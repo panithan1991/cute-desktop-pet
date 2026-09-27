@@ -93,10 +93,15 @@ jobs:
         shell: pwsh
         run: |
           Expand-Archive -LiteralPath 'CuteDesktopPet-Windows.zip' -DestinationPath 'unpacked'
-          & './unpacked/BooBoo.exe' --smoke-test
-          if ($LASTEXITCODE -ne 0) { throw "BooBoo.exe exited $LASTEXITCODE" }
-          & './unpacked/MooKrata.exe' --smoke-test
-          if ($LASTEXITCODE -ne 0) { throw "MooKrata.exe exited $LASTEXITCODE" }
+          foreach ($name in @('BooBoo', 'MooKrata')) {
+            $exe = (Resolve-Path "./unpacked/$name.exe").Path
+            $process = Start-Process -FilePath $exe -ArgumentList '--smoke-test' -WindowStyle Hidden -PassThru
+            if (-not $process.WaitForExit(30000)) {
+              Stop-Process -Id $process.Id -Force
+              throw "$name.exe did not finish its smoke test"
+            }
+            if ($process.ExitCode -ne 0) { throw "$name.exe exited $($process.ExitCode)" }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: CuteDesktopPet-Windows

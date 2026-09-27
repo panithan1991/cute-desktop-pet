@@ -184,7 +184,7 @@
         ['happy','wave','stretch','playbow','blink']
       ],
       mookrata: [
-        ['idle','happy','tilt_left','awake_rest','sleep'],
+        ['idle','happy','tilt','tilt_left','awake_rest','sleep'],
         ['happy_sit','paw_up','tilt_right','curled_sleep','stretch'],
         ['sniff_low','sniff_air','sniff_close','playbow','playbow_two']
       ]
@@ -239,9 +239,13 @@
       } else if (action === 'stretch') {
         actionOverride = 'stretch';
         actionUntil = now + 1800;
+        jumpHeight = 0;
+        jumpVelocity = 0;
       } else if (action === 'sleep') {
         actionOverride = 'sleep';
         actionUntil = now + 4500;
+        jumpHeight = 0;
+        jumpVelocity = 0;
       }
     }
     function togglePause() { paused = !paused; }
@@ -322,11 +326,12 @@
     let startX = 0;
     canvas.addEventListener('mousedown', (e) => {
       isDragging = true;
-      startX = e.clientX - petX;
+      startX = e.clientX - playground.getBoundingClientRect().left - petX;
     });
     window.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
-      petX = Math.max(20, Math.min(playground.clientWidth - 140, e.clientX - startX));
+      petX = Math.max(20, Math.min(playground.clientWidth - 140,
+        e.clientX - playground.getBoundingClientRect().left - startX));
     });
     window.addEventListener('mouseup', () => { isDragging = false; });
   </script>
