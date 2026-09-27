@@ -11,7 +11,12 @@ import pymupdf
 
 def main() -> None:
     base = Path(__file__).parent
-    sources = [base / "preview.svg", base / "characters-preview.svg", base / "power-preview.svg"]
+    sources = [
+        base / "preview.svg",
+        base / "characters-preview.svg",
+        base / "power-preview.svg",
+        base / "special-powers-preview.svg",
+    ]
     sources.extend(sorted((base / "icons").glob("*.svg")))
     for source in sources:
         document = pymupdf.open(source)

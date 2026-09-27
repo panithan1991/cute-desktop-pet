@@ -8,7 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from desktop_pet import DesktopPet
-from power_effects import PowerEffect, PowerEffectView
+from power_effects import PowerEffect, PowerEffectView, launch_power
 from fantasy_art import draw_trail_scout
 from storybook_art import (
     draw_astral_sage,
@@ -90,7 +90,7 @@ def main() -> None:
 
     visitors = (
         (draw_moss_keeper, "MOSS KEEPER", "#dcead4"),
-        (draw_astral_sage, "ASTRAL SAGE", "#e0deef"),
+        (draw_astral_sage, "WIZARD", "#e0deef"),
         (draw_trail_scout, "TRAIL SCOUT", "#f4dfc5"),
         (draw_ember_warden, "EMBER WARDEN", "#e6d6d7"),
     )
@@ -161,9 +161,65 @@ def main() -> None:
         f'<g transform="translate(130 87)">{"".join(tornado.parts)}</g>'
         '<text x="250" y="225" text-anchor="middle" fill="#edf8f5" '
         'font-family="Arial,sans-serif" font-size="14" font-weight="bold">'
-        'ASTRAL SAGE · LIGHT &amp; TORNADO</text></svg>'
+        'WIZARD · LIGHT &amp; TORNADO</text></svg>'
     )
     Path(__file__).with_name("power-preview.svg").write_text(power_svg, encoding="utf-8")
+
+    special_cards: list[str] = []
+    specials: tuple[tuple[str, str, str, Callable[[SvgCanvas], None], str], ...] = (
+        (
+            "STAR GUARDIAN · LIGHTNING", "#d7e8e7", "guardian",
+            lambda c: DesktopPet._draw_guardian(None, c, 0, 0, False, 1, False),
+            "lightning",
+        ),
+        (
+            "MOSS KEEPER · GROW TREE", "#dcead4", "moss",
+            lambda c: draw_moss_keeper(c, 0, 0, False, 1, False),
+            "tree",
+        ),
+        (
+            "WIZARD · TORNADO", "#e0deef", "astral",
+            lambda c: draw_astral_sage(c, 0, 0, False, 1, False),
+            "tornado",
+        ),
+        (
+            "EMBER WARDEN · FIRE", "#e6d6d7", "ember",
+            lambda c: draw_ember_warden(c, 0, 0, False, 1, False),
+            "fire",
+        ),
+    )
+    for index, (label, background, character, draw_character, effect_kind) in enumerate(specials):
+        x = 17 + (index % 2) * 311
+        y = 17 + (index // 2) * 231
+        pet_art = SvgCanvas()
+        effect_art = SvgCanvas()
+        draw_character(pet_art)
+        effect = launch_power(character, 0, 0, -1 if character == "ember" else 1, special=True)
+        effect.age = {"lightning": 0.2, "tree": 1.0, "tornado": 0.5, "fire": 0.23}[effect_kind]
+        {
+            "lightning": PowerEffectView._draw_lightning,
+            "tree": PowerEffectView._draw_tree,
+            "tornado": PowerEffectView._draw_tornado,
+            "fire": PowerEffectView._draw_fire,
+        }[effect_kind](effect_art, effect)
+        effect_x = {"lightning": 23, "tree": 15, "tornado": 28, "fire": 85}[effect_kind]
+        effect_y = {"lightning": 6, "tree": 18, "tornado": 61, "fire": 69}[effect_kind]
+        special_cards.append(
+            f'<rect x="{x}" y="{y}" width="294" height="214" rx="17" fill="{background}"/>'
+            f'<g transform="translate({x + 125} {y + 14}) scale(.84)">{"".join(pet_art.parts)}</g>'
+            f'<g transform="translate({x + effect_x} {y + effect_y})">{"".join(effect_art.parts)}</g>'
+            f'<text x="{x + 147}" y="{y + 197}" text-anchor="middle" '
+            f'fill="#30394f" font-family="Arial,sans-serif" font-size="12" '
+            f'font-weight="bold">{label}</text>'
+        )
+    specials_svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 639 479">'
+        '<rect width="639" height="479" rx="24" fill="#25344d"/>'
+        + "".join(special_cards) + '</svg>'
+    )
+    Path(__file__).with_name("special-powers-preview.svg").write_text(
+        specials_svg, encoding="utf-8"
+    )
 
 
 if __name__ == "__main__":

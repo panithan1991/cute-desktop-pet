@@ -17,7 +17,7 @@ from storybook_art import (
     draw_moss_keeper,
 )
 from pet_motion import FlightMotion, JumpMotion, PetMotion
-from power_effects import PowerEffectView, launch_power
+from power_effects import SPECIAL_POWERS, PowerEffectView, launch_power
 
 
 WIDTH = 184
@@ -94,7 +94,7 @@ class DesktopPet:
         self.canvas.bind("<Double-Button-1>", self._toggle_pause)
         root.bind("<Escape>", lambda _event: self.close())
         root.bind("<KeyPress-f>", lambda _event: self._fire_now())
-        root.bind("<KeyPress-t>", lambda _event: self._fire_now(tornado=True))
+        root.bind("<KeyPress-t>", lambda _event: self._fire_now(special=True))
         root.protocol("WM_DELETE_WINDOW", self.close)
         self._draw(self.last_tick)
         root.after(33, self._tick)
@@ -113,8 +113,8 @@ class DesktopPet:
         )
         menu.add_separator()
         for label, value in (
-            ("ผู้ดูแลพฤกษา", "moss"),
-            ("นักอ่านแผนที่ดาว", "astral"),
+            ("นักดูแลพฤกษา", "moss"),
+            ("พ่อมด", "astral"),
             ("นักสำรวจเส้นทาง", "trail"),
             ("ผู้พิทักษ์แสงอำพัน", "ember"),
         ):
@@ -142,9 +142,8 @@ class DesktopPet:
         menu.add_checkbutton(label="ใช้พลังอัตโนมัติ", variable=self.auto_power_var)
         menu.add_command(label="กระโดด", command=self._jump_now)
         menu.add_command(label="ยิงพลัง", command=self._fire_now)
-        menu.add_command(label="เสกทอร์นาโด (พ่อมด)", command=lambda: self._fire_now(tornado=True))
-        self.tornado_menu_index = menu.index("end")
-        menu.entryconfig(self.tornado_menu_index, state="disabled")
+        menu.add_command(label="เรียกฟ้าผ่า", command=lambda: self._fire_now(special=True))
+        self.special_menu_index = menu.index("end")
         menu.add_command(label="กลับไปขอบล่าง", command=self._move_to_bottom)
         menu.add_separator()
         menu.add_command(label="ออกจากแอป", command=self.close)
@@ -187,8 +186,9 @@ class DesktopPet:
             self.jump.reset()
         self.current_character = character
         self.menu.entryconfig(
-            self.tornado_menu_index,
-            state="normal" if character == "astral" else "disabled",
+            self.special_menu_index,
+            label=SPECIAL_POWERS.get(character, ("", "พลังพิเศษ"))[1],
+            state="normal" if character in SPECIAL_POWERS else "disabled",
         )
         self._place_window()
         self._redraw()
@@ -202,14 +202,14 @@ class DesktopPet:
         self._fire_now()
         return "break"
 
-    def _fire_now(self, tornado: bool = False) -> bool:
-        if tornado and self.current_character != "astral":
+    def _fire_now(self, special: bool = False) -> bool:
+        if special and self.current_character not in SPECIAL_POWERS:
             return False
         if len(self.effects) >= 6:
             return False
         effect = launch_power(
             self.current_character, self.x, self.y,
-            self.motion.direction, self.flight.dx, tornado,
+            self.motion.direction, self.flight.dx, special,
         )
         self.effects.append(PowerEffectView(self.root, effect, self.topmost_var.get()))
         self.next_power = time.monotonic() + self.random.uniform(7, 12)
@@ -293,7 +293,7 @@ class DesktopPet:
             and not self.dragging
             and now >= self.next_power
         ):
-            self._fire_now(tornado=self.current_character == "astral" and self.random.random() < 0.3)
+            self._fire_now(special=self.current_character in SPECIAL_POWERS and self.random.random() < 0.3)
             self.next_power = now + self.random.uniform(7, 12)
         live_effects: list[PowerEffectView] = []
         for view in self.effects:
