@@ -1,10 +1,37 @@
 import unittest
 
-from power_effects import POWER_STYLES, SPECIAL_POWERS, PowerEffectView, launch_power
+from power_effects import (
+    AutoPowerTimer,
+    POWER_STYLES,
+    SPECIAL_POWERS,
+    PowerEffectView,
+    launch_power,
+)
 from make_preview import SvgCanvas
 
 
 class PowerEffectTests(unittest.TestCase):
+    def test_auto_timer_supports_three_five_and_six_second_intervals(self):
+        timer = AutoPowerTimer(5, 105)
+        self.assertFalse(timer.due(104.99))
+        self.assertTrue(timer.due(105))
+        self.assertFalse(timer.due(109.99))
+        self.assertTrue(timer.due(110))
+        for seconds in (3, 5, 6):
+            with self.subTest(seconds=seconds):
+                timer.reset(200, seconds)
+                self.assertFalse(timer.due(200 + seconds - 0.01))
+                self.assertTrue(timer.due(200 + seconds))
+                self.assertFalse(timer.due(200 + seconds))
+        with self.assertRaises(ValueError):
+            timer.reset(200, 4)
+
+    def test_delayed_timer_casts_once_without_backlog(self):
+        timer = AutoPowerTimer(3, 103)
+        self.assertTrue(timer.due(120))
+        self.assertFalse(timer.due(120))
+        self.assertEqual(timer.next_at, 123)
+
     def test_every_character_launches_a_distinct_power_from_its_art(self):
         self.assertEqual(len(POWER_STYLES), 8)
         for character, style in POWER_STYLES.items():

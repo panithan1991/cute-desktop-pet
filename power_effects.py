@@ -40,6 +40,26 @@ SPECIAL_POWERS = {
 
 
 @dataclass
+class AutoPowerTimer:
+    """One cast per selected interval, without catch-up bursts after a delay."""
+
+    interval_seconds: int
+    next_at: float
+
+    def reset(self, now: float, interval_seconds: int) -> None:
+        if interval_seconds not in (3, 5, 6):
+            raise ValueError("Power interval must be 3, 5, or 6 seconds")
+        self.interval_seconds = interval_seconds
+        self.next_at = now + interval_seconds
+
+    def due(self, now: float) -> bool:
+        if now < self.next_at:
+            return False
+        self.next_at = now + self.interval_seconds
+        return True
+
+
+@dataclass
 class PowerEffect:
     kind: str
     outer: str

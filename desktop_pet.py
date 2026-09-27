@@ -17,7 +17,7 @@ from storybook_art import (
     draw_moss_keeper,
 )
 from pet_motion import FlightMotion, JumpMotion, PetMotion
-from power_effects import SPECIAL_POWERS, PowerEffectView, launch_power
+from power_effects import AutoPowerTimer, SPECIAL_POWERS, PowerEffectView, launch_power
 
 
 WIDTH = 184
@@ -58,12 +58,13 @@ class DesktopPet:
         self.next_jump = self.last_tick + self.random.uniform(2, 4)
         self.next_blink = self.last_tick + self.random.uniform(2, 5)
         self.blink_until = 0.0
-        self.next_power = self.last_tick + self.random.uniform(6, 10)
+        self.power_timer = AutoPowerTimer(5, self.last_tick + 5)
         self.effects: list[PowerEffectView] = []
 
         self.paused_var = tk.BooleanVar(value=False)
         self.topmost_var = tk.BooleanVar(value=True)
         self.auto_power_var = tk.BooleanVar(value=True)
+        self.power_interval_var = tk.IntVar(value=5)
         self.character_var = tk.StringVar(value="guardian")
         self.current_character = "guardian"
         self.speed_var = tk.StringVar(value="normal")
@@ -139,7 +140,19 @@ class DesktopPet:
             variable=self.topmost_var,
             command=self._set_topmost,
         )
-        menu.add_checkbutton(label="ใช้พลังอัตโนมัติ", variable=self.auto_power_var)
+        menu.add_checkbutton(
+            label="ใช้พลังอัตโนมัติ", variable=self.auto_power_var,
+            command=self._reset_power_timer,
+        )
+        interval_menu = tk.Menu(menu, tearoff=False)
+        for seconds in (3, 5, 6):
+            interval_menu.add_radiobutton(
+                label=f"ทุก {seconds} วินาที",
+                variable=self.power_interval_var,
+                value=seconds,
+                command=self._reset_power_timer,
+            )
+        menu.add_cascade(label="ความถี่ใช้พลัง", menu=interval_menu)
         menu.add_command(label="กระโดด", command=self._jump_now)
         menu.add_command(label="ยิงพลัง", command=self._fire_now)
         menu.add_command(label="เรียกฟ้าผ่า", command=lambda: self._fire_now(special=True))
@@ -170,6 +183,9 @@ class DesktopPet:
         self.motion.speed = {"slow": 38, "normal": 65, "fast": 105}[self.speed_var.get()]
         self.flight.speed = {"slow": 85, "normal": 145, "fast": 220}[self.speed_var.get()]
 
+    def _reset_power_timer(self) -> None:
+        self.power_timer.reset(time.monotonic(), self.power_interval_var.get())
+
     def _set_character(self) -> None:
         character = self.character_var.get()
         left, top, right, bottom = self.work_area
@@ -185,6 +201,7 @@ class DesktopPet:
         if character not in GROUND_JUMPERS:
             self.jump.reset()
         self.current_character = character
+        self._reset_power_timer()
         self.menu.entryconfig(
             self.special_menu_index,
             label=SPECIAL_POWERS.get(character, ("", "พลังพิเศษ"))[1],
@@ -212,7 +229,6 @@ class DesktopPet:
             self.motion.direction, self.flight.dx, special,
         )
         self.effects.append(PowerEffectView(self.root, effect, self.topmost_var.get()))
-        self.next_power = time.monotonic() + self.random.uniform(7, 12)
         return True
 
     def _redraw(self) -> None:
@@ -288,13 +304,12 @@ class DesktopPet:
                     self.y = self.base_y
             self._place_window()
         if (
-            self.auto_power_var.get()
+            self.power_timer.due(now)
+            and self.auto_power_var.get()
             and not self.paused_var.get()
             and not self.dragging
-            and now >= self.next_power
         ):
-            self._fire_now(special=self.current_character in SPECIAL_POWERS and self.random.random() < 0.3)
-            self.next_power = now + self.random.uniform(7, 12)
+            self._fire_now(special=self.current_character in SPECIAL_POWERS)
         live_effects: list[PowerEffectView] = []
         for view in self.effects:
             if view.effect.step(dt, self.work_area):
