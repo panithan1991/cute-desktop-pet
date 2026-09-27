@@ -1,4 +1,4 @@
-"""A tiny, dependency-free Windows desktop companion."""
+"""A tiny desktop companion for Windows and macOS."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import random
 import sys
 import time
 import tkinter as tk
-from ctypes import wintypes
 
 from booboo_art import BooBooSprites, choose_pose
 from fantasy_art import draw_trail_scout
@@ -19,21 +18,27 @@ from storybook_art import (
 )
 from pet_motion import FlightMotion, JumpMotion, PetMotion
 from power_effects import AutoPowerTimer, SPECIAL_POWERS, PowerEffectView, launch_power
+from window_style import configure_overlay
 
 
 WIDTH = 184
 HEIGHT = 174
-TRANSPARENT = "#ff00ff"
 OUTLINE = "#30394f"
 GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", "bunny"})
 
 
 def get_work_area(root: tk.Tk) -> tuple[int, int, int, int]:
-    """Return the primary monitor's usable area, excluding the taskbar."""
+    """Return a usable primary-display area clear of system UI."""
     if sys.platform == "win32":
+        from ctypes import wintypes
+
         rect = wintypes.RECT()
         if ctypes.windll.user32.SystemParametersInfoW(48, 0, ctypes.byref(rect), 0):
             return rect.left, rect.top, rect.right, rect.bottom
+    if sys.platform == "darwin":
+        # Tk exposes the full display rather than the macOS visible frame.
+        # Leave room for the menu bar and a bottom-positioned Dock.
+        return 0, 32, root.winfo_screenwidth(), root.winfo_screenheight() - 80
     return 0, 0, root.winfo_screenwidth(), root.winfo_screenheight()
 
 
@@ -72,17 +77,14 @@ class DesktopPet:
         self.speed_var = tk.StringVar(value="normal")
         self.booboo_sprites = BooBooSprites(root)
 
-        root.configure(background=TRANSPARENT)
         root.overrideredirect(True)
         root.wm_attributes("-topmost", True)
-        # On Windows this makes the unused canvas pixels see-through and lets
-        # mouse clicks pass through them to the user's other applications.
-        root.wm_attributes("-transparentcolor", TRANSPARENT)
+        background = configure_overlay(root)
         self.canvas = tk.Canvas(
             root,
             width=WIDTH,
             height=HEIGHT,
-            background=TRANSPARENT,
+            background=background,
             borderwidth=0,
             highlightthickness=0,
         )
@@ -94,7 +96,11 @@ class DesktopPet:
         self.canvas.bind("<ButtonRelease-1>", self._end_drag)
         self.canvas.bind("<Button-3>", self._show_menu)
         self.canvas.bind("<Button-2>", lambda _event: self._jump_now())
-        self.canvas.bind("<Control-ButtonPress-1>", self._shoot_click)
+        if sys.platform == "darwin":
+            # Control-click is the standard context-menu gesture on a Mac.
+            self.canvas.bind("<Control-ButtonPress-1>", self._show_menu)
+        else:
+            self.canvas.bind("<Control-ButtonPress-1>", self._shoot_click)
         self.canvas.bind("<Double-Button-1>", self._toggle_pause)
         root.bind("<Escape>", lambda _event: self.close())
         root.bind("<KeyPress-f>", lambda _event: self._fire_now())
@@ -580,15 +586,20 @@ class DesktopPet:
 
 
 def main() -> int:
-    if sys.platform != "win32":
-        print("This desktop pet currently supports Windows only.")
+    if sys.platform not in {"win32", "darwin"}:
+        print("This desktop pet supports Windows and macOS.")
         return 1
-    # Keep Windows work-area coordinates and Tk window coordinates in sync.
-    try:
-        ctypes.windll.user32.SetProcessDPIAware()
-    except (AttributeError, OSError):
-        pass
+    if sys.platform == "win32":
+        # Keep Windows work-area coordinates and Tk window coordinates in sync.
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except (AttributeError, OSError):
+            pass
     root = tk.Tk()
+    if sys.platform == "darwin" and root.tk.call("tk", "windowingsystem") != "aqua":
+        root.destroy()
+        print("macOS needs a Python build with Aqua Tk (for example from python.org).")
+        return 1
     DesktopPet(root)
     root.mainloop()
     return 0

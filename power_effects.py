@@ -6,8 +6,8 @@ import math
 import tkinter as tk
 from dataclasses import dataclass
 
+from window_style import configure_overlay
 
-TRANSPARENT = "#ff00ff"
 EFFECT_LINGER_SECONDS = 4.0
 
 
@@ -146,14 +146,13 @@ class PowerEffectView:
         self.window = tk.Toplevel(parent)
         self.window.withdraw()
         self.window.overrideredirect(True)
-        self.window.configure(background=TRANSPARENT)
-        self.window.wm_attributes("-transparentcolor", TRANSPARENT)
+        background = configure_overlay(self.window)
         self.window.wm_attributes("-topmost", topmost)
         self.canvas = tk.Canvas(
             self.window,
             width=effect.width,
             height=effect.height,
-            background=TRANSPARENT,
+            background=background,
             borderwidth=0,
             highlightthickness=0,
         )
