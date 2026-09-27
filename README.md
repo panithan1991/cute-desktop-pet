@@ -12,6 +12,8 @@
 
 ![ท่าทาง Moo Krata ที่ใช้ในแอป](assets/mookrata-animation.gif)
 
+![Moo Krata วิ่งเล่น](assets/mookrata-run.gif)
+
 ![ผู้พิทักษ์ดวงดาวและยานสำรวจที่ออกแบบสำหรับแอปนี้](preview.png)
 
 ## ตัวละครทั้งหมด
