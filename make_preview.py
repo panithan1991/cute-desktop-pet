@@ -124,7 +124,6 @@ def main() -> None:
         ("trail", "#f4dfc5", lambda c: draw_trail_scout(c, 0, 0, False, 1, False)),
         ("ember", "#e6d6d7", lambda c: draw_ember_warden(c, 0, 0, False, 1, False)),
         ("cat", "#f7e2d2", lambda c: DesktopPet._draw_cat(DesktopPet, c, 0, 0, False, 1)),
-        ("bunny", "#e7e9e6", lambda c: DesktopPet._draw_bunny(DesktopPet, c, 0, 0, False, 1)),
     )
     for name, background, draw in icon_art:
         art = SvgCanvas()

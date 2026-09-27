@@ -29,7 +29,6 @@ POWER_STYLES = {
     "trail": PowerStyle("compass", "#edb956", "#fff4c7", 144, 69, 1),
     "ember": PowerStyle("ember", "#e35a71", "#ffd0ad", 20, 67, -1),
     "cat": PowerStyle("paw", "#eea485", "#ffe6bc", 92, 98),
-    "bunny": PowerStyle("bubble", "#f2acbb", "#fff9f4", 92, 100),
 }
 
 SPECIAL_POWERS = {
@@ -99,6 +98,8 @@ def launch_power(
     """Start a power at the matching staff, crystal, compass, or pet face."""
     if special and character not in SPECIAL_POWERS:
         raise ValueError(f"{character} has no special power")
+    if character not in POWER_STYLES:
+        raise ValueError(f"{character} has no power")
     style = POWER_STYLES[character]
     direction = style.fixed_direction or (1 if facing >= 0 else -1)
     origin_x = style.origin_x
@@ -211,10 +212,6 @@ class PowerEffectView:
             for px in (-9, -3, 4, 10):
                 c.create_oval(cx+px-2, cy-9, cx+px+2, cy-3,
                               fill="#e68d78", outline="")
-        elif effect.kind == "bubble":
-            c.create_oval(cx-9, cy-9, cx+9, cy+9,
-                          fill="#ffffff", outline="#82beb6", width=2)
-            c.create_oval(cx-5, cy-6, cx-1, cy-2, fill="#e3ffff", outline="")
         else:  # Survey ship pulse.
             c.create_polygon(cx-9, cy-9, cx+14, cy, cx-9, cy+9,
                              fill=effect.inner, outline=effect.outer, width=2)

@@ -59,6 +59,7 @@ class DesktopPet:
         self.next_jump = self.last_tick + self.random.uniform(0.5, 1.0)
         self.next_blink = self.last_tick + self.random.uniform(2, 5)
         self.blink_until = 0.0
+        self.land_until = 0.0
         self.power_timer = AutoPowerTimer(5, self.last_tick + 5)
         self.effects: list[PowerEffectView] = []
 
@@ -145,8 +146,9 @@ class DesktopPet:
         )
         menu.add_checkbutton(
             label="ใช้พลังอัตโนมัติ", variable=self.auto_power_var,
-            command=self._reset_power_timer,
+            command=self._reset_power_timer, state="disabled",
         )
+        self.auto_power_menu_index = menu.index("end")
         interval_menu = tk.Menu(menu, tearoff=False)
         for seconds in (3, 5, 6):
             interval_menu.add_radiobutton(
@@ -155,9 +157,11 @@ class DesktopPet:
                 value=seconds,
                 command=self._reset_power_timer,
             )
-        menu.add_cascade(label="ความถี่ใช้พลัง", menu=interval_menu)
+        menu.add_cascade(label="ความถี่ใช้พลัง", menu=interval_menu, state="disabled")
+        self.power_interval_menu_index = menu.index("end")
         menu.add_command(label="กระโดด", command=self._jump_now)
-        menu.add_command(label="ยิงพลัง", command=self._fire_now)
+        menu.add_command(label="ยิงพลัง", command=self._fire_now, state="disabled")
+        self.fire_menu_index = menu.index("end")
         menu.add_command(
             label="พลังพิเศษ", command=lambda: self._fire_now(special=True),
             state="disabled",
@@ -215,7 +219,15 @@ class DesktopPet:
             self.jump.launch_speed = 340
             self.jump.gravity = 1050
         self.current_character = character
+        if character == "bunny":
+            for view in self.effects:
+                view.close()
+            self.effects.clear()
         self._reset_power_timer()
+        power_state = "disabled" if character == "bunny" else "normal"
+        for index in (self.auto_power_menu_index, self.power_interval_menu_index,
+                      self.fire_menu_index):
+            self.menu.entryconfig(index, state=power_state)
         self.menu.entryconfig(
             self.special_menu_index,
             label=SPECIAL_POWERS.get(character, ("", "พลังพิเศษ"))[1],
@@ -235,6 +247,8 @@ class DesktopPet:
         return "break"
 
     def _fire_now(self, special: bool = False) -> bool:
+        if self.current_character == "bunny":
+            return False
         if special and self.current_character not in SPECIAL_POWERS:
             return False
         if len(self.effects) >= 6:
@@ -323,14 +337,18 @@ class DesktopPet:
                             if self.current_character == "bunny"
                             else self.random.uniform(3.5, 6.5)
                         )
+                    was_airborne = self.jump.airborne
                     if not self.motion.paused:
                         self.jump.step(dt, self.base_y - top)
+                    if self.current_character == "bunny" and was_airborne and not self.jump.airborne:
+                        self.land_until = now + 0.14
                     self.y = self.base_y - self.jump.height
                 else:
                     self.y = self.base_y
             self._place_window()
         if (
-            self.power_timer.due(now)
+            self.current_character != "bunny"
+            and self.power_timer.due(now)
             and self.auto_power_var.get()
             and not self.paused_var.get()
             and not self.dragging
@@ -352,8 +370,7 @@ class DesktopPet:
         canvas.delete("all")
         character = self.character_var.get()
         walking = not self.motion.paused and not self.dragging and (
-            self.jump.airborne if character == "bunny"
-            else (now >= self.idle_until or self.jump.airborne)
+            now >= self.idle_until or self.jump.airborne
         )
         stride = math.sin(self.walk_time * 12) if walking else 0.0
         bob = abs(stride) * 3 if walking else math.sin(now * 2) * 1.5
@@ -426,6 +443,8 @@ class DesktopPet:
             now,
             walking=walking,
             airborne=self.jump.airborne,
+            jump_velocity=self.jump.velocity,
+            just_landed=now < self.land_until,
             blink=blink,
             resting_remaining=max(0.0, self.idle_until - now) if not walking else 0.0,
             paused=self.paused_var.get(),

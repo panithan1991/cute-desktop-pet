@@ -34,7 +34,10 @@ class PowerEffectTests(unittest.TestCase):
         self.assertEqual(timer.next_at, 123)
 
     def test_every_character_launches_a_distinct_power_from_its_art(self):
-        self.assertEqual(len(POWER_STYLES), 8)
+        self.assertEqual(len(POWER_STYLES), 7)
+        self.assertNotIn("bunny", POWER_STYLES)
+        with self.assertRaises(ValueError):
+            launch_power("bunny", 300, 400, facing=1)
         for character, style in POWER_STYLES.items():
             with self.subTest(character=character):
                 effect = launch_power(character, 300, 400, facing=1)
