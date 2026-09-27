@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -111,6 +112,28 @@ def main() -> None:
         + "".join(cards) + '</svg>'
     )
     Path(__file__).with_name("characters-preview.svg").write_text(visitor_svg, encoding="utf-8")
+
+    icons = Path(__file__).with_name("icons")
+    icons.mkdir(exist_ok=True)
+    icon_art: tuple[tuple[str, str, Callable[[SvgCanvas], None]], ...] = (
+        ("guardian", "#e8e0d1", lambda c: DesktopPet._draw_guardian(None, c, 0, 0, False, 1, False)),
+        ("ship", "#dbe9ed", lambda c: DesktopPet._draw_ship(dummy, c, 0.5, 1, -0.5)),
+        ("moss", "#dcead4", lambda c: draw_moss_keeper(c, 0, 0, False, 1, False)),
+        ("astral", "#e0deef", lambda c: draw_astral_sage(c, 0, 0, False, 1, False)),
+        ("trail", "#f4dfc5", lambda c: draw_trail_scout(c, 0, 0, False, 1, False)),
+        ("ember", "#e6d6d7", lambda c: draw_ember_warden(c, 0, 0, False, 1, False)),
+        ("cat", "#f7e2d2", lambda c: DesktopPet._draw_cat(DesktopPet, c, 0, 0, False, 1)),
+        ("bunny", "#e7e9e6", lambda c: DesktopPet._draw_bunny(DesktopPet, c, 0, 0, False, 1)),
+    )
+    for name, background, draw in icon_art:
+        art = SvgCanvas()
+        draw(art)
+        icon_svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 184 174">'
+            f'<rect x="4" y="4" width="176" height="166" rx="25" fill="{background}"/>'
+            + "".join(art.parts) + '</svg>'
+        )
+        (icons / f"{name}.svg").write_text(icon_svg, encoding="utf-8")
 
 
 if __name__ == "__main__":
