@@ -55,14 +55,14 @@ def choose_pose(
         return "hop_air"
     if just_landed:
         return "hop_land"
-    if blink:
-        return "smile"
-    if resting_remaining > 0.9:
+    if resting_remaining > 3.8:
         return "curious"
-    if resting_remaining > 0.45:
+    if resting_remaining > 3.2:
         return "stretch"
     if resting_remaining > 0:
         return "sleepy"
+    if blink:
+        return "smile"
     if walking and now % 5.2 < 0.55:
         return "happy"
     return "idle"

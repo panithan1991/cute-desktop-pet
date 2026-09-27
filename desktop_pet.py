@@ -55,8 +55,8 @@ class DesktopPet:
         self.last_tick = time.monotonic()
         self.walk_time = 0.0
         self.idle_until = 0.0
-        self.next_idle = self.last_tick + self.random.uniform(7, 12)
-        self.next_jump = self.last_tick + self.random.uniform(0.5, 1.0)
+        self.next_idle = self.last_tick + self.random.uniform(2, 4)
+        self.next_jump = self.last_tick + self.random.uniform(6, 9)
         self.next_blink = self.last_tick + self.random.uniform(2, 5)
         self.blink_until = 0.0
         self.land_until = 0.0
@@ -214,10 +214,15 @@ class DesktopPet:
             self.jump.reset()
             self.jump.launch_speed = 245
             self.jump.gravity = 1050
-            self.next_jump = time.monotonic() + 0.4
+            now = time.monotonic()
+            self.idle_until = 0.0
+            self.next_idle = now + self.random.uniform(2, 4)
+            self.next_jump = now + self.random.uniform(6, 9)
         else:
             self.jump.launch_speed = 340
             self.jump.gravity = 1050
+            self.idle_until = 0.0
+            self.next_idle = time.monotonic() + self.random.uniform(7, 12)
         self.current_character = character
         if character == "bunny":
             for view in self.effects:
@@ -239,7 +244,7 @@ class DesktopPet:
     def _jump_now(self) -> None:
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
-            delay = self.random.uniform(0.8, 1.2) if self.current_character == "bunny" else self.random.uniform(3, 6)
+            delay = self.random.uniform(8, 12) if self.current_character == "bunny" else self.random.uniform(3, 6)
             self.next_jump = time.monotonic() + delay
 
     def _shoot_click(self, _event: tk.Event) -> str:
@@ -304,8 +309,9 @@ class DesktopPet:
         self.last_tick = now
         if now >= self.next_idle and self.current_character != "ship" and not self.jump.airborne:
             if self.current_character == "bunny":
-                self.idle_until = now + self.random.uniform(1.4, 2.4)
-                self.next_idle = now + self.random.uniform(8, 13)
+                self.idle_until = now + self.random.uniform(7, 9)
+                self.next_idle = self.idle_until + self.random.uniform(4, 6)
+                self.next_jump = max(self.next_jump, self.idle_until + self.random.uniform(1, 2))
             else:
                 self.idle_until = now + self.random.uniform(0.7, 1.5)
                 self.next_idle = now + self.random.uniform(7, 12)
@@ -333,7 +339,7 @@ class DesktopPet:
                     ):
                         self.jump.jump()
                         self.next_jump = now + (
-                            self.random.uniform(0.8, 1.2)
+                            self.random.uniform(8, 12)
                             if self.current_character == "bunny"
                             else self.random.uniform(3.5, 6.5)
                         )

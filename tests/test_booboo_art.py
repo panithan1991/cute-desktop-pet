@@ -40,9 +40,10 @@ class BooBooPoseTests(unittest.TestCase):
         self.assertEqual(pose(), "idle")
         self.assertEqual(pose(walking=True, now=0.2), "happy")
         self.assertEqual(pose(blink=True), "smile")
-        self.assertEqual(pose(resting_remaining=1.5), "curious")
-        self.assertEqual(pose(resting_remaining=0.7), "stretch")
-        self.assertEqual(pose(resting_remaining=0.2), "sleepy")
+        self.assertEqual(pose(resting_remaining=6.0), "curious")
+        self.assertEqual(pose(resting_remaining=3.5), "stretch")
+        self.assertEqual(pose(resting_remaining=1.5), "sleepy")
+        self.assertEqual(pose(resting_remaining=6.0, blink=True), "curious")
         self.assertEqual(pose(paused=True, airborne=True), "sleepy")
 
     def test_display_frame_has_only_clear_or_opaque_alpha(self):
