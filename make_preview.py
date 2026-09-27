@@ -8,11 +8,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from desktop_pet import DesktopPet
-from fantasy_art import (
+from fantasy_art import draw_trail_scout
+from storybook_art import (
     draw_astral_sage,
     draw_ember_warden,
     draw_moss_keeper,
-    draw_trail_scout,
 )
 
 
