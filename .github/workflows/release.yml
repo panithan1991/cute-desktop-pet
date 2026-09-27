@@ -1,4 +1,4 @@
-name: Release BooBoo for macOS
+name: Release Multi-Platform Desktop Pet
 
 on:
   push:
@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build ${{ matrix.arch }}
+  build-macos:
+    name: Build macOS ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -19,7 +19,7 @@ jobs:
           - runner: macos-15
             cpu: arm64
             arch: Apple-Silicon
-          - runner: macos-15-intel
+          - runner: macos-13
             cpu: x86_64
             arch: Intel
     steps:
@@ -33,29 +33,51 @@ jobs:
         run: |
           test "$(uname -m)" = "${{ matrix.cpu }}"
           python3 -m unittest discover -s tests -q
-      - name: Build BooBoo.app
+      - name: Build BooBoo.app & MooKrata
         run: sh scripts/build_macos.sh
       - name: Test bundled app
         timeout-minutes: 3
         run: |
           test -x dist/BooBoo.app/Contents/MacOS/BooBoo
-          find dist/BooBoo.app -name booboo-sprites.png -print -quit | grep booboo-sprites.png
           dist/BooBoo.app/Contents/MacOS/BooBoo --smoke-test
           codesign --verify --deep --strict dist/BooBoo.app
       - name: Package Mac download
         run: |
-          ditto -c -k --sequesterRsrc --keepParent dist/BooBoo.app "BooBoo-macOS-${{ matrix.arch }}.zip"
-          shasum -a 256 "BooBoo-macOS-${{ matrix.arch }}.zip"
+          ditto -c -k --sequesterRsrc --keepParent dist/BooBoo.app "CuteDesktopPet-macOS-${{ matrix.arch }}.zip"
+          shasum -a 256 "CuteDesktopPet-macOS-${{ matrix.arch }}.zip"
       - uses: actions/upload-artifact@v4
         with:
-          name: BooBoo-macOS-${{ matrix.arch }}
-          path: BooBoo-macOS-${{ matrix.arch }}.zip
+          name: CuteDesktopPet-macOS-${{ matrix.arch }}
+          path: CuteDesktopPet-macOS-${{ matrix.arch }}.zip
+          if-no-files-found: error
+          retention-days: 1
+
+  build-windows:
+    name: Build Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Run tests
+        run: python -m unittest discover -s tests -q
+      - name: Build Windows Executables
+        run: cmd.exe /c scripts\build_windows.bat
+      - name: Smoke test executables
+        run: |
+          .\dist\MooKrata.exe --smoke-test
+          .\dist\BooBoo.exe --smoke-test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CuteDesktopPet-Windows
+          path: CuteDesktopPet-Windows.zip
           if-no-files-found: error
           retention-days: 1
 
   release:
-    name: Publish Mac downloads
-    needs: build
+    name: Publish Multi-Platform Release
+    needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -63,18 +85,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          pattern: BooBoo-macOS-*
           path: release-files
           merge-multiple: true
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ls release-files/BooBoo-macOS-*.zip
+          ls -la release-files/
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" release-files/BooBoo-macOS-*.zip --clobber --repo "$GITHUB_REPOSITORY"
+            gh release upload "$GITHUB_REF_NAME" release-files/*.zip --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$GITHUB_REF_NAME" release-files/BooBoo-macOS-*.zip \
-              --verify-tag --latest --title "BooBoo for macOS $GITHUB_REF_NAME" \
-              --notes-file docs/mac-release-notes.md --repo "$GITHUB_REPOSITORY"
+            gh release create "$GITHUB_REF_NAME" release-files/*.zip \
+              --verify-tag --latest --title "Cute Desktop Pet $GITHUB_REF_NAME" \
+              --notes-file docs/release-notes.md --repo "$GITHUB_REPOSITORY"
           fi

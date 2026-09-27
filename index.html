@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cute Desktop Pet 🐾 Moo Krata & BooBoo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", sans-serif;
+      background: linear-gradient(135deg, #1e2638 0%, #0f1422 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+    header {
+      text-align: center;
+      padding: 30px 20px 10px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #ffb380, #ffd166, #06d6a0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.subtitle {
+      color: #a0aec0;
+      font-size: 1.05rem;
+    }
+    .playground {
+      position: relative;
+      width: 90vw;
+      max-width: 900px;
+      height: 380px;
+      margin: 25px auto;
+      background: rgba(255, 255, 255, 0.04);
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+    .ground-line {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+    #pet-canvas {
+      position: absolute;
+      bottom: 25px;
+      left: 100px;
+      width: 140px;
+      height: 140px;
+      cursor: grab;
+      user-select: none;
+      filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4));
+    }
+    #pet-canvas:active { cursor: grabbing; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .btn {
+      background: #2d3748;
+      color: #fff;
+      border: 1px solid #4a5568;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:hover { background: #4a5568; transform: translateY(-2px); }
+    .btn.active {
+      background: linear-gradient(135deg, #e53e3e, #dd6b20);
+      border-color: transparent;
+      font-weight: bold;
+    }
+    .downloads {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 25px 30px;
+      max-width: 800px;
+      width: 90vw;
+      margin: 10px auto 40px;
+      text-align: center;
+    }
+    .downloads h3 { margin-bottom: 15px; font-size: 1.25rem; }
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .dl-card {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.25s ease;
+    }
+    .dl-card:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: #ffd166;
+      transform: translateY(-3px);
+    }
+    .dl-icon { font-size: 2rem; }
+    .dl-title { font-weight: bold; font-size: 1rem; }
+    .dl-desc { font-size: 0.8rem; color: #a0aec0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cute Desktop Pet 🐾</h1>
+    <p class="subtitle">สถาปัตยกรรมที่เปิดเล่นได้ทันทีบน Mac ทุกรุ่น (Apple Silicon & Intel) และ Windows</p>
+  </header>
+
+  <div class="controls">
+    <button class="btn active" id="btn-mookrata" onclick="switchPet('mookrata')">🐶 Moo Krata (หมูกระทะ)</button>
+    <button class="btn" id="btn-booboo" onclick="switchPet('booboo')">🐰 BooBoo (กระต่าย)</button>
+    <button class="btn" onclick="triggerAction('jump')">🦘 กระโดด</button>
+    <button class="btn" onclick="triggerAction('stretch')">✨ ชวนเล่น / ยืดเส้น</button>
+    <button class="btn" onclick="triggerAction('sleep')">💤 พักผ่อน</button>
+    <button class="btn" onclick="togglePause()">⏯️ พัก/เดินต่อ</button>
+  </div>
+
+  <div class="playground" id="playground">
+    <div class="ground-line"></div>
+    <canvas id="pet-canvas" width="140" height="140"></canvas>
+  </div>
+
+  <div class="downloads">
+    <h3>📥 ดาวน์โหลดแอปติดตั้งบนคอมพิวเตอร์ (ไม่ต้องลง Python)</h3>
+    <div class="download-grid">
+      <a class="dl-card" href="https://github.com/panithan1991/cute-desktop-pet/releases/latest" target="_blank">
+        <span class="dl-icon">🪟</span>
+        <span class="dl-title">Windows 10 / 11</span>
+        <span class="dl-desc">CuteDesktopPet-Windows.zip (ไฟล์ .exe เปิดได้เลย)</span>
+      </a>
+      <a class="dl-card" href="https://github.com/panithan1991/cute-desktop-pet/releases/latest" target="_blank">
+        <span class="dl-icon">🍏</span>
+        <span class="dl-title">Mac Apple Silicon</span>
+        <span class="dl-desc">ชิป M1 / M2 / M3 / M4 (ทุกรุ่น)</span>
+      </a>
+      <a class="dl-card" href="https://github.com/panithan1991/cute-desktop-pet/releases/latest" target="_blank">
+        <span class="dl-icon">💻</span>
+        <span class="dl-title">Mac Intel</span>
+        <span class="dl-desc">Mac รุ่น Intel ทุกรุ่น (ก่อนปี 2020)</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('pet-canvas');
+    const ctx = canvas.getContext('2d');
+    const playground = document.getElementById('playground');
+
+    const POSES = {
+      idle: [0, 0], smile: [1, 0], happy: [2, 0],
+      curious: [0, 1], hop_start: [1, 1], hop_air: [2, 1],
+      hop_land: [0, 2], stretch: [1, 2], sleepy: [2, 2]
+    };
+
+    let currentPet = 'mookrata';
+    let currentPose = 'idle';
+    let petX = 100;
+    let petY = 25;
+    let facing = 1;
+    let speed = 2.2;
+    let paused = false;
+    let actionOverride = null;
+    let actionTimer = 0;
+
+    const sheetImg = new Image();
+    function loadPetSheet(pet) {
+      currentPet = pet;
+      sheetImg.src = pet === 'mookrata' ? 'assets/mookrata-sprites.png' : 'assets/booboo-sprites.png';
+      document.getElementById('btn-mookrata').classList.toggle('active', pet === 'mookrata');
+      document.getElementById('btn-booboo').classList.toggle('active', pet === 'booboo');
+    }
+    loadPetSheet('mookrata');
+
+    function switchPet(pet) { loadPetSheet(pet); }
+
+    function triggerAction(action) {
+      if (action === 'jump') {
+        actionOverride = 'hop_air';
+        actionTimer = 35;
+      } else if (action === 'stretch') {
+        actionOverride = 'stretch';
+        actionTimer = 60;
+      } else if (action === 'sleep') {
+        actionOverride = 'sleepy';
+        actionTimer = 80;
+      }
+    }
+
+    function togglePause() { paused = !paused; }
+
+    let tick = 0;
+    function loop() {
+      tick++;
+      const bounds = playground.clientWidth - 140;
+
+      if (!paused && !actionOverride) {
+        petX += speed * facing;
+        if (petX >= bounds) { petX = bounds; facing = -1; }
+        else if (petX <= 20) { petX = 20; facing = 1; }
+
+        const cycle = (tick % 24);
+        if (cycle < 6) currentPose = 'hop_start';
+        else if (cycle < 12) currentPose = 'hop_air';
+        else if (cycle < 18) currentPose = 'hop_land';
+        else currentPose = 'happy';
+      } else if (actionOverride) {
+        currentPose = actionOverride;
+        actionTimer--;
+        if (actionTimer <= 0) actionOverride = null;
+      } else {
+        currentPose = 'sleepy';
+      }
+
+      canvas.style.left = petX + 'px';
+
+      // Draw sprite
+      ctx.clearRect(0, 0, 140, 140);
+      const [col, row] = POSES[currentPose] || [0, 0];
+      const cell = 418;
+
+      ctx.save();
+      if (facing === -1) {
+        ctx.translate(140, 0);
+        ctx.scale(-1, 1);
+      }
+      if (sheetImg.complete) {
+        ctx.drawImage(sheetImg, col * cell, row * cell, cell, cell, 0, 0, 140, 140);
+      }
+      ctx.restore();
+
+      requestAnimationFrame(loop);
+    }
+    sheetImg.onload = () => requestAnimationFrame(loop);
+
+    // Interactive Drag
+    let isDragging = false;
+    let startX = 0;
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX - petX;
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      petX = Math.max(20, Math.min(playground.clientWidth - 140, e.clientX - startX));
+    });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+  </script>
+</body>
+</html>

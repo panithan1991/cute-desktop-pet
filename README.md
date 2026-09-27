@@ -9,11 +9,16 @@
 
 *(สำหรับ Mac: แอปเวอร์ชันฟรีนี้ยังไม่ได้ลงนาม หาก macOS บล็อกครั้งแรก ให้ไปที่ **System Settings → Privacy & Security → Open Anyway** แล้วยืนยัน **Open**)*
 
+## สัตว์เลี้ยงน่ารักประจำแอป 🐾
+
+| **BooBoo** กระต่ายหูตกสีขาว 🐰 | **Moo Krata (หมูกระทะ)** ลูกสุนัขเบอร์นีส 🐶 |
+|:---:|:---:|
+| <img src="assets/booboo-animation.gif" width="280" alt="BooBoo Animation"><br>*(BooBoo เคลื่อนไหว)* | <img src="assets/mookrata-animation.gif" width="280" alt="Moo Krata Animation"><br>*(Moo Krata เคลื่อนไหว)* |
+| <img src="assets/booboo-hop.gif" width="240" alt="BooBoo Hopping"><br>*(กระโดดดุ๊กดิ๊ก)* | <img src="assets/mookrata-run.gif" width="240" alt="Moo Krata Running"><br>*(วิ่งเล่นร่าเริง)* |
+
 ![ท่าทาง BooBoo ที่ใช้ในแอป](assets/booboo-sprites.png)
 
-![ท่าทาง Moo Krata ที่ใช้ในแอป](assets/mookrata-animation.gif)
-
-![Moo Krata วิ่งเล่น](assets/mookrata-run.gif)
+![ท่าทาง Moo Krata ที่ใช้ในแอป](assets/mookrata-sprites.png)
 
 ![ผู้พิทักษ์ดวงดาวและยานสำรวจที่ออกแบบสำหรับแอปนี้](preview.png)
 
