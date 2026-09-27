@@ -1,6 +1,7 @@
 """Small, testable movement model for the desktop pet."""
 
 from dataclasses import dataclass
+import math
 
 
 @dataclass
@@ -101,3 +102,75 @@ class FlightMotion:
         elif self.y <= top:
             self.y = top
             self.dy = abs(self.dy)
+
+
+@dataclass
+class BibiFlightMotion:
+    """A grounded bird that climbs into the upper desktop, cruises in 2D, and lands."""
+
+    x: float
+    y: float
+    direction: int = 1
+    speed: float = 95.0
+    paused: bool = False
+    state: str = "rest"
+    elapsed: float = 0.0
+    start_y: float = 0.0
+    landing_y: float = 0.0
+
+    def launch(self) -> bool:
+        if self.paused or self.state != "rest":
+            return False
+        self.state = "takeoff"
+        self.elapsed = 0.0
+        self.start_y = self.y
+        return True
+
+    def reset(self, x: float, ground: float) -> None:
+        self.x, self.y = x, ground
+        self.state = "rest"
+        self.elapsed = 0.0
+
+    def step(self, seconds: float, left: float, top: float, right: float, ground: float) -> None:
+        right = max(left, right)
+        ground = max(top, ground)
+        self.x = min(max(self.x, left), right)
+        self.y = min(max(self.y, top), ground)
+        if self.paused:
+            return
+        dt = min(max(seconds, 0.0), 0.1)
+        self.elapsed += dt
+        if self.state == "rest":
+            self.y = ground
+            if self.elapsed >= 8.2:
+                self.launch()
+            return
+
+        horizontal = 0.65 if self.state in {"takeoff", "landing"} else 1.0
+        self.x += self.direction * self.speed * horizontal * dt
+        if self.x >= right:
+            self.x, self.direction = right, -1
+        elif self.x <= left:
+            self.x, self.direction = left, 1
+
+        # Target 18% down from the top, visibly above the desktop midpoint.
+        high = top + (ground - top) * 0.18
+        if self.state == "takeoff":
+            progress = min(self.elapsed / 2.4, 1.0)
+            eased = progress * progress * (3 - 2 * progress)
+            self.y = self.start_y + (high - self.start_y) * eased
+            if progress >= 1:
+                self.state, self.elapsed = "cruise", 0.0
+        elif self.state == "cruise":
+            amplitude = min(64.0, (ground - top) * 0.08)
+            self.y = high + amplitude * math.sin(self.elapsed * 1.5)
+            if self.elapsed >= 10.0:
+                self.state, self.elapsed = "landing", 0.0
+                self.landing_y = self.y
+        else:
+            progress = min(self.elapsed / 2.8, 1.0)
+            eased = progress * progress * (3 - 2 * progress)
+            self.y = self.landing_y + (ground - self.landing_y) * eased
+            if progress >= 1:
+                self.state, self.elapsed = "rest", 0.0
+                self.y = ground

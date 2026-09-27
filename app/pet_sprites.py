@@ -1,4 +1,4 @@
-"""Fast, pre-rendered 25-pose animation atlases for BooBoo and Moo Krata."""
+"""Fast, pre-rendered animation atlases for the desktop pets."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import tkinter as tk
 
 CELL = 160
 COLUMNS = 5
+GRID_COLUMNS = {"bunny": 5, "mookrata": 5, "bibi": 6}
 POSES = {
     "bunny": (
         "idle", "blink", "happy", "sleep", "hop_up",
@@ -24,8 +25,15 @@ POSES = {
         "happy_sit", "awake_rest", "curled_sleep", "stretch", "playbow_two",
         "trot_a", "trot_b", "hop_two", "land", "sniff_close",
     ),
+    "bibi": (
+        "idle", "wink", "happy", "tilt_right", "tilt_left", "curious",
+        "crouch", "wings_half", "wings_up", "bow", "takeoff", "launch",
+        "fly_glide", "fly_flap", "fly_cheer", "fly_turn", "fly_glide_low", "fly_dive",
+        "hover_happy", "hover_wink", "hover_turn", "land", "sleep_start", "sit",
+        "hover_wings", "wings_happy", "wave", "cheer", "sleepy", "sleep",
+    ),
 }
-FILENAME = {"bunny": "booboo-motion", "mookrata": "moo-krata-motion"}
+FILENAME = {"bunny": "booboo-motion", "mookrata": "moo-krata-motion", "bibi": "bibi-motion"}
 
 
 def atlas_path(character: str, facing: int, platform: str | None = None) -> Path:
@@ -38,14 +46,16 @@ def atlas_path(character: str, facing: int, platform: str | None = None) -> Path
 class PetSprites:
     def __init__(self, root: tk.Misc, character: str) -> None:
         self.frames: dict[tuple[str, int], tk.PhotoImage] = {}
+        columns = GRID_COLUMNS[character]
+        rows = len(POSES[character]) // columns
         for facing in (1, -1):
             atlas = tk.PhotoImage(master=root, file=str(atlas_path(character, facing)))
-            if (atlas.width(), atlas.height()) != (CELL * COLUMNS, CELL * COLUMNS):
+            if (atlas.width(), atlas.height()) != (CELL * columns, CELL * rows):
                 raise ValueError(f"Invalid {character} sprite atlas size")
             for index, pose in enumerate(POSES[character]):
                 frame = tk.PhotoImage(master=root, width=CELL, height=CELL)
-                x = (index % COLUMNS) * CELL
-                y = (index // COLUMNS) * CELL
+                x = (index % columns) * CELL
+                y = (index // columns) * CELL
                 root.tk.call(str(frame), "copy", str(atlas), "-from",
                              x, y, x + CELL, y + CELL, "-to", 0, 0)
                 self.frames[(pose, facing)] = frame

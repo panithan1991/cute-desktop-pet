@@ -1,6 +1,6 @@
 import unittest
 
-from app.pet_motion import FlightMotion, JumpMotion, PetMotion
+from app.pet_motion import BibiFlightMotion, FlightMotion, JumpMotion, PetMotion
 
 
 class PetMotionTests(unittest.TestCase):
@@ -62,6 +62,30 @@ class FlightMotionTests(unittest.TestCase):
         ship = FlightMotion(x=40, y=60, paused=True)
         ship.step(0.1, 0, 0, 100, 100)
         self.assertEqual((ship.x, ship.y), (40, 60))
+
+
+class BibiFlightMotionTests(unittest.TestCase):
+    def test_bibi_climbs_above_mid_screen_while_moving_sideways_then_lands(self):
+        bird = BibiFlightMotion(x=300, y=700)
+        self.assertTrue(bird.launch())
+        self.assertFalse(bird.launch())
+        positions = []
+        for _ in range(160):
+            bird.step(0.1, 0, 20, 900, 700)
+            positions.append((bird.x, bird.y))
+        self.assertLess(min(y for _, y in positions), 350)
+        self.assertGreater(max(x for x, _ in positions) - min(x for x, _ in positions), 300)
+        self.assertEqual(bird.state, "rest")
+        self.assertEqual(bird.y, 700)
+
+    def test_pausing_freezes_bibi_in_both_dimensions(self):
+        bird = BibiFlightMotion(x=200, y=700)
+        bird.launch()
+        bird.step(0.1, 0, 0, 900, 700)
+        bird.paused = True
+        before = (bird.x, bird.y, bird.elapsed)
+        bird.step(0.1, 0, 0, 900, 700)
+        self.assertEqual((bird.x, bird.y, bird.elapsed), before)
 
 
 if __name__ == "__main__":

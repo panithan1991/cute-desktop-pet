@@ -2,8 +2,9 @@ import unittest
 
 from PIL import Image, ImageOps
 
+from app.bibi_animation import choose_bibi_pose
 from app.pet_animation import choose_pet_pose
-from app.pet_sprites import CELL, POSES, atlas_path
+from app.pet_sprites import CELL, GRID_COLUMNS, POSES, atlas_path
 
 
 def pose(character, **changes):
@@ -16,7 +17,8 @@ def pose(character, **changes):
 
 class PetAnimationTests(unittest.TestCase):
     def test_each_pet_has_25_distinct_reachable_poses(self):
-        for character, keys in POSES.items():
+        for character in ("bunny", "mookrata"):
+            keys = POSES[character]
             with self.subTest(character=character):
                 self.assertEqual(len(keys), 25)
                 self.assertEqual(len(set(keys)), 25)
@@ -51,16 +53,28 @@ class PetAnimationTests(unittest.TestCase):
                 right = Image.open(atlas_path(character, 1, "darwin")).convert("RGBA")
                 left = Image.open(atlas_path(character, -1, "darwin")).convert("RGBA")
                 hard = Image.open(atlas_path(character, 1, "win32")).convert("RGBA")
-                self.assertEqual(right.size, (5 * CELL, 5 * CELL))
+                columns = GRID_COLUMNS[character]
+                self.assertEqual(right.size, (columns * CELL, 5 * CELL))
                 self.assertEqual(left.size, right.size)
                 self.assertEqual(hard.size, right.size)
                 self.assertEqual(set(hard.getchannel("A").tobytes()), {0, 255})
-                for index in range(25):
-                    box = ((index % 5) * CELL, (index // 5) * CELL,
-                           (index % 5 + 1) * CELL, (index // 5 + 1) * CELL)
+                for index in range(len(POSES[character])):
+                    box = ((index % columns) * CELL, (index // columns) * CELL,
+                           (index % columns + 1) * CELL, (index // columns + 1) * CELL)
                     frame = right.crop(box)
                     self.assertIsNotNone(frame.getchannel("A").getbbox())
                     self.assertEqual(ImageOps.mirror(frame).tobytes(), left.crop(box).tobytes())
+
+    def test_bibi_has_30_reachable_poses(self):
+        keys = POSES["bibi"]
+        self.assertEqual(len(keys), 30)
+        self.assertEqual(len(set(keys)), 30)
+        reached = {
+            choose_bibi_pose(state, step / 20)
+            for state in ("rest", "takeoff", "cruise", "landing")
+            for step in range(300)
+        }
+        self.assertEqual(reached, set(keys))
 
 
 if __name__ == "__main__":

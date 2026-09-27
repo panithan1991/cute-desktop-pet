@@ -45,6 +45,7 @@ jobs:
           find dist/BooBoo.app -name moo-krata-motion.png -print -quit | grep moo-krata-motion.png
           dist/BooBoo.app/Contents/MacOS/BooBoo --smoke-test
           dist/BooBoo.app/Contents/MacOS/BooBoo --character=mookrata --smoke-test
+          dist/BooBoo.app/Contents/MacOS/BooBoo --character=bibi --smoke-test
           codesign --verify --deep --strict dist/BooBoo.app
       - name: Package Mac download
         run: |
@@ -100,13 +101,13 @@ jobs:
       - run: python -m pip install 'pyinstaller==6.22.3' 'Pillow>=10,<13'
       - name: Test source
         run: python -m unittest discover -s tests -q
-      - name: Build both desktop launchers
+      - name: Build desktop launchers
         run: cmd.exe /c scripts\build_windows.bat
-      - name: Test both executables from download
+      - name: Test executables from download
         shell: pwsh
         run: |
           Expand-Archive -LiteralPath 'CuteDesktopPet-Windows.zip' -DestinationPath 'unpacked'
-          foreach ($name in @('BooBoo', 'MooKrata')) {
+          foreach ($name in @('BooBoo', 'MooKrata', 'Bibi')) {
             $exe = (Resolve-Path "./unpacked/$name.exe").Path
             $process = Start-Process -FilePath $exe -ArgumentList '--smoke-test' -WindowStyle Hidden -PassThru
             if (-not $process.WaitForExit(30000)) {

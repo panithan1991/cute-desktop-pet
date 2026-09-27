@@ -11,6 +11,7 @@ import time
 import tkinter as tk
 
 from app.pet_animation import choose_pet_pose
+from app.bibi_animation import choose_bibi_pose
 from app.pet_sprites import PetSprites
 from app.fantasy_art import draw_trail_scout
 from app.storybook_art import (
@@ -18,7 +19,7 @@ from app.storybook_art import (
     draw_ember_warden,
     draw_moss_keeper,
 )
-from app.pet_motion import FlightMotion, JumpMotion, PetMotion
+from app.pet_motion import BibiFlightMotion, FlightMotion, JumpMotion, PetMotion
 from app.power_effects import AutoPowerTimer, SPECIAL_POWERS, PowerEffectView, launch_power
 from app.window_style import configure_overlay, configure_pet_window
 
@@ -26,8 +27,8 @@ from app.window_style import configure_overlay, configure_pet_window
 WIDTH = 184
 HEIGHT = 174
 OUTLINE = "#30394f"
-PET_CHARACTERS = frozenset({"bunny", "mookrata"})
-GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", *PET_CHARACTERS})
+PET_CHARACTERS = frozenset({"bunny", "mookrata", "bibi"})
+GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", "bunny", "mookrata"})
 
 
 def get_work_area(root: tk.Tk) -> tuple[int, int, int, int]:
@@ -57,6 +58,7 @@ class DesktopPet:
         self.motion = PetMotion(self.x)
         self.jump = JumpMotion(launch_speed=245, gravity=1050)
         self.flight = FlightMotion(self.x, self.y)
+        self.bibi_flight = BibiFlightMotion(self.x, self.y)
         self.dragging = False
         self.drag_offset = (0, 0)
         self.running = True
@@ -83,6 +85,8 @@ class DesktopPet:
         default_character = "bunny"
         if "mookrata" in Path(sys.argv[0]).stem.lower() or "--mookrata" in sys.argv[1:]:
             default_character = "mookrata"
+        if "bibi" in Path(sys.argv[0]).stem.lower() or "--bibi" in sys.argv[1:]:
+            default_character = "bibi"
         for argument in sys.argv[1:]:
             if argument.startswith("--character="):
                 requested = argument.split("=", 1)[1]
@@ -165,6 +169,10 @@ class DesktopPet:
             label="Moo Krata ลูกสุนัข", variable=self.character_var,
             value="mookrata", command=self._set_character,
         )
+        menu.add_radiobutton(
+            label="Bibi ลูกนกอินทรี", variable=self.character_var,
+            value="bibi", command=self._set_character,
+        )
         speed_menu = tk.Menu(menu, tearoff=False)
         for label, value in (("ช้า", "slow"), ("ปกติ", "normal"), ("เร็ว", "fast")):
             speed_menu.add_radiobutton(
@@ -191,7 +199,9 @@ class DesktopPet:
             )
         menu.add_cascade(label="ความถี่ใช้พลัง", menu=interval_menu, state="disabled")
         self.power_interval_menu_index = menu.index("end")
-        menu.add_command(label="กระโดด", command=self._jump_now)
+        menu.add_command(label="บิน" if self.current_character == "bibi" else "กระโดด",
+                         command=self._jump_now)
+        self.jump_menu_index = menu.index("end")
         menu.add_command(label="ยิงพลัง", command=self._fire_now, state="disabled")
         self.fire_menu_index = menu.index("end")
         menu.add_command(
@@ -210,6 +220,7 @@ class DesktopPet:
     def _set_paused(self) -> None:
         self.motion.paused = self.paused_var.get()
         self.flight.paused = self.paused_var.get()
+        self.bibi_flight.paused = self.paused_var.get()
 
     def _set_topmost(self) -> None:
         topmost = self.topmost_var.get()
@@ -224,6 +235,7 @@ class DesktopPet:
     def _set_speed(self) -> None:
         self.motion.speed = {"slow": 38, "normal": 65, "fast": 105}[self.speed_var.get()]
         self.flight.speed = {"slow": 85, "normal": 145, "fast": 220}[self.speed_var.get()]
+        self.bibi_flight.speed = {"slow": 58, "normal": 95, "fast": 145}[self.speed_var.get()]
 
     def _reset_power_timer(self) -> None:
         self.power_timer.reset(time.monotonic(), self.power_interval_var.get())
@@ -240,9 +252,17 @@ class DesktopPet:
             self.y = self.base_y
             self.motion.x = self.x
             self.jump.reset()
+        if character == "bibi":
+            self.base_y = bottom - HEIGHT
+            self.bibi_flight.reset(self.x, self.base_y)
+            self.y = self.base_y
+        elif self.current_character == "bibi" and character != "ship":
+            self.base_y = bottom - HEIGHT
+            self.y = self.base_y
+            self.motion.x = self.x
         if character not in GROUND_JUMPERS:
             self.jump.reset()
-        if character in PET_CHARACTERS:
+        if character in {"bunny", "mookrata"}:
             self.jump.reset()
             self.jump.launch_speed = 245 if character == "bunny" else 300
             self.jump.gravity = 1050
@@ -273,10 +293,15 @@ class DesktopPet:
             label=SPECIAL_POWERS.get(character, ("", "พลังพิเศษ"))[1],
             state="normal" if character in SPECIAL_POWERS else "disabled",
         )
+        self.menu.entryconfig(self.jump_menu_index, label="บิน" if character == "bibi" else "กระโดด",
+                              state="normal" if character in GROUND_JUMPERS or character == "bibi" else "disabled")
         self._place_window()
         self._redraw()
 
     def _jump_now(self) -> None:
+        if self.current_character == "bibi":
+            self.bibi_flight.launch()
+            return
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
             delay = self.random.uniform(12, 18) if self.current_character == "bunny" else (self.random.uniform(8, 13) if self.current_character == "mookrata" else self.random.uniform(3, 6))
@@ -309,6 +334,7 @@ class DesktopPet:
         self.base_y = self.y
         self.jump.reset()
         self.flight.y = self.y
+        self.bibi_flight.reset(self.x, self.y)
         self._place_window()
 
     def _start_drag(self, event: tk.Event) -> None:
@@ -323,6 +349,8 @@ class DesktopPet:
         self.motion.x = self.x
         self.flight.x = self.x
         self.flight.y = self.y
+        self.bibi_flight.x = self.x
+        self.bibi_flight.y = self.y
         if self.current_character != "ship":
             self.base_y = self.y
         self._place_window()
@@ -342,7 +370,7 @@ class DesktopPet:
         now = time.monotonic()
         dt = now - self.last_tick
         self.last_tick = now
-        if now >= self.next_idle and self.current_character != "ship" and not self.jump.airborne:
+        if now >= self.next_idle and self.current_character not in {"ship", "bibi"} and not self.jump.airborne:
             if self.current_character in PET_CHARACTERS:
                 self.rest_start = now
                 self.rest_variant = self.random.randrange(3)
@@ -370,6 +398,9 @@ class DesktopPet:
                 self.x, self.y = self.flight.x, self.flight.y
                 if not self.flight.paused:
                     self.walk_time += min(max(dt, 0), 0.1)
+            elif self.current_character == "bibi":
+                self.bibi_flight.step(dt, left, top, right - WIDTH, bottom - HEIGHT)
+                self.x, self.y = self.bibi_flight.x, self.bibi_flight.y
             else:
                 moving = now >= self.idle_until or self.jump.airborne
                 if moving:
@@ -431,6 +462,12 @@ class DesktopPet:
             self._draw_guardian(canvas, bob, stride, blink, facing, self.jump.airborne)
         elif character == "ship":
             self._draw_ship(canvas, now, self.flight.dx, self.flight.dy)
+        elif character == "bibi":
+            pose = choose_bibi_pose(self.bibi_flight.state, self.bibi_flight.elapsed,
+                                    self.paused_var.get())
+            canvas.create_image(WIDTH // 2, HEIGHT - 2,
+                                image=self.pet_sprites["bibi"].get(pose, self.bibi_flight.direction),
+                                anchor="s")
         elif character == "moss":
             draw_moss_keeper(canvas, bob, stride, blink, facing, self.jump.airborne)
         elif character == "astral":
@@ -640,7 +677,7 @@ def main() -> int:
         except (AttributeError, OSError):
             pass
     root = tk.Tk()
-    root.title("BooBoo & Moo Krata")
+    root.title("BooBoo, Moo Krata & Bibi")
     root.withdraw()
     if sys.platform == "darwin" and root.tk.call("tk", "windowingsystem") != "aqua":
         root.destroy()
