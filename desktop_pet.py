@@ -17,6 +17,7 @@ from storybook_art import (
     draw_moss_keeper,
 )
 from pet_motion import FlightMotion, JumpMotion, PetMotion
+from power_effects import PowerEffectView, launch_power
 
 
 WIDTH = 184
@@ -57,9 +58,12 @@ class DesktopPet:
         self.next_jump = self.last_tick + self.random.uniform(2, 4)
         self.next_blink = self.last_tick + self.random.uniform(2, 5)
         self.blink_until = 0.0
+        self.next_power = self.last_tick + self.random.uniform(6, 10)
+        self.effects: list[PowerEffectView] = []
 
         self.paused_var = tk.BooleanVar(value=False)
         self.topmost_var = tk.BooleanVar(value=True)
+        self.auto_power_var = tk.BooleanVar(value=True)
         self.character_var = tk.StringVar(value="guardian")
         self.current_character = "guardian"
         self.speed_var = tk.StringVar(value="normal")
@@ -86,8 +90,11 @@ class DesktopPet:
         self.canvas.bind("<ButtonRelease-1>", self._end_drag)
         self.canvas.bind("<Button-3>", self._show_menu)
         self.canvas.bind("<Button-2>", lambda _event: self._jump_now())
+        self.canvas.bind("<Control-ButtonPress-1>", self._shoot_click)
         self.canvas.bind("<Double-Button-1>", self._toggle_pause)
         root.bind("<Escape>", lambda _event: self.close())
+        root.bind("<KeyPress-f>", lambda _event: self._fire_now())
+        root.bind("<KeyPress-t>", lambda _event: self._fire_now(tornado=True))
         root.protocol("WM_DELETE_WINDOW", self.close)
         self._draw(self.last_tick)
         root.after(33, self._tick)
@@ -130,9 +137,14 @@ class DesktopPet:
         menu.add_checkbutton(
             label="อยู่เหนือหน้าต่างอื่น",
             variable=self.topmost_var,
-            command=lambda: self.root.wm_attributes("-topmost", self.topmost_var.get()),
+            command=self._set_topmost,
         )
+        menu.add_checkbutton(label="ใช้พลังอัตโนมัติ", variable=self.auto_power_var)
         menu.add_command(label="กระโดด", command=self._jump_now)
+        menu.add_command(label="ยิงพลัง", command=self._fire_now)
+        menu.add_command(label="เสกทอร์นาโด (พ่อมด)", command=lambda: self._fire_now(tornado=True))
+        self.tornado_menu_index = menu.index("end")
+        menu.entryconfig(self.tornado_menu_index, state="disabled")
         menu.add_command(label="กลับไปขอบล่าง", command=self._move_to_bottom)
         menu.add_separator()
         menu.add_command(label="ออกจากแอป", command=self.close)
@@ -144,6 +156,12 @@ class DesktopPet:
     def _set_paused(self) -> None:
         self.motion.paused = self.paused_var.get()
         self.flight.paused = self.paused_var.get()
+
+    def _set_topmost(self) -> None:
+        topmost = self.topmost_var.get()
+        self.root.wm_attributes("-topmost", topmost)
+        for view in self.effects:
+            view.window.wm_attributes("-topmost", topmost)
 
     def _toggle_pause(self, _event: tk.Event) -> None:
         self.paused_var.set(not self.paused_var.get())
@@ -168,6 +186,10 @@ class DesktopPet:
         if character not in GROUND_JUMPERS:
             self.jump.reset()
         self.current_character = character
+        self.menu.entryconfig(
+            self.tornado_menu_index,
+            state="normal" if character == "astral" else "disabled",
+        )
         self._place_window()
         self._redraw()
 
@@ -175,6 +197,23 @@ class DesktopPet:
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
             self.next_jump = time.monotonic() + self.random.uniform(3, 6)
+
+    def _shoot_click(self, _event: tk.Event) -> str:
+        self._fire_now()
+        return "break"
+
+    def _fire_now(self, tornado: bool = False) -> bool:
+        if tornado and self.current_character != "astral":
+            return False
+        if len(self.effects) >= 6:
+            return False
+        effect = launch_power(
+            self.current_character, self.x, self.y,
+            self.motion.direction, self.flight.dx, tornado,
+        )
+        self.effects.append(PowerEffectView(self.root, effect, self.topmost_var.get()))
+        self.next_power = time.monotonic() + self.random.uniform(7, 12)
+        return True
 
     def _redraw(self) -> None:
         self._draw(time.monotonic())
@@ -248,6 +287,22 @@ class DesktopPet:
                 else:
                     self.y = self.base_y
             self._place_window()
+        if (
+            self.auto_power_var.get()
+            and not self.paused_var.get()
+            and not self.dragging
+            and now >= self.next_power
+        ):
+            self._fire_now(tornado=self.current_character == "astral" and self.random.random() < 0.3)
+            self.next_power = now + self.random.uniform(7, 12)
+        live_effects: list[PowerEffectView] = []
+        for view in self.effects:
+            if view.effect.step(dt, self.work_area):
+                view.draw()
+                live_effects.append(view)
+            else:
+                view.close()
+        self.effects = live_effects
         self._draw(now)
         self.root.after(33, self._tick)
 
@@ -455,6 +510,9 @@ class DesktopPet:
 
     def close(self) -> None:
         self.running = False
+        for view in self.effects:
+            view.close()
+        self.effects.clear()
         self.root.destroy()
 
 

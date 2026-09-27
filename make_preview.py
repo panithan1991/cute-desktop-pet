@@ -8,6 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from desktop_pet import DesktopPet
+from power_effects import PowerEffect, PowerEffectView
 from fantasy_art import draw_trail_scout
 from storybook_art import (
     draw_astral_sage,
@@ -134,6 +135,35 @@ def main() -> None:
             + "".join(art.parts) + '</svg>'
         )
         (icons / f"{name}.svg").write_text(icon_svg, encoding="utf-8")
+
+    wizard = SvgCanvas()
+    light = SvgCanvas()
+    tornado = SvgCanvas()
+    draw_astral_sage(wizard, 0, 0, False, 1, False)
+    PowerEffectView._draw_orb(
+        light,
+        PowerEffect("light", "#87c9e0", "#ffffff", 0, 0, -1, age=0.35),
+    )
+    PowerEffectView._draw_tornado(
+        tornado,
+        PowerEffect("tornado", "#8fbacb", "#eefafa", 0, 0, -1,
+                    width=88, height=104, age=0.5),
+    )
+    power_svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 245">'
+        '<rect width="500" height="245" rx="24" fill="#182840"/>'
+        '<circle cx="53" cy="43" r="2" fill="#d8f6f4"/>'
+        '<circle cx="445" cy="38" r="2" fill="#d8f6f4"/>'
+        '<circle cx="230" cy="23" r="1.5" fill="#f7dd9c"/>'
+        '<ellipse cx="222" cy="191" rx="145" ry="12" fill="#2b4059"/>'
+        f'<g transform="translate(280 23)">{"".join(wizard.parts)}</g>'
+        f'<g transform="translate(234 19)">{"".join(light.parts)}</g>'
+        f'<g transform="translate(130 87)">{"".join(tornado.parts)}</g>'
+        '<text x="250" y="225" text-anchor="middle" fill="#edf8f5" '
+        'font-family="Arial,sans-serif" font-size="14" font-weight="bold">'
+        'ASTRAL SAGE · LIGHT &amp; TORNADO</text></svg>'
+    )
+    Path(__file__).with_name("power-preview.svg").write_text(power_svg, encoding="utf-8")
 
 
 if __name__ == "__main__":

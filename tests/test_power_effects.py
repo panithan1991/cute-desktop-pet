@@ -1,0 +1,46 @@
+import unittest
+
+from power_effects import POWER_STYLES, launch_power
+
+
+class PowerEffectTests(unittest.TestCase):
+    def test_every_character_launches_a_distinct_power_from_its_art(self):
+        self.assertEqual(len(POWER_STYLES), 8)
+        for character, style in POWER_STYLES.items():
+            with self.subTest(character=character):
+                effect = launch_power(character, 300, 400, facing=1)
+                self.assertEqual(effect.kind, style.kind)
+                self.assertEqual(effect.x + effect.width / 2, 300 + style.origin_x)
+                self.assertEqual(effect.y + effect.height / 2, 400 + style.origin_y)
+
+    def test_wizard_light_starts_at_staff_tip_and_tornado_drifts_left(self):
+        bolt = launch_power("astral", 300, 400, facing=1)
+        self.assertEqual((bolt.x + 32, bolt.y + 32, bolt.direction), (336, 425, -1))
+        tornado = launch_power("astral", 300, 400, facing=1, tornado=True)
+        self.assertEqual(tornado.kind, "tornado")
+        self.assertGreater(tornado.height, bolt.height)
+        first_x = tornado.x
+        self.assertTrue(tornado.step(0.1, (0, 0, 1000, 1000)))
+        self.assertLess(tornado.x, first_x)
+        with self.assertRaises(ValueError):
+            launch_power("cat", 300, 400, facing=1, tornado=True)
+
+    def test_ship_fires_from_the_nose_in_either_direction(self):
+        right = launch_power("ship", 300, 400, facing=-1, ship_dx=1)
+        left = launch_power("ship", 300, 400, facing=1, ship_dx=-1)
+        self.assertEqual((right.x + 32, right.direction), (465, 1))
+        self.assertEqual((left.x + 32, left.direction), (319, -1))
+
+    def test_power_expires_by_time_or_desktop_edge(self):
+        effect = launch_power("guardian", 200, 300, facing=1)
+        for _ in range(13):
+            self.assertTrue(effect.step(0.1, (0, 0, 2000, 1000)))
+        self.assertFalse(effect.step(0.1, (0, 0, 2000, 1000)))
+        edge = launch_power("astral", 0, 300, facing=1)
+        for _ in range(4):
+            alive = edge.step(0.1, (0, 0, 100, 1000))
+        self.assertFalse(alive)
+
+
+if __name__ == "__main__":
+    unittest.main()
