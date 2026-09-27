@@ -10,6 +10,7 @@ import time
 import tkinter as tk
 from ctypes import wintypes
 
+from booboo_art import BooBooSprites, choose_pose
 from fantasy_art import draw_trail_scout
 from storybook_art import (
     draw_astral_sage,
@@ -24,7 +25,7 @@ WIDTH = 184
 HEIGHT = 174
 TRANSPARENT = "#ff00ff"
 OUTLINE = "#30394f"
-GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember"})
+GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", "bunny"})
 
 
 def get_work_area(root: tk.Tk) -> tuple[int, int, int, int]:
@@ -46,7 +47,7 @@ class DesktopPet:
         self.y = float(bottom - HEIGHT)
         self.base_y = self.y
         self.motion = PetMotion(self.x)
-        self.jump = JumpMotion()
+        self.jump = JumpMotion(launch_speed=245, gravity=1050)
         self.flight = FlightMotion(self.x, self.y)
         self.dragging = False
         self.drag_offset = (0, 0)
@@ -55,7 +56,7 @@ class DesktopPet:
         self.walk_time = 0.0
         self.idle_until = 0.0
         self.next_idle = self.last_tick + self.random.uniform(7, 12)
-        self.next_jump = self.last_tick + self.random.uniform(2, 4)
+        self.next_jump = self.last_tick + self.random.uniform(0.5, 1.0)
         self.next_blink = self.last_tick + self.random.uniform(2, 5)
         self.blink_until = 0.0
         self.power_timer = AutoPowerTimer(5, self.last_tick + 5)
@@ -65,9 +66,10 @@ class DesktopPet:
         self.topmost_var = tk.BooleanVar(value=True)
         self.auto_power_var = tk.BooleanVar(value=True)
         self.power_interval_var = tk.IntVar(value=5)
-        self.character_var = tk.StringVar(value="guardian")
-        self.current_character = "guardian"
+        self.character_var = tk.StringVar(value="bunny")
+        self.current_character = "bunny"
         self.speed_var = tk.StringVar(value="normal")
+        self.booboo_sprites = BooBooSprites(root)
 
         root.configure(background=TRANSPARENT)
         root.overrideredirect(True)
@@ -127,7 +129,8 @@ class DesktopPet:
             label="แมวน้อย", variable=self.character_var, value="cat", command=self._set_character
         )
         menu.add_radiobutton(
-            label="กระต่าย", variable=self.character_var, value="bunny", command=self._set_character
+            label="BooBoo กระต่ายหูตก", variable=self.character_var,
+            value="bunny", command=self._set_character,
         )
         speed_menu = tk.Menu(menu, tearoff=False)
         for label, value in (("ช้า", "slow"), ("ปกติ", "normal"), ("เร็ว", "fast")):
@@ -155,7 +158,10 @@ class DesktopPet:
         menu.add_cascade(label="ความถี่ใช้พลัง", menu=interval_menu)
         menu.add_command(label="กระโดด", command=self._jump_now)
         menu.add_command(label="ยิงพลัง", command=self._fire_now)
-        menu.add_command(label="เรียกฟ้าผ่า", command=lambda: self._fire_now(special=True))
+        menu.add_command(
+            label="พลังพิเศษ", command=lambda: self._fire_now(special=True),
+            state="disabled",
+        )
         self.special_menu_index = menu.index("end")
         menu.add_command(label="กลับไปขอบล่าง", command=self._move_to_bottom)
         menu.add_separator()
@@ -200,6 +206,14 @@ class DesktopPet:
             self.jump.reset()
         if character not in GROUND_JUMPERS:
             self.jump.reset()
+        if character == "bunny":
+            self.jump.reset()
+            self.jump.launch_speed = 245
+            self.jump.gravity = 1050
+            self.next_jump = time.monotonic() + 0.4
+        else:
+            self.jump.launch_speed = 340
+            self.jump.gravity = 1050
         self.current_character = character
         self._reset_power_timer()
         self.menu.entryconfig(
@@ -213,7 +227,8 @@ class DesktopPet:
     def _jump_now(self) -> None:
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
-            self.next_jump = time.monotonic() + self.random.uniform(3, 6)
+            delay = self.random.uniform(0.8, 1.2) if self.current_character == "bunny" else self.random.uniform(3, 6)
+            self.next_jump = time.monotonic() + delay
 
     def _shoot_click(self, _event: tk.Event) -> str:
         self._fire_now()
@@ -274,8 +289,12 @@ class DesktopPet:
         dt = now - self.last_tick
         self.last_tick = now
         if now >= self.next_idle and self.current_character != "ship" and not self.jump.airborne:
-            self.idle_until = now + self.random.uniform(0.7, 1.5)
-            self.next_idle = now + self.random.uniform(7, 12)
+            if self.current_character == "bunny":
+                self.idle_until = now + self.random.uniform(1.4, 2.4)
+                self.next_idle = now + self.random.uniform(8, 13)
+            else:
+                self.idle_until = now + self.random.uniform(0.7, 1.5)
+                self.next_idle = now + self.random.uniform(7, 12)
         if now >= self.next_blink:
             self.blink_until = now + 0.16
             self.next_blink = now + self.random.uniform(2.5, 5.5)
@@ -288,15 +307,22 @@ class DesktopPet:
                     self.walk_time += min(max(dt, 0), 0.1)
             else:
                 moving = now >= self.idle_until or self.jump.airborne
-                if moving:
+                if moving and (self.current_character != "bunny" or self.jump.airborne):
                     self.motion.step(dt, left, right - WIDTH)
                     self.x = self.motion.x
                     if not self.motion.paused:
                         self.walk_time += min(max(dt, 0), 0.1)
                 if self.current_character in GROUND_JUMPERS:
-                    if now >= self.next_jump and not self.motion.paused:
+                    if (
+                        now >= self.next_jump and not self.motion.paused
+                        and (self.current_character != "bunny" or now >= self.idle_until)
+                    ):
                         self.jump.jump()
-                        self.next_jump = now + self.random.uniform(3.5, 6.5)
+                        self.next_jump = now + (
+                            self.random.uniform(0.8, 1.2)
+                            if self.current_character == "bunny"
+                            else self.random.uniform(3.5, 6.5)
+                        )
                     if not self.motion.paused:
                         self.jump.step(dt, self.base_y - top)
                     self.y = self.base_y - self.jump.height
@@ -325,7 +351,10 @@ class DesktopPet:
         canvas = self.canvas
         canvas.delete("all")
         character = self.character_var.get()
-        walking = not self.motion.paused and not self.dragging and (now >= self.idle_until or self.jump.airborne)
+        walking = not self.motion.paused and not self.dragging and (
+            self.jump.airborne if character == "bunny"
+            else (now >= self.idle_until or self.jump.airborne)
+        )
         stride = math.sin(self.walk_time * 12) if walking else 0.0
         bob = abs(stride) * 3 if walking else math.sin(now * 2) * 1.5
         blink = now < self.blink_until
@@ -343,7 +372,7 @@ class DesktopPet:
         elif character == "ember":
             draw_ember_warden(canvas, bob, stride, blink, facing, self.jump.airborne)
         elif character == "bunny":
-            self._draw_bunny(canvas, bob, stride, blink, facing)
+            self._draw_booboo(canvas, now, bob, walking, blink, facing)
         else:
             self._draw_cat(canvas, bob, stride, blink, facing)
 
@@ -389,28 +418,22 @@ class DesktopPet:
         c.create_oval(60 + left_step, 139 + y, 86 + left_step, 155 + y, fill="#f5b27d", outline=OUTLINE, width=2)
         c.create_oval(100 - left_step, 139 + y, 126 - left_step, 155 + y, fill="#f5b27d", outline=OUTLINE, width=2)
 
-    def _draw_bunny(self, c: tk.Canvas, bob: float, stride: float, blink: bool, facing: int) -> None:
-        y = -bob
-        c.create_oval(55, 154, 129, 164, fill="#d5d1cd", outline="")
-        c.create_oval(53, 103 + y, 72, 122 + y, fill="#fffefa", outline=OUTLINE, width=2)
-        c.create_oval(56, 94 + y, 128, 150 + y, fill="#fffefa", outline=OUTLINE, width=3)
-        c.create_oval(73, 109 + y, 111, 145 + y, fill="#f5e4db", outline="")
-        c.create_oval(57, 8 + y, 83, 78 + y, fill="#fffefa", outline=OUTLINE, width=3)
-        c.create_oval(102, 8 + y, 128, 78 + y, fill="#fffefa", outline=OUTLINE, width=3)
-        c.create_oval(65, 20 + y, 75, 65 + y, fill="#f6b7bc", outline="")
-        c.create_oval(110, 20 + y, 120, 65 + y, fill="#f6b7bc", outline="")
-        c.create_oval(48, 54 + y, 136, 121 + y, fill="#fffefa", outline=OUTLINE, width=3)
-        c.create_oval(61, 91 + y, 78, 101 + y, fill="#f9d6d6", outline="")
-        c.create_oval(107, 91 + y, 124, 101 + y, fill="#f9d6d6", outline="")
-        self._eyes(c, 83 + y, blink, facing)
-        c.create_oval(88, 94 + y, 96, 100 + y, fill="#d88890", outline="")
-        c.create_arc(82, 96 + y, 92, 108 + y, start=200, extent=135, style=tk.ARC, outline=OUTLINE, width=2)
-        c.create_arc(92, 96 + y, 102, 108 + y, start=205, extent=135, style=tk.ARC, outline=OUTLINE, width=2)
-        c.create_arc(64, 105 + y, 120, 136 + y, start=185, extent=170, style=tk.ARC, outline="#8ebbb6", width=7)
-        c.create_oval(87, 124 + y, 98, 134 + y, fill="#f5d67e", outline=OUTLINE, width=1)
-        left_step = stride * 5
-        c.create_oval(59 + left_step, 139 + y, 85 + left_step, 155 + y, fill="#fffefa", outline=OUTLINE, width=2)
-        c.create_oval(101 - left_step, 139 + y, 127 - left_step, 155 + y, fill="#fffefa", outline=OUTLINE, width=2)
+    def _draw_booboo(
+        self, c: tk.Canvas, now: float, bob: float,
+        walking: bool, blink: bool, facing: int,
+    ) -> None:
+        pose = choose_pose(
+            now,
+            walking=walking,
+            airborne=self.jump.airborne,
+            blink=blink,
+            resting_remaining=max(0.0, self.idle_until - now) if not walking else 0.0,
+            paused=self.paused_var.get(),
+        )
+        c.create_image(
+            WIDTH // 2, HEIGHT - 2 - bob,
+            image=self.booboo_sprites.get(pose, facing), anchor="s",
+        )
 
     def _draw_guardian(
         self, c: tk.Canvas, bob: float, stride: float, blink: bool, facing: int, jumping: bool

@@ -29,7 +29,7 @@ POWER_STYLES = {
     "trail": PowerStyle("compass", "#edb956", "#fff4c7", 144, 69, 1),
     "ember": PowerStyle("ember", "#e35a71", "#ffd0ad", 20, 67, -1),
     "cat": PowerStyle("paw", "#eea485", "#ffe6bc", 92, 98),
-    "bunny": PowerStyle("bubble", "#a6cfc5", "#ffffff", 92, 100),
+    "bunny": PowerStyle("bubble", "#f2acbb", "#fff9f4", 92, 100),
 }
 
 SPECIAL_POWERS = {
