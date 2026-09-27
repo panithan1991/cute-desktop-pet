@@ -2,17 +2,19 @@
 
 BooBoo the rabbit and Moo Krata the puppy live on your desktop. Each has 25 poses, including resting, head tilts, walking, and occasional hops. Seven other characters are available from the pet's menu.
 
+| BooBoo | Moo Krata |
+| :---: | :---: |
+| <img src="assets/readme/booboo.png" alt="BooBoo the white rabbit" width="180"> | <img src="assets/readme/moo-krata.png" alt="Moo Krata the puppy" width="180"> |
+
 ## Download
 
-Get the ZIP for your computer from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
+Choose a ZIP from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
 
-| System | Open after extracting the ZIP |
+| Download for Window | Download for MAC |
 | --- | --- |
-| Windows 10/11 | `BooBoo.exe` or `MooKrata.exe` |
-| Mac, Apple Silicon | `BooBoo.app` from the Apple Silicon ZIP |
-| Mac, Intel | `BooBoo.app` from the Intel ZIP |
+| [Windows 10/11 ZIP](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-Windows.zip) | [Apple Silicon ZIP](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Apple-Silicon.zip) · [Intel ZIP](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Intel.zip) |
 
-The downloads include Python, Tk, and the artwork. Right-click the pet (or Control-click on Mac) to switch characters, pause, or quit. Drag it to move it.
+Extract the ZIP. On Windows, open `BooBoo.exe` or `MooKrata.exe`. On Mac, open `BooBoo.app`. The downloads include Python, Tk, and the artwork. Right-click the pet (or Control-click on Mac) to switch characters, pause, or quit. Drag it to move it.
 
 The Mac app is not Apple-notarized. If macOS blocks its first launch, open **System Settings → Privacy & Security → Open Anyway**. If it still does not appear, check `~/Library/Logs/BooBoo/startup.log`.
 
