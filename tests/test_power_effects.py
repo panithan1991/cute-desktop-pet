@@ -2,6 +2,7 @@ import unittest
 
 from power_effects import (
     AutoPowerTimer,
+    EFFECT_LINGER_SECONDS,
     POWER_STYLES,
     SPECIAL_POWERS,
     PowerEffectView,
@@ -95,15 +96,32 @@ class PowerEffectTests(unittest.TestCase):
         self.assertEqual((right.x + 32, right.direction), (465, 1))
         self.assertEqual((left.x + 32, left.direction), (319, -1))
 
-    def test_power_expires_by_time_or_desktop_edge(self):
+    def test_every_power_lingers_four_seconds_after_its_animation(self):
+        for character in POWER_STYLES:
+            with self.subTest(character=character):
+                effect = launch_power(character, 300, 400, facing=1)
+                self.assertEqual(effect.linger_seconds, EFFECT_LINGER_SECONDS)
+        for character in SPECIAL_POWERS:
+            with self.subTest(special=character):
+                effect = launch_power(character, 300, 400, facing=1, special=True)
+                self.assertEqual(effect.linger_seconds, EFFECT_LINGER_SECONDS)
+
+    def test_power_holds_position_then_expires_and_stays_visible_at_edge(self):
         effect = launch_power("guardian", 200, 300, facing=1)
-        for _ in range(13):
+        for _ in range(15):
             self.assertTrue(effect.step(0.1, (0, 0, 2000, 1000)))
-        self.assertFalse(effect.step(0.1, (0, 0, 2000, 1000)))
+        held_x = effect.x
+        for _ in range(25):
+            self.assertTrue(effect.step(0.1, (0, 0, 2000, 1000)))
+            self.assertEqual(effect.x, held_x)
+        effect.age = effect.lifetime + effect.linger_seconds - 0.02
+        self.assertTrue(effect.step(0.01, (0, 0, 2000, 1000)))
+        self.assertFalse(effect.step(0.02, (0, 0, 2000, 1000)))
         edge = launch_power("astral", 0, 300, facing=1)
         for _ in range(4):
             alive = edge.step(0.1, (0, 0, 100, 1000))
-        self.assertFalse(alive)
+        self.assertTrue(alive)
+        self.assertEqual(edge.x, 0)
 
 
 if __name__ == "__main__":

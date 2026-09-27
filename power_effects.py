@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 
 TRANSPARENT = "#ff00ff"
+EFFECT_LINGER_SECONDS = 4.0
 
 
 @dataclass(frozen=True)
@@ -71,21 +72,20 @@ class PowerEffect:
     height: int = 64
     speed: float = 250.0
     lifetime: float = 1.4
+    linger_seconds: float = EFFECT_LINGER_SECONDS
     age: float = 0.0
 
     def step(self, seconds: float, bounds: tuple[int, int, int, int]) -> bool:
-        """Advance the effect; return whether it remains visible and alive."""
+        """Animate first, then keep the effect visible for four more seconds."""
         seconds = min(max(seconds, 0.0), 0.1)
+        moving_seconds = min(seconds, max(0.0, self.lifetime - self.age))
         self.age += seconds
-        self.x += self.direction * self.speed * seconds
+        self.x += self.direction * self.speed * moving_seconds
         left, top, right, bottom = bounds
-        return (
-            self.age < self.lifetime
-            and self.x + self.width >= left
-            and self.x <= right
-            and self.y + self.height >= top
-            and self.y <= bottom
-        )
+        # A shot reaching the desktop edge should remain visible during its hold.
+        self.x = min(max(self.x, left), max(left, right - self.width))
+        self.y = min(max(self.y, top), max(top, bottom - self.height))
+        return self.age < self.lifetime + self.linger_seconds
 
 
 def launch_power(
