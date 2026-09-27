@@ -2,9 +2,6 @@
 setlocal
 cd /d "%~dp0\.."
 
-python -m pip install "pyinstaller==6.22.3" "Pillow>=10,<13"
-if errorlevel 1 exit /b %errorlevel%
-
 python -m PyInstaller ^
     --noconfirm ^
     --clean ^

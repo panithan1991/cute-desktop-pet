@@ -6,7 +6,7 @@ import math
 import tkinter as tk
 from dataclasses import dataclass
 
-from window_style import configure_overlay
+from app.window_style import configure_overlay
 
 EFFECT_LINGER_SECONDS = 4.0
 

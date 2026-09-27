@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 
-from fantasy_art import INK, _feet, _shadow
+from app.fantasy_art import INK, _feet, _shadow
 
 
 def draw_moss_keeper(

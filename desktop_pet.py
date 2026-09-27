@@ -10,17 +10,17 @@ import sys
 import time
 import tkinter as tk
 
-from pet_animation import choose_pet_pose
-from pet_sprites import PetSprites
-from fantasy_art import draw_trail_scout
-from storybook_art import (
+from app.pet_animation import choose_pet_pose
+from app.pet_sprites import PetSprites
+from app.fantasy_art import draw_trail_scout
+from app.storybook_art import (
     draw_astral_sage,
     draw_ember_warden,
     draw_moss_keeper,
 )
-from pet_motion import FlightMotion, JumpMotion, PetMotion
-from power_effects import AutoPowerTimer, SPECIAL_POWERS, PowerEffectView, launch_power
-from window_style import configure_overlay, configure_pet_window
+from app.pet_motion import FlightMotion, JumpMotion, PetMotion
+from app.power_effects import AutoPowerTimer, SPECIAL_POWERS, PowerEffectView, launch_power
+from app.window_style import configure_overlay, configure_pet_window
 
 
 WIDTH = 184

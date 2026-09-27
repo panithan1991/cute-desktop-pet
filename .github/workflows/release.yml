@@ -130,4 +130,4 @@ jobs:
           ls release-files/*.zip
           gh release create "$GITHUB_REF_NAME" release-files/*.zip \
             --verify-tag --latest --title "Cute Desktop Pet $GITHUB_REF_NAME" \
-            --notes-file docs/release-notes.md --repo "$GITHUB_REPOSITORY"
+            --generate-notes --repo "$GITHUB_REPOSITORY"

@@ -2,8 +2,8 @@ import unittest
 
 from PIL import Image, ImageOps
 
-from pet_animation import choose_pet_pose
-from pet_sprites import CELL, POSES, atlas_path
+from app.pet_animation import choose_pet_pose
+from app.pet_sprites import CELL, POSES, atlas_path
 
 
 def pose(character, **changes):

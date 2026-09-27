@@ -1,6 +1,6 @@
 import unittest
 
-from power_effects import (
+from app.power_effects import (
     AutoPowerTimer,
     EFFECT_LINGER_SECONDS,
     POWER_STYLES,
@@ -8,7 +8,22 @@ from power_effects import (
     PowerEffectView,
     launch_power,
 )
-from make_preview import SvgCanvas
+
+
+class RecordingCanvas:
+    """Count canvas drawing calls without a live desktop or preview generator."""
+
+    def __init__(self):
+        self.parts = []
+
+    def __getattr__(self, name):
+        if not name.startswith("create_"):
+            raise AttributeError(name)
+
+        def record(*args, **kwargs):
+            self.parts.append((name, args, kwargs))
+
+        return record
 
 
 class PowerEffectTests(unittest.TestCase):
@@ -71,10 +86,10 @@ class PowerEffectTests(unittest.TestCase):
 
     def test_tree_visibly_grows_after_summoning(self):
         effect = launch_power("moss", 300, 400, facing=1, special=True)
-        seed = SvgCanvas()
+        seed = RecordingCanvas()
         PowerEffectView._draw_tree(seed, effect)
         effect.step(0.1, (0, 0, 1000, 1000))
-        sapling = SvgCanvas()
+        sapling = RecordingCanvas()
         PowerEffectView._draw_tree(sapling, effect)
         self.assertGreater(len(sapling.parts), len(seed.parts))
 
@@ -89,7 +104,7 @@ class PowerEffectTests(unittest.TestCase):
             ("astral", PowerEffectView._draw_tornado),
         ):
             with self.subTest(character=character):
-                canvas = SvgCanvas()
+                canvas = RecordingCanvas()
                 renderer(canvas, launch_power(character, 300, 400, 1, special=True))
                 self.assertGreater(len(canvas.parts), 3)
 

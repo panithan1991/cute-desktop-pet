@@ -31,7 +31,7 @@ FILENAME = {"bunny": "booboo-motion", "mookrata": "moo-krata-motion"}
 def atlas_path(character: str, facing: int, platform: str | None = None) -> Path:
     platform = sys.platform if platform is None else platform
     suffix = ("-left" if facing < 0 else "") + ("-windows" if platform == "win32" else "")
-    base = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
     return base / "assets" / f"{FILENAME[character]}{suffix}.png"
 
 

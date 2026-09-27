@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from window_style import configure_overlay, configure_pet_window
+from app.window_style import configure_overlay, configure_pet_window
 
 
 class WindowStyleTests(unittest.TestCase):

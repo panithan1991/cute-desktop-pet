@@ -1,6 +1,6 @@
 import unittest
 
-from pet_motion import FlightMotion, JumpMotion, PetMotion
+from app.pet_motion import FlightMotion, JumpMotion, PetMotion
 
 
 class PetMotionTests(unittest.TestCase):
