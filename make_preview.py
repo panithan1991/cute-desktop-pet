@@ -7,6 +7,12 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from desktop_pet import DesktopPet
+from fantasy_art import (
+    draw_astral_sage,
+    draw_ember_warden,
+    draw_moss_keeper,
+    draw_trail_scout,
+)
 
 
 class SvgCanvas:
@@ -79,6 +85,32 @@ def main() -> None:
 <text x="366" y="217" text-anchor="middle" fill="#f5e6c9" font-family="Arial,sans-serif" font-size="14" font-weight="bold">ORBIT SCOUT</text>
 </svg>'''
     Path(__file__).with_name("preview.svg").write_text(svg, encoding="utf-8")
+
+    visitors = (
+        (draw_moss_keeper, "MOSS KEEPER", "#dcead4"),
+        (draw_astral_sage, "ASTRAL SAGE", "#e0deef"),
+        (draw_trail_scout, "TRAIL SCOUT", "#f4dfc5"),
+        (draw_ember_warden, "EMBER WARDEN", "#e6d6d7"),
+    )
+    cards: list[str] = []
+    for index, (draw, label, background) in enumerate(visitors):
+        x = 18 + (index % 2) * 243
+        y = 18 + (index // 2) * 222
+        art = SvgCanvas()
+        draw(art, 0, 0.45, False, 1, False)
+        cards.append(
+            f'<rect x="{x}" y="{y}" width="226" height="204" rx="18" fill="{background}"/>'
+            f'<g transform="translate({x + 21} {y + 4})">{"".join(art.parts)}</g>'
+            f'<text x="{x + 113}" y="{y + 187}" text-anchor="middle" '
+            f'fill="#30394f" font-family="Arial,sans-serif" font-size="14" '
+            f'font-weight="bold">{label}</text>'
+        )
+    visitor_svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 487 462">'
+        '<rect width="487" height="462" rx="24" fill="#25344d"/>'
+        + "".join(cards) + '</svg>'
+    )
+    Path(__file__).with_name("characters-preview.svg").write_text(visitor_svg, encoding="utf-8")
 
 
 if __name__ == "__main__":

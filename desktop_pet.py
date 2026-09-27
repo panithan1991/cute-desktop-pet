@@ -10,6 +10,12 @@ import time
 import tkinter as tk
 from ctypes import wintypes
 
+from fantasy_art import (
+    draw_astral_sage,
+    draw_ember_warden,
+    draw_moss_keeper,
+    draw_trail_scout,
+)
 from pet_motion import FlightMotion, JumpMotion, PetMotion
 
 
@@ -17,6 +23,7 @@ WIDTH = 184
 HEIGHT = 174
 TRANSPARENT = "#ff00ff"
 OUTLINE = "#30394f"
+GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember"})
 
 
 def get_work_area(root: tk.Tk) -> tuple[int, int, int, int]:
@@ -98,6 +105,16 @@ class DesktopPet:
             label="ยานสำรวจดาว", variable=self.character_var, value="ship", command=self._set_character
         )
         menu.add_separator()
+        for label, value in (
+            ("ผู้ดูแลพฤกษา", "moss"),
+            ("นักอ่านแผนที่ดาว", "astral"),
+            ("นักสำรวจเส้นทาง", "trail"),
+            ("ผู้พิทักษ์แสงอำพัน", "ember"),
+        ):
+            menu.add_radiobutton(
+                label=label, variable=self.character_var, value=value, command=self._set_character
+            )
+        menu.add_separator()
         menu.add_radiobutton(
             label="แมวน้อย", variable=self.character_var, value="cat", command=self._set_character
         )
@@ -115,7 +132,7 @@ class DesktopPet:
             variable=self.topmost_var,
             command=lambda: self.root.wm_attributes("-topmost", self.topmost_var.get()),
         )
-        menu.add_command(label="กระโดด (ผู้พิทักษ์)", command=self._jump_now)
+        menu.add_command(label="กระโดด", command=self._jump_now)
         menu.add_command(label="กลับไปขอบล่าง", command=self._move_to_bottom)
         menu.add_separator()
         menu.add_command(label="ออกจากแอป", command=self.close)
@@ -148,14 +165,14 @@ class DesktopPet:
             self.y = self.base_y
             self.motion.x = self.x
             self.jump.reset()
-        if character != "guardian":
+        if character not in GROUND_JUMPERS:
             self.jump.reset()
         self.current_character = character
         self._place_window()
         self._redraw()
 
     def _jump_now(self) -> None:
-        if self.current_character == "guardian" and not self.motion.paused:
+        if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
             self.next_jump = time.monotonic() + self.random.uniform(3, 6)
 
@@ -221,7 +238,7 @@ class DesktopPet:
                     self.x = self.motion.x
                     if not self.motion.paused:
                         self.walk_time += min(max(dt, 0), 0.1)
-                if self.current_character == "guardian":
+                if self.current_character in GROUND_JUMPERS:
                     if now >= self.next_jump and not self.motion.paused:
                         self.jump.jump()
                         self.next_jump = now + self.random.uniform(3.5, 6.5)
@@ -247,6 +264,14 @@ class DesktopPet:
             self._draw_guardian(canvas, bob, stride, blink, facing, self.jump.airborne)
         elif character == "ship":
             self._draw_ship(canvas, now, self.flight.dx, self.flight.dy)
+        elif character == "moss":
+            draw_moss_keeper(canvas, bob, stride, blink, facing, self.jump.airborne)
+        elif character == "astral":
+            draw_astral_sage(canvas, bob, stride, blink, facing, self.jump.airborne)
+        elif character == "trail":
+            draw_trail_scout(canvas, bob, stride, blink, facing, self.jump.airborne)
+        elif character == "ember":
+            draw_ember_warden(canvas, bob, stride, blink, facing, self.jump.airborne)
         elif character == "bunny":
             self._draw_bunny(canvas, bob, stride, blink, facing)
         else:
