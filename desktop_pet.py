@@ -10,13 +10,13 @@ import time
 import tkinter as tk
 from ctypes import wintypes
 
-from pet_motion import PetMotion
+from pet_motion import FlightMotion, JumpMotion, PetMotion
 
 
 WIDTH = 184
 HEIGHT = 174
 TRANSPARENT = "#ff00ff"
-OUTLINE = "#654842"
+OUTLINE = "#30394f"
 
 
 def get_work_area(root: tk.Tk) -> tuple[int, int, int, int]:
@@ -36,7 +36,10 @@ class DesktopPet:
         left, top, right, bottom = self.work_area
         self.x = float(left + max(0, right - left - WIDTH) * 0.25)
         self.y = float(bottom - HEIGHT)
+        self.base_y = self.y
         self.motion = PetMotion(self.x)
+        self.jump = JumpMotion()
+        self.flight = FlightMotion(self.x, self.y)
         self.dragging = False
         self.drag_offset = (0, 0)
         self.running = True
@@ -44,12 +47,14 @@ class DesktopPet:
         self.walk_time = 0.0
         self.idle_until = 0.0
         self.next_idle = self.last_tick + self.random.uniform(7, 12)
+        self.next_jump = self.last_tick + self.random.uniform(2, 4)
         self.next_blink = self.last_tick + self.random.uniform(2, 5)
         self.blink_until = 0.0
 
         self.paused_var = tk.BooleanVar(value=False)
         self.topmost_var = tk.BooleanVar(value=True)
-        self.character_var = tk.StringVar(value="cat")
+        self.character_var = tk.StringVar(value="guardian")
+        self.current_character = "guardian"
         self.speed_var = tk.StringVar(value="normal")
 
         root.configure(background=TRANSPARENT)
@@ -73,6 +78,7 @@ class DesktopPet:
         self.canvas.bind("<B1-Motion>", self._drag)
         self.canvas.bind("<ButtonRelease-1>", self._end_drag)
         self.canvas.bind("<Button-3>", self._show_menu)
+        self.canvas.bind("<Button-2>", lambda _event: self._jump_now())
         self.canvas.bind("<Double-Button-1>", self._toggle_pause)
         root.bind("<Escape>", lambda _event: self.close())
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -86,10 +92,17 @@ class DesktopPet:
         )
         menu.add_separator()
         menu.add_radiobutton(
-            label="แมวน้อย", variable=self.character_var, value="cat", command=self._redraw
+            label="ผู้พิทักษ์ดวงดาว", variable=self.character_var, value="guardian", command=self._set_character
         )
         menu.add_radiobutton(
-            label="กระต่าย", variable=self.character_var, value="bunny", command=self._redraw
+            label="ยานสำรวจดาว", variable=self.character_var, value="ship", command=self._set_character
+        )
+        menu.add_separator()
+        menu.add_radiobutton(
+            label="แมวน้อย", variable=self.character_var, value="cat", command=self._set_character
+        )
+        menu.add_radiobutton(
+            label="กระต่าย", variable=self.character_var, value="bunny", command=self._set_character
         )
         speed_menu = tk.Menu(menu, tearoff=False)
         for label, value in (("ช้า", "slow"), ("ปกติ", "normal"), ("เร็ว", "fast")):
@@ -102,6 +115,7 @@ class DesktopPet:
             variable=self.topmost_var,
             command=lambda: self.root.wm_attributes("-topmost", self.topmost_var.get()),
         )
+        menu.add_command(label="กระโดด (ผู้พิทักษ์)", command=self._jump_now)
         menu.add_command(label="กลับไปขอบล่าง", command=self._move_to_bottom)
         menu.add_separator()
         menu.add_command(label="ออกจากแอป", command=self.close)
@@ -112,6 +126,7 @@ class DesktopPet:
 
     def _set_paused(self) -> None:
         self.motion.paused = self.paused_var.get()
+        self.flight.paused = self.paused_var.get()
 
     def _toggle_pause(self, _event: tk.Event) -> None:
         self.paused_var.set(not self.paused_var.get())
@@ -119,6 +134,30 @@ class DesktopPet:
 
     def _set_speed(self) -> None:
         self.motion.speed = {"slow": 38, "normal": 65, "fast": 105}[self.speed_var.get()]
+        self.flight.speed = {"slow": 85, "normal": 145, "fast": 220}[self.speed_var.get()]
+
+    def _set_character(self) -> None:
+        character = self.character_var.get()
+        left, top, right, bottom = self.work_area
+        if character == "ship" and self.current_character != "ship":
+            self.flight.x = self.x
+            self.flight.y = top + (bottom - top - HEIGHT) * 0.32
+            self.y = self.flight.y
+        elif self.current_character == "ship":
+            self.base_y = bottom - HEIGHT
+            self.y = self.base_y
+            self.motion.x = self.x
+            self.jump.reset()
+        if character != "guardian":
+            self.jump.reset()
+        self.current_character = character
+        self._place_window()
+        self._redraw()
+
+    def _jump_now(self) -> None:
+        if self.current_character == "guardian" and not self.motion.paused:
+            self.jump.jump()
+            self.next_jump = time.monotonic() + self.random.uniform(3, 6)
 
     def _redraw(self) -> None:
         self._draw(time.monotonic())
@@ -126,17 +165,25 @@ class DesktopPet:
     def _move_to_bottom(self) -> None:
         self.work_area = get_work_area(self.root)
         self.y = self.work_area[3] - HEIGHT
+        self.base_y = self.y
+        self.jump.reset()
+        self.flight.y = self.y
         self._place_window()
 
     def _start_drag(self, event: tk.Event) -> None:
         self.dragging = True
         self.drag_offset = (event.x, event.y)
+        self.jump.reset()
 
     def _drag(self, event: tk.Event) -> None:
         left, top, right, bottom = self.work_area
         self.x = min(max(event.x_root - self.drag_offset[0], left), right - WIDTH)
         self.y = min(max(event.y_root - self.drag_offset[1], top), bottom - HEIGHT)
         self.motion.x = self.x
+        self.flight.x = self.x
+        self.flight.y = self.y
+        if self.current_character != "ship":
+            self.base_y = self.y
         self._place_window()
 
     def _end_drag(self, _event: tk.Event) -> None:
@@ -154,31 +201,53 @@ class DesktopPet:
         now = time.monotonic()
         dt = now - self.last_tick
         self.last_tick = now
-        if now >= self.next_idle:
+        if now >= self.next_idle and self.current_character != "ship" and not self.jump.airborne:
             self.idle_until = now + self.random.uniform(0.7, 1.5)
             self.next_idle = now + self.random.uniform(7, 12)
         if now >= self.next_blink:
             self.blink_until = now + 0.16
             self.next_blink = now + self.random.uniform(2.5, 5.5)
-        if not self.dragging and now >= self.idle_until:
-            left, _top, right, _bottom = self.work_area
-            self.motion.step(dt, left, right - WIDTH)
-            self.x = self.motion.x
+        if not self.dragging:
+            left, top, right, bottom = self.work_area
+            if self.current_character == "ship":
+                self.flight.step(dt, left, top, right - WIDTH, bottom - HEIGHT)
+                self.x, self.y = self.flight.x, self.flight.y
+                if not self.flight.paused:
+                    self.walk_time += min(max(dt, 0), 0.1)
+            else:
+                moving = now >= self.idle_until or self.jump.airborne
+                if moving:
+                    self.motion.step(dt, left, right - WIDTH)
+                    self.x = self.motion.x
+                    if not self.motion.paused:
+                        self.walk_time += min(max(dt, 0), 0.1)
+                if self.current_character == "guardian":
+                    if now >= self.next_jump and not self.motion.paused:
+                        self.jump.jump()
+                        self.next_jump = now + self.random.uniform(3.5, 6.5)
+                    if not self.motion.paused:
+                        self.jump.step(dt, self.base_y - top)
+                    self.y = self.base_y - self.jump.height
+                else:
+                    self.y = self.base_y
             self._place_window()
-            if not self.motion.paused:
-                self.walk_time += min(max(dt, 0), 0.1)
         self._draw(now)
         self.root.after(33, self._tick)
 
     def _draw(self, now: float) -> None:
         canvas = self.canvas
         canvas.delete("all")
-        walking = not self.motion.paused and not self.dragging and now >= self.idle_until
+        character = self.character_var.get()
+        walking = not self.motion.paused and not self.dragging and (now >= self.idle_until or self.jump.airborne)
         stride = math.sin(self.walk_time * 12) if walking else 0.0
         bob = abs(stride) * 3 if walking else math.sin(now * 2) * 1.5
         blink = now < self.blink_until
         facing = self.motion.direction
-        if self.character_var.get() == "bunny":
+        if character == "guardian":
+            self._draw_guardian(canvas, bob, stride, blink, facing, self.jump.airborne)
+        elif character == "ship":
+            self._draw_ship(canvas, now, self.flight.dx, self.flight.dy)
+        elif character == "bunny":
             self._draw_bunny(canvas, bob, stride, blink, facing)
         else:
             self._draw_cat(canvas, bob, stride, blink, facing)
@@ -247,6 +316,117 @@ class DesktopPet:
         left_step = stride * 5
         c.create_oval(59 + left_step, 139 + y, 85 + left_step, 155 + y, fill="#fffefa", outline=OUTLINE, width=2)
         c.create_oval(101 - left_step, 139 + y, 127 - left_step, 155 + y, fill="#fffefa", outline=OUTLINE, width=2)
+
+    def _draw_guardian(
+        self, c: tk.Canvas, bob: float, stride: float, blink: bool, facing: int, jumping: bool
+    ) -> None:
+        """An original star navigator: a cream helmet, copper cape and orbit compass."""
+        y = -bob
+        step = stride * 6
+        if not jumping:
+            c.create_oval(48, 153, 136, 164, fill="#c4ced1", outline="")
+        # Copper cape and dark boots establish a silhouette distinct from a robe.
+        c.create_polygon(
+            65, 81 + y, 121, 80 + y, 143 + stride * 4, 143 + y,
+            105, 135 + y, 75, 146 + y, 42 - stride * 4, 143 + y,
+            fill="#dd8058", outline=OUTLINE, width=3,
+        )
+        c.create_line(54, 130 + y, 70, 110 + y, fill="#f5bf84", width=4)
+        if jumping:
+            c.create_line(79, 129 + y, 69, 138 + y, fill=OUTLINE, width=16, capstyle=tk.ROUND)
+            c.create_line(106, 129 + y, 119, 138 + y, fill=OUTLINE, width=16, capstyle=tk.ROUND)
+            c.create_oval(56, 130 + y, 78, 143 + y, fill="#34455c", outline=OUTLINE, width=2)
+            c.create_oval(109, 130 + y, 131, 143 + y, fill="#34455c", outline=OUTLINE, width=2)
+        else:
+            c.create_line(78, 127 + y, 73 + step, 146 + y, fill=OUTLINE, width=16, capstyle=tk.ROUND)
+            c.create_line(108, 127 + y, 113 - step, 146 + y, fill=OUTLINE, width=16, capstyle=tk.ROUND)
+            c.create_oval(58 + step, 141 + y, 86 + step, 156 + y, fill="#34455c", outline=OUTLINE, width=2)
+            c.create_oval(99 - step, 141 + y, 127 - step, 156 + y, fill="#34455c", outline=OUTLINE, width=2)
+        # A short navigation compass with a floating orb, not an energy sword.
+        c.create_line(144, 112 + y, 151, 58 + y, fill=OUTLINE, width=7, capstyle=tk.ROUND)
+        c.create_line(144, 111 + y, 150, 65 + y, fill="#73d9d7", width=3, capstyle=tk.ROUND)
+        c.create_oval(136, 43 + y, 165, 71 + y, fill="#f7e7c5", outline=OUTLINE, width=3)
+        c.create_oval(143, 50 + y, 158, 64 + y, fill="#72dce1", outline="")
+        c.create_oval(147, 51 + y, 152, 56 + y, fill="white", outline="")
+        c.create_oval(56, 81 + y, 128, 139 + y, fill="#f5e6c9", outline=OUTLINE, width=3)
+        c.create_polygon(64, 89 + y, 92, 80 + y, 122, 91 + y, 113, 125 + y, 72, 125 + y,
+                         fill="#f0a166", outline=OUTLINE, width=2)
+        c.create_polygon(78, 100 + y, 93, 93 + y, 108, 100 + y, 103, 117 + y, 83, 117 + y,
+                         fill="#34455c", outline="")
+        c.create_oval(85, 99 + y, 101, 115 + y, fill="#72dce1", outline="#f5e6c9", width=2)
+        c.create_polygon(89, 101 + y, 98, 107 + y, 89, 113 + y, fill="#f7d379", outline="")
+        # Hood and offset crest are geometric, with a teal visor and expressive eyes.
+        c.create_oval(47, 28 + y, 137, 103 + y, fill="#34455c", outline=OUTLINE, width=3)
+        c.create_oval(57, 43 + y, 127, 95 + y, fill="#f5e6c9", outline=OUTLINE, width=3)
+        c.create_polygon(61, 48 + y, 76, 22 + y, 109, 23 + y, 128, 49 + y,
+                         fill="#f5e6c9", outline=OUTLINE, width=3)
+        c.create_polygon(82, 29 + y, 102, 29 + y, 107, 37 + y, 78, 37 + y,
+                         fill="#ed945f", outline="")
+        c.create_oval(65, 57 + y, 119, 84 + y, fill="#5bbcc2", outline=OUTLINE, width=2)
+        for cx in (78, 105):
+            if blink:
+                c.create_line(cx - 4, 70 + y, cx + 4, 70 + y, fill=OUTLINE, width=3)
+            else:
+                c.create_oval(cx - 4, 65 + y, cx + 4, 75 + y, fill="#243148", outline="")
+                c.create_oval(cx - 2 + facing, 66 + y, cx + facing, 69 + y,
+                              fill="white", outline="")
+        c.create_arc(83, 72 + y, 101, 86 + y, start=205, extent=130,
+                     style=tk.ARC, outline=OUTLINE, width=2)
+        # Cream sleeves, teal gloves and orange shoulder badges.
+        c.create_oval(44, 84 + y, 72, 118 + y, fill="#f5e6c9", outline=OUTLINE, width=3)
+        c.create_oval(113, 84 + y, 141, 118 + y, fill="#f5e6c9", outline=OUTLINE, width=3)
+        c.create_oval(45, 105 + y, 68, 126 + y, fill="#72bdbd", outline=OUTLINE, width=2)
+        c.create_oval(120, 104 + y, 145, 126 + y, fill="#72bdbd", outline=OUTLINE, width=2)
+        c.create_oval(49, 88 + y, 62, 99 + y, fill="#e78e58", outline="")
+        c.create_oval(124, 88 + y, 137, 99 + y, fill="#e78e58", outline="")
+
+    def _draw_ship(self, c: tk.Canvas, now: float, dx: float, dy: float) -> None:
+        """A small manta-shaped survey ship with an asymmetric orbit window."""
+        facing = 1 if dx >= 0 else -1
+        bob = math.sin(now * 4.5) * 2
+
+        def x(value: float) -> float:
+            return value if facing > 0 else WIDTH - value
+
+        def oval(x1: float, y1: float, x2: float, y2: float, **kwargs: object) -> None:
+            c.create_oval(min(x(x1), x(x2)), y1 + bob,
+                          max(x(x1), x(x2)), y2 + bob, **kwargs)
+
+        def polygon(points: tuple[float, ...], **kwargs: object) -> None:
+            mapped = [x(value) if index % 2 == 0 else value + bob
+                      for index, value in enumerate(points)]
+            c.create_polygon(*mapped, **kwargs)
+
+        pulse = 4 + math.sin(now * 15) * 3 if not self.flight.paused else 2
+        # Two soft exhaust plumes follow the direction of travel.
+        for ey in (78, 107):
+            polygon((29, ey - 7, 9 - pulse, ey, 29, ey + 7),
+                    fill="#79e4e1", outline="")
+            polygon((27, ey - 4, 15 - pulse / 2, ey, 27, ey + 4),
+                    fill="#f5d174", outline="")
+        polygon((30, 72, 18, 57, 23, 100, 53, 117, 58, 91),
+                fill="#34455c", outline=OUTLINE, width=3)
+        polygon((61, 101, 29, 125, 69, 121, 91, 107),
+                fill="#64b8b8", outline=OUTLINE, width=3)
+        polygon((34, 74, 61, 56, 115, 54, 159, 76, 170, 89,
+                 153, 104, 112, 116, 58, 111, 32, 94),
+                fill="#f4e4c5", outline=OUTLINE, width=4)
+        polygon((54, 69, 92, 59, 129, 69, 145, 82, 124, 94, 72, 94),
+                fill="#ed945f", outline="")
+        polygon((68, 73, 100, 64, 124, 76, 119, 95, 77, 95),
+                fill="#34455c", outline=OUTLINE, width=2)
+        oval(81, 70, 115, 93, fill="#69d6d5", outline="#f4e4c5", width=2)
+        oval(88, 72, 98, 78, fill="#d9ffff", outline="")
+        polygon((150, 78, 166, 88, 149, 98, 138, 88),
+                fill="#68c3c0", outline=OUTLINE, width=2)
+        c.create_line(x(63), 102 + bob, x(111), 103 + bob,
+                      fill="#34455c", width=3, capstyle=tk.ROUND)
+        oval(51, 98, 61, 108, fill="#f7d379", outline=OUTLINE, width=1)
+        oval(68, 101, 76, 109, fill="#72dce1", outline="")
+        # Tiny radar star makes the craft readable even when flying upward.
+        c.create_line(x(117), 45 + bob, x(123), 36 + bob,
+                      fill=OUTLINE, width=3, capstyle=tk.ROUND)
+        oval(119, 29, 128, 39, fill="#f7d379", outline=OUTLINE, width=2)
 
     def close(self) -> None:
         self.running = False
