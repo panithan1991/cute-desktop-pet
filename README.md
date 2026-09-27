@@ -2,6 +2,12 @@
 
 แอปตัวการ์ตูนตัวเล็กสำหรับ Windows และ macOS ที่เดินเล่นบนหน้าจอระหว่างทำงาน เปิดมาจะพบ **BooBoo** กระต่ายหูตกสีขาว และยังเลือกผู้พิทักษ์ดวงดาว ยานสำรวจ ตัวละครผจญภัย 4 แบบ และแมวได้ BooBoo เคลื่อนไหวโดยไม่ยิงพลัง ส่วนตัวละครอื่นยังใช้พลังของตนเองได้
 
+## ดาวน์โหลด BooBoo สำหรับ Mac
+
+เปิดหน้า [Releases](https://github.com/panithan1991/cute-desktop-pet/releases/latest) แล้วดาวน์โหลด `BooBoo-macOS-Apple-Silicon.zip` สำหรับ Mac ชิป M หรือ `BooBoo-macOS-Intel.zip` สำหรับ Mac ชิป Intel แตก ZIP แล้วดับเบิลคลิก `BooBoo.app` ได้เลย **ไม่ต้องติดตั้ง Python หรือใช้ Terminal** แอปรวม Python และภาพทั้งหมดไว้แล้ว
+
+แอปเวอร์ชันฟรีนี้ยังไม่ได้ลงนามและรับรองโดย Apple หาก macOS บล็อกครั้งแรก ให้ไปที่ **System Settings → Privacy & Security → Open Anyway** แล้วยืนยัน **Open** ตาม[คำแนะนำของ Apple](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac) ครั้งถัดไปเปิดตามปกติได้
+
 ![ท่าทาง BooBoo ที่ใช้ในแอป](assets/booboo-sprites.png)
 
 ![ผู้พิทักษ์ดวงดาวและยานสำรวจที่ออกแบบสำหรับแอปนี้](preview.png)
@@ -33,14 +39,14 @@
 - ตัวละครอีก 7 ตัวใช้พลังของตัวเองอัตโนมัติ **ทุก 5 วินาที** ตามค่าเริ่มต้น เปลี่ยนเป็น **ทุก 3 หรือ 6 วินาที** ได้ที่ **คลิกขวา → ความถี่ใช้พลัง** ตัวละครที่มีพลังพิเศษ 4 ตัวจะใช้พลังพิเศษ ส่วนตัวอื่นใช้พลังยิงประจำตัว
 - ปิดการใช้พลังอัตโนมัติได้ด้วย **คลิกขวา → ใช้พลังอัตโนมัติ** การยิงด้วยมือไม่เลื่อนรอบยิงอัตโนมัติ
 
-## เริ่มใช้งาน
+## เปิดจากซอร์สโค้ด
 
 **Windows:** ต้องมี Windows 10/11 และ Python 3.10 ขึ้นไปพร้อม Tkinter (เลือกติดตั้ง Python รุ่นปกติจาก python.org) ไฟล์ `run.bat` จะเลือก Python ที่เปิด Tkinter ได้เอง หากในเครื่องมี Python หลายตัว
 
 1. ดาวน์โหลด repository นี้เป็น ZIP แล้วแตกไฟล์ หรือใช้ `git clone`
 2. ดับเบิลคลิก `run.bat`
 
-**macOS:** ติดตั้ง Python 3.10 ขึ้นไปที่มี Aqua Tk 8.6 ขึ้นไป เช่น [ตัวติดตั้ง Python สำหรับ Mac จาก python.org](https://www.python.org/downloads/macos/) จากนั้นดาวน์โหลด repository และเปิด Terminal ในโฟลเดอร์โปรเจกต์ แล้วรัน:
+**macOS (ทางเลือกสำหรับผู้ที่ต้องการรันจากซอร์ส):** ติดตั้ง Python 3.10 ขึ้นไปที่มี Aqua Tk 8.6 ขึ้นไป เช่น [ตัวติดตั้ง Python สำหรับ Mac จาก python.org](https://www.python.org/downloads/macos/) จากนั้นดาวน์โหลด repository และเปิด Terminal ในโฟลเดอร์โปรเจกต์ แล้วรัน:
 
 ```sh
 chmod +x run.command

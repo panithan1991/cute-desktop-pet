@@ -47,6 +47,20 @@ class WindowStyleTests(unittest.TestCase):
         root.destroy.assert_called_once()
         pet.assert_not_called()
 
+    def test_bundle_smoke_mode_initializes_then_closes(self):
+        import desktop_pet
+
+        root = Mock()
+        root.tk.call.return_value = "aqua"
+        with patch.object(desktop_pet.sys, "platform", "darwin"), \
+             patch.object(desktop_pet.sys, "argv", ["desktop_pet.py", "--smoke-test"]), \
+             patch.object(desktop_pet.tk, "Tk", return_value=root), \
+             patch.object(desktop_pet, "DesktopPet") as pet:
+            self.assertEqual(desktop_pet.main(), 0)
+        root.withdraw.assert_called_once()
+        pet.return_value.close.assert_called_once()
+        root.mainloop.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

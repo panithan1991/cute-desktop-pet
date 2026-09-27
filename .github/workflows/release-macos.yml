@@ -1,0 +1,80 @@
+name: Release BooBoo for macOS
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            cpu: arm64
+            arch: Apple-Silicon
+          - runner: macos-15-intel
+            cpu: x86_64
+            arch: Intel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install build tools
+        run: python3 -m pip install 'pyinstaller==6.22.3' 'Pillow>=10,<13'
+      - name: Test source and architecture
+        run: |
+          test "$(uname -m)" = "${{ matrix.cpu }}"
+          python3 -m unittest discover -s tests -q
+      - name: Build BooBoo.app
+        run: sh scripts/build_macos.sh
+      - name: Test bundled app
+        timeout-minutes: 3
+        run: |
+          test -x dist/BooBoo.app/Contents/MacOS/BooBoo
+          find dist/BooBoo.app -name booboo-sprites.png -print -quit | grep booboo-sprites.png
+          dist/BooBoo.app/Contents/MacOS/BooBoo --smoke-test
+          codesign --verify --deep --strict dist/BooBoo.app
+      - name: Package Mac download
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent dist/BooBoo.app "BooBoo-macOS-${{ matrix.arch }}.zip"
+          shasum -a 256 "BooBoo-macOS-${{ matrix.arch }}.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BooBoo-macOS-${{ matrix.arch }}
+          path: BooBoo-macOS-${{ matrix.arch }}.zip
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    name: Publish Mac downloads
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: BooBoo-macOS-*
+          path: release-files
+          merge-multiple: true
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls release-files/BooBoo-macOS-*.zip
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release-files/BooBoo-macOS-*.zip --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" release-files/BooBoo-macOS-*.zip \
+              --verify-tag --latest --title "BooBoo for macOS $GITHUB_REF_NAME" \
+              --notes-file docs/mac-release-notes.md --repo "$GITHUB_REPOSITORY"
+          fi

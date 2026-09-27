@@ -600,7 +600,14 @@ def main() -> int:
         root.destroy()
         print("macOS needs a Python build with Aqua Tk (for example from python.org).")
         return 1
-    DesktopPet(root)
+    smoke_test = "--smoke-test" in sys.argv[1:]
+    if smoke_test:
+        root.withdraw()
+    pet = DesktopPet(root)
+    if smoke_test:
+        root.update_idletasks()
+        pet.close()
+        return 0
     root.mainloop()
     return 0
 
