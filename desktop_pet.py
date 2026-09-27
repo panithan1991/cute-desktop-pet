@@ -487,6 +487,7 @@ class DesktopPet:
             blink=blink,
             resting_remaining=max(0.0, self.idle_until - now) if not walking else 0.0,
             paused=self.paused_var.get(),
+            walk_time=self.walk_time,
         )
         c.create_image(
             WIDTH // 2, HEIGHT - 2 - bob,

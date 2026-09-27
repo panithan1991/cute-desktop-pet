@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import math
 from pathlib import Path
 import tkinter as tk
 
@@ -26,6 +27,7 @@ def choose_mookrata_pose(
     blink: bool,
     resting_remaining: float,
     paused: bool,
+    walk_time: float = 0.0,
 ) -> str:
     """Select the best puppy pose for Moo Krata's current state."""
     if paused:
@@ -45,9 +47,9 @@ def choose_mookrata_pose(
     if resting_remaining > 0:
         return "sleepy"
     if walking:
-        # Alternates between excited run and bounding trot
-        cycle = int(now * 4.5) % 2
-        return "happy" if cycle == 0 else "hop_start"
+        # Smooth side-view running trot synchronized with stride:
+        # Alternates seamlessly between reaching stride (hop_start) and ground contact (hop_land)
+        return "hop_start" if math.sin(walk_time * 12) > 0 else "hop_land"
     if blink:
         return "smile"
     if now % 7.0 < 1.8:

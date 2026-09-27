@@ -14,6 +14,7 @@ def pose(**changes):
     state = dict(
         now=1.0, walking=False, airborne=False, jump_velocity=0.0,
         just_landed=False, blink=False, resting_remaining=0.0, paused=False,
+        walk_time=0.0,
     )
     state.update(changes)
     return choose_mookrata_pose(**state)
@@ -40,14 +41,14 @@ class MooKrataPoseTests(unittest.TestCase):
         self.assertEqual(pose(just_landed=True), "hop_land")
 
     def test_idle_walk_and_rest_expressions(self):
-        # Idle at now=5.0 (where now % 7.0 = 5.0 >= 1.8) gives idle
+        # Idle at now=5.0 gives idle
         self.assertEqual(pose(now=5.0), "idle")
         # Head tilt when curious
         self.assertEqual(pose(now=0.5), "curious")
         self.assertEqual(pose(blink=True, now=5.0), "smile")
-        # Walking alternates trot and run
-        self.assertIn(pose(walking=True, now=0.0), {"happy", "hop_start"})
-        self.assertIn(pose(walking=True, now=0.25), {"happy", "hop_start"})
+        # Running trot alternates side-view frames seamlessly
+        self.assertEqual(pose(walking=True, walk_time=0.1), "hop_start")
+        self.assertEqual(pose(walking=True, walk_time=0.3), "hop_land")
         # Resting states
         self.assertEqual(pose(resting_remaining=5.0), "curious")
         self.assertEqual(pose(resting_remaining=4.0), "stretch")
