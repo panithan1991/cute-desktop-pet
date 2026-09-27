@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import math
+from pathlib import Path
 import random
 import sys
 import time
@@ -73,8 +74,18 @@ class DesktopPet:
         self.topmost_var = tk.BooleanVar(value=True)
         self.auto_power_var = tk.BooleanVar(value=True)
         self.power_interval_var = tk.IntVar(value=5)
-        self.character_var = tk.StringVar(value="bunny")
-        self.current_character = "bunny"
+        default_char = "bunny"
+        for arg in sys.argv[1:]:
+            if arg.lower() in ("--mookrata", "-mookrata", "mookrata"):
+                default_char = "mookrata"
+                break
+            if arg.startswith("--character="):
+                default_char = arg.split("=", 1)[1]
+                break
+        if "mookrata" in Path(sys.argv[0]).stem.lower():
+            default_char = "mookrata"
+        self.character_var = tk.StringVar(value=default_char)
+        self.current_character = default_char
         self.speed_var = tk.StringVar(value="normal")
         self.booboo_sprites = BooBooSprites(root)
         self.mookrata_sprites = MooKrataSprites(root)

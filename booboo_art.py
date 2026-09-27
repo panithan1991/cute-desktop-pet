@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 from pathlib import Path
 import struct
+import sys
 import tkinter as tk
 import zlib
 
@@ -151,7 +152,8 @@ class BooBooSprites:
     """Keep all Tk frames alive and mirror them for left-facing movement."""
 
     def __init__(self, root: tk.Misc) -> None:
-        path = Path(__file__).parent / "assets" / "booboo-sprites.png"
+        base_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+        path = base_dir / "assets" / "booboo-sprites.png"
         width, height, pixels = _read_rgba_png(path)
         expected = CELL_SIZE * GRID_SIZE
         if (width, height) != (expected, expected):

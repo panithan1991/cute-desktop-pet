@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import math
 from pathlib import Path
+import sys
 import tkinter as tk
 
 from booboo_art import (
@@ -61,7 +62,8 @@ class MooKrataSprites:
     """Keep all Tk frames alive for Moo Krata and mirror them for left/right facing."""
 
     def __init__(self, root: tk.Misc) -> None:
-        path = Path(__file__).parent / "assets" / "mookrata-sprites.png"
+        base_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+        path = base_dir / "assets" / "mookrata-sprites.png"
         width, height, pixels = _read_rgba_png(path)
         expected = CELL_SIZE * GRID_SIZE
         if (width, height) != (expected, expected):

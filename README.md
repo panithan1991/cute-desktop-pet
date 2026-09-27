@@ -2,11 +2,12 @@
 
 แอปตัวการ์ตูนตัวเล็กสำหรับ Windows และ macOS ที่เดินเล่นบนหน้าจอระหว่างทำงาน เปิดมาจะพบ **BooBoo** กระต่ายหูตกสีขาว และ **Moo Krata (หมูกระทะ)** ลูกสุนัขพันธุ์เบอร์นีส เมาน์เทนด็อกสุดน่ารัก และยังเลือกผู้พิทักษ์ดวงดาว ยานสำรวจ ตัวละครผจญภัย 4 แบบ และแมวได้ BooBoo และ Moo Krata เคลื่อนไหวอย่างสงบและน่ารักโดยไม่ยิงพลัง ส่วนตัวละครอื่นยังใช้พลังของตนเองได้
 
-## ดาวน์โหลด BooBoo สำหรับ Mac
+## ดาวน์โหลดแอปพร้อมเล่น (ไม่ต้องลง Python)
 
-เปิดหน้า [Releases](https://github.com/panithan1991/cute-desktop-pet/releases/latest) แล้วดาวน์โหลด `BooBoo-macOS-Apple-Silicon.zip` สำหรับ Mac ชิป M หรือ `BooBoo-macOS-Intel.zip` สำหรับ Mac ชิป Intel แตก ZIP แล้วดับเบิลคลิก `BooBoo.app` ได้เลย **ไม่ต้องติดตั้ง Python หรือใช้ Terminal** แอปรวม Python และภาพทั้งหมดไว้แล้ว
+- **Windows:** ดาวน์โหลด `MooKrata-Windows.zip` จากหน้า [Releases](https://github.com/panithan1991/cute-desktop-pet/releases/latest) แตก ZIP แล้วดับเบิลคลิก `MooKrata.exe` ได้ทันที
+- **macOS:** ดาวน์โหลด `BooBoo-macOS-Apple-Silicon.zip` สำหรับ Mac ชิป M หรือ `BooBoo-macOS-Intel.zip` สำหรับ Mac ชิป Intel แตก ZIP แล้วดับเบิลคลิก `BooBoo.app` ได้เลย
 
-แอปเวอร์ชันฟรีนี้ยังไม่ได้ลงนามและรับรองโดย Apple หาก macOS บล็อกครั้งแรก ให้ไปที่ **System Settings → Privacy & Security → Open Anyway** แล้วยืนยัน **Open** ตาม[คำแนะนำของ Apple](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac) ครั้งถัดไปเปิดตามปกติได้
+*(สำหรับ Mac: แอปเวอร์ชันฟรีนี้ยังไม่ได้ลงนาม หาก macOS บล็อกครั้งแรก ให้ไปที่ **System Settings → Privacy & Security → Open Anyway** แล้วยืนยัน **Open**)*
 
 ![ท่าทาง BooBoo ที่ใช้ในแอป](assets/booboo-sprites.png)
 
