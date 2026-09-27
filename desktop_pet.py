@@ -10,6 +10,7 @@ import time
 import tkinter as tk
 
 from booboo_art import BooBooSprites, choose_pose
+from mookrata_art import MooKrataSprites, choose_mookrata_pose
 from fantasy_art import draw_trail_scout
 from storybook_art import (
     draw_astral_sage,
@@ -24,7 +25,7 @@ from window_style import configure_overlay, configure_pet_window
 WIDTH = 184
 HEIGHT = 174
 OUTLINE = "#30394f"
-GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", "bunny"})
+GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", "bunny", "mookrata"})
 
 
 def get_work_area(root: tk.Tk) -> tuple[int, int, int, int]:
@@ -76,6 +77,7 @@ class DesktopPet:
         self.current_character = "bunny"
         self.speed_var = tk.StringVar(value="normal")
         self.booboo_sprites = BooBooSprites(root)
+        self.mookrata_sprites = MooKrataSprites(root)
 
         configure_pet_window(root)
         root.wm_attributes("-topmost", True)
@@ -138,6 +140,10 @@ class DesktopPet:
         menu.add_radiobutton(
             label="BooBoo กระต่ายหูตก", variable=self.character_var,
             value="bunny", command=self._set_character,
+        )
+        menu.add_radiobutton(
+            label="Moo Krata ลูกหมาเบอร์นีส", variable=self.character_var,
+            value="mookrata", command=self._set_character,
         )
         speed_menu = tk.Menu(menu, tearoff=False)
         for label, value in (("ช้า", "slow"), ("ปกติ", "normal"), ("เร็ว", "fast")):
@@ -216,7 +222,7 @@ class DesktopPet:
             self.jump.reset()
         if character not in GROUND_JUMPERS:
             self.jump.reset()
-        if character == "bunny":
+        if character in ("bunny", "mookrata"):
             self.jump.reset()
             self.jump.launch_speed = 245
             self.jump.gravity = 1050
@@ -230,12 +236,12 @@ class DesktopPet:
             self.idle_until = 0.0
             self.next_idle = time.monotonic() + self.random.uniform(7, 12)
         self.current_character = character
-        if character == "bunny":
+        if character in ("bunny", "mookrata"):
             for view in self.effects:
                 view.close()
             self.effects.clear()
         self._reset_power_timer()
-        power_state = "disabled" if character == "bunny" else "normal"
+        power_state = "disabled" if character in ("bunny", "mookrata") else "normal"
         for index in (self.auto_power_menu_index, self.power_interval_menu_index,
                       self.fire_menu_index):
             self.menu.entryconfig(index, state=power_state)
@@ -250,7 +256,7 @@ class DesktopPet:
     def _jump_now(self) -> None:
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
-            delay = self.random.uniform(8, 12) if self.current_character == "bunny" else self.random.uniform(3, 6)
+            delay = self.random.uniform(8, 12) if self.current_character in ("bunny", "mookrata") else self.random.uniform(3, 6)
             self.next_jump = time.monotonic() + delay
 
     def _shoot_click(self, _event: tk.Event) -> str:
@@ -258,7 +264,7 @@ class DesktopPet:
         return "break"
 
     def _fire_now(self, special: bool = False) -> bool:
-        if self.current_character == "bunny":
+        if self.current_character in ("bunny", "mookrata"):
             return False
         if special and self.current_character not in SPECIAL_POWERS:
             return False
@@ -314,7 +320,7 @@ class DesktopPet:
         dt = now - self.last_tick
         self.last_tick = now
         if now >= self.next_idle and self.current_character != "ship" and not self.jump.airborne:
-            if self.current_character == "bunny":
+            if self.current_character in ("bunny", "mookrata"):
                 self.idle_until = now + self.random.uniform(7, 9)
                 self.next_idle = self.idle_until + self.random.uniform(4, 6)
                 self.next_jump = max(self.next_jump, self.idle_until + self.random.uniform(1, 2))
@@ -341,25 +347,25 @@ class DesktopPet:
                 if self.current_character in GROUND_JUMPERS:
                     if (
                         now >= self.next_jump and not self.motion.paused
-                        and (self.current_character != "bunny" or now >= self.idle_until)
+                        and (self.current_character not in ("bunny", "mookrata") or now >= self.idle_until)
                     ):
                         self.jump.jump()
                         self.next_jump = now + (
                             self.random.uniform(8, 12)
-                            if self.current_character == "bunny"
+                            if self.current_character in ("bunny", "mookrata")
                             else self.random.uniform(3.5, 6.5)
                         )
                     was_airborne = self.jump.airborne
                     if not self.motion.paused:
                         self.jump.step(dt, self.base_y - top)
-                    if self.current_character == "bunny" and was_airborne and not self.jump.airborne:
+                    if self.current_character in ("bunny", "mookrata") and was_airborne and not self.jump.airborne:
                         self.land_until = now + 0.14
                     self.y = self.base_y - self.jump.height
                 else:
                     self.y = self.base_y
             self._place_window()
         if (
-            self.current_character != "bunny"
+            self.current_character not in ("bunny", "mookrata")
             and self.power_timer.due(now)
             and self.auto_power_var.get()
             and not self.paused_var.get()
@@ -402,6 +408,8 @@ class DesktopPet:
             draw_ember_warden(canvas, bob, stride, blink, facing, self.jump.airborne)
         elif character == "bunny":
             self._draw_booboo(canvas, now, bob, walking, blink, facing)
+        elif character == "mookrata":
+            self._draw_mookrata(canvas, now, bob, walking, blink, facing)
         else:
             self._draw_cat(canvas, bob, stride, blink, facing)
 
@@ -464,6 +472,25 @@ class DesktopPet:
         c.create_image(
             WIDTH // 2, HEIGHT - 2 - bob,
             image=self.booboo_sprites.get(pose, facing), anchor="s",
+        )
+
+    def _draw_mookrata(
+        self, c: tk.Canvas, now: float, bob: float,
+        walking: bool, blink: bool, facing: int,
+    ) -> None:
+        pose = choose_mookrata_pose(
+            now,
+            walking=walking,
+            airborne=self.jump.airborne,
+            jump_velocity=self.jump.velocity,
+            just_landed=now < self.land_until,
+            blink=blink,
+            resting_remaining=max(0.0, self.idle_until - now) if not walking else 0.0,
+            paused=self.paused_var.get(),
+        )
+        c.create_image(
+            WIDTH // 2, HEIGHT - 2 - bob,
+            image=self.mookrata_sprites.get(pose, facing), anchor="s",
         )
 
     def _draw_guardian(
