@@ -9,7 +9,8 @@ import sys
 import time
 import tkinter as tk
 
-from booboo_art import BooBooSprites, choose_pose
+from pet_animation import choose_pet_pose
+from pet_sprites import PetSprites
 from fantasy_art import draw_trail_scout
 from storybook_art import (
     draw_astral_sage,
@@ -24,7 +25,8 @@ from window_style import configure_overlay, configure_pet_window
 WIDTH = 184
 HEIGHT = 174
 OUTLINE = "#30394f"
-GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", "bunny"})
+PET_CHARACTERS = frozenset({"bunny", "moo"})
+GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", *PET_CHARACTERS})
 
 
 def get_work_area(root: tk.Tk) -> tuple[int, int, int, int]:
@@ -59,9 +61,14 @@ class DesktopPet:
         self.running = True
         self.last_tick = time.monotonic()
         self.walk_time = 0.0
-        self.idle_until = 0.0
-        self.next_idle = self.last_tick + self.random.uniform(2, 4)
-        self.next_jump = self.last_tick + self.random.uniform(6, 9)
+        self.rest_start = self.last_tick
+        self.rest_variant = 0
+        self.idle_until = self.last_tick + 7.0
+        self.next_idle = self.idle_until + 2.5
+        self.next_jump = self.last_tick + self.random.uniform(12, 18)
+        self.roll_start = 0.0
+        self.roll_until = 0.0
+        self.next_roll = self.last_tick + self.random.uniform(20, 30)
         self.next_blink = self.last_tick + self.random.uniform(2, 5)
         self.blink_until = 0.0
         self.land_until = 0.0
@@ -75,7 +82,7 @@ class DesktopPet:
         self.character_var = tk.StringVar(value="bunny")
         self.current_character = "bunny"
         self.speed_var = tk.StringVar(value="normal")
-        self.booboo_sprites = BooBooSprites(root)
+        self.pet_sprites = {name: PetSprites(root, name) for name in PET_CHARACTERS}
 
         configure_pet_window(root)
         root.wm_attributes("-topmost", True)
@@ -138,6 +145,10 @@ class DesktopPet:
         menu.add_radiobutton(
             label="BooBoo กระต่ายหูตก", variable=self.character_var,
             value="bunny", command=self._set_character,
+        )
+        menu.add_radiobutton(
+            label="Moo Krata ลูกสุนัข", variable=self.character_var,
+            value="moo", command=self._set_character,
         )
         speed_menu = tk.Menu(menu, tearoff=False)
         for label, value in (("ช้า", "slow"), ("ปกติ", "normal"), ("เร็ว", "fast")):
@@ -216,26 +227,29 @@ class DesktopPet:
             self.jump.reset()
         if character not in GROUND_JUMPERS:
             self.jump.reset()
-        if character == "bunny":
+        if character in PET_CHARACTERS:
             self.jump.reset()
-            self.jump.launch_speed = 245
+            self.jump.launch_speed = 245 if character == "bunny" else 300
             self.jump.gravity = 1050
             now = time.monotonic()
-            self.idle_until = 0.0
-            self.next_idle = now + self.random.uniform(2, 4)
-            self.next_jump = now + self.random.uniform(6, 9)
+            self.rest_start = now
+            self.rest_variant = self.random.randrange(3)
+            self.idle_until = now + self.random.uniform(7, 9) if character == "bunny" else now + self.random.uniform(4, 6)
+            self.next_idle = self.idle_until + (self.random.uniform(1.5, 3) if character == "bunny" else self.random.uniform(3, 5))
+            self.next_jump = now + (self.random.uniform(12, 18) if character == "bunny" else self.random.uniform(8, 13))
+            self.roll_until = 0.0
         else:
             self.jump.launch_speed = 340
             self.jump.gravity = 1050
             self.idle_until = 0.0
             self.next_idle = time.monotonic() + self.random.uniform(7, 12)
         self.current_character = character
-        if character == "bunny":
+        if character in PET_CHARACTERS:
             for view in self.effects:
                 view.close()
             self.effects.clear()
         self._reset_power_timer()
-        power_state = "disabled" if character == "bunny" else "normal"
+        power_state = "disabled" if character in PET_CHARACTERS else "normal"
         for index in (self.auto_power_menu_index, self.power_interval_menu_index,
                       self.fire_menu_index):
             self.menu.entryconfig(index, state=power_state)
@@ -250,7 +264,7 @@ class DesktopPet:
     def _jump_now(self) -> None:
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
-            delay = self.random.uniform(8, 12) if self.current_character == "bunny" else self.random.uniform(3, 6)
+            delay = self.random.uniform(12, 18) if self.current_character == "bunny" else (self.random.uniform(8, 13) if self.current_character == "moo" else self.random.uniform(3, 6))
             self.next_jump = time.monotonic() + delay
 
     def _shoot_click(self, _event: tk.Event) -> str:
@@ -258,7 +272,7 @@ class DesktopPet:
         return "break"
 
     def _fire_now(self, special: bool = False) -> bool:
-        if self.current_character == "bunny":
+        if self.current_character in PET_CHARACTERS:
             return False
         if special and self.current_character not in SPECIAL_POWERS:
             return False
@@ -314,9 +328,13 @@ class DesktopPet:
         dt = now - self.last_tick
         self.last_tick = now
         if now >= self.next_idle and self.current_character != "ship" and not self.jump.airborne:
-            if self.current_character == "bunny":
-                self.idle_until = now + self.random.uniform(7, 9)
-                self.next_idle = self.idle_until + self.random.uniform(4, 6)
+            if self.current_character in PET_CHARACTERS:
+                self.rest_start = now
+                self.rest_variant = self.random.randrange(3)
+                resting = self.random.uniform(7, 9) if self.current_character == "bunny" else self.random.uniform(4, 6)
+                active = self.random.uniform(1.5, 3) if self.current_character == "bunny" else self.random.uniform(3, 5)
+                self.idle_until = now + resting
+                self.next_idle = self.idle_until + active
                 self.next_jump = max(self.next_jump, self.idle_until + self.random.uniform(1, 2))
             else:
                 self.idle_until = now + self.random.uniform(0.7, 1.5)
@@ -324,6 +342,12 @@ class DesktopPet:
         if now >= self.next_blink:
             self.blink_until = now + 0.16
             self.next_blink = now + self.random.uniform(2.5, 5.5)
+        if (self.current_character == "bunny" and now >= self.next_roll
+                and not self.jump.airborne and not self.motion.paused):
+            self.roll_start = now
+            self.roll_until = now + 1.05
+            self.idle_until = max(self.idle_until, self.roll_until)
+            self.next_roll = now + self.random.uniform(20, 30)
         if not self.dragging:
             left, top, right, bottom = self.work_area
             if self.current_character == "ship":
@@ -333,7 +357,7 @@ class DesktopPet:
                     self.walk_time += min(max(dt, 0), 0.1)
             else:
                 moving = now >= self.idle_until or self.jump.airborne
-                if moving and (self.current_character != "bunny" or self.jump.airborne):
+                if moving:
                     self.motion.step(dt, left, right - WIDTH)
                     self.x = self.motion.x
                     if not self.motion.paused:
@@ -341,25 +365,25 @@ class DesktopPet:
                 if self.current_character in GROUND_JUMPERS:
                     if (
                         now >= self.next_jump and not self.motion.paused
-                        and (self.current_character != "bunny" or now >= self.idle_until)
+                        and (self.current_character not in PET_CHARACTERS or now >= self.idle_until)
                     ):
                         self.jump.jump()
                         self.next_jump = now + (
                             self.random.uniform(8, 12)
                             if self.current_character == "bunny"
-                            else self.random.uniform(3.5, 6.5)
+                            else (self.random.uniform(8, 13) if self.current_character == "moo" else self.random.uniform(3.5, 6.5))
                         )
                     was_airborne = self.jump.airborne
                     if not self.motion.paused:
                         self.jump.step(dt, self.base_y - top)
-                    if self.current_character == "bunny" and was_airborne and not self.jump.airborne:
-                        self.land_until = now + 0.14
+                    if self.current_character in PET_CHARACTERS and was_airborne and not self.jump.airborne:
+                        self.land_until = now + 0.20
                     self.y = self.base_y - self.jump.height
                 else:
                     self.y = self.base_y
             self._place_window()
         if (
-            self.current_character != "bunny"
+            self.current_character not in PET_CHARACTERS
             and self.power_timer.due(now)
             and self.auto_power_var.get()
             and not self.paused_var.get()
@@ -400,8 +424,8 @@ class DesktopPet:
             draw_trail_scout(canvas, bob, stride, blink, facing, self.jump.airborne)
         elif character == "ember":
             draw_ember_warden(canvas, bob, stride, blink, facing, self.jump.airborne)
-        elif character == "bunny":
-            self._draw_booboo(canvas, now, bob, walking, blink, facing)
+        elif character in PET_CHARACTERS:
+            self._draw_pet(canvas, now, bob, walking, blink, facing, character)
         else:
             self._draw_cat(canvas, bob, stride, blink, facing)
 
@@ -447,23 +471,28 @@ class DesktopPet:
         c.create_oval(60 + left_step, 139 + y, 86 + left_step, 155 + y, fill="#f5b27d", outline=OUTLINE, width=2)
         c.create_oval(100 - left_step, 139 + y, 126 - left_step, 155 + y, fill="#f5b27d", outline=OUTLINE, width=2)
 
-    def _draw_booboo(
+    def _draw_pet(
         self, c: tk.Canvas, now: float, bob: float,
-        walking: bool, blink: bool, facing: int,
+        walking: bool, blink: bool, facing: int, character: str,
     ) -> None:
-        pose = choose_pose(
-            now,
+        rest_duration = max(0.001, self.idle_until - self.rest_start)
+        pose = choose_pet_pose(
+            character,
             walking=walking,
+            walk_time=self.walk_time,
+            rest_progress=(now - self.rest_start) / rest_duration,
+            rest_variant=self.rest_variant,
             airborne=self.jump.airborne,
             jump_velocity=self.jump.velocity,
-            just_landed=now < self.land_until,
+            landed=now < self.land_until,
             blink=blink,
-            resting_remaining=max(0.0, self.idle_until - now) if not walking else 0.0,
             paused=self.paused_var.get(),
+            roll_progress=((now - self.roll_start) / (self.roll_until - self.roll_start)
+                           if character == "bunny" and now < self.roll_until else None),
         )
         c.create_image(
             WIDTH // 2, HEIGHT - 2 - bob,
-            image=self.booboo_sprites.get(pose, facing), anchor="s",
+            image=self.pet_sprites[character].get(pose, facing), anchor="s",
         )
 
     def _draw_guardian(
@@ -596,21 +625,50 @@ def main() -> int:
         except (AttributeError, OSError):
             pass
     root = tk.Tk()
+    root.title("BooBoo & Moo Krata")
+    root.withdraw()
     if sys.platform == "darwin" and root.tk.call("tk", "windowingsystem") != "aqua":
         root.destroy()
         print("macOS needs a Python build with Aqua Tk (for example from python.org).")
         return 1
     smoke_test = "--smoke-test" in sys.argv[1:]
-    if smoke_test:
-        root.withdraw()
     pet = DesktopPet(root)
     if smoke_test:
         root.update_idletasks()
         pet.close()
         return 0
+    root.deiconify()
+    root.lift()
     root.mainloop()
     return 0
 
 
+def report_mac_startup_failure() -> None:
+    """Make a Finder-launched crash visible and leave a local diagnostic log."""
+    from pathlib import Path
+    import subprocess
+    import traceback
+
+    log_path = Path.home() / "Library" / "Logs" / "BooBoo" / "startup.log"
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text(traceback.format_exc(), encoding="utf-8")
+    except OSError:
+        pass
+    try:
+        subprocess.run(
+            ["osascript", "-e", 'display alert "BooBoo could not start" '
+             'message "See ~/Library/Logs/BooBoo/startup.log for details." as critical'],
+            timeout=15, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except Exception:
+        if sys.platform == "darwin":
+            report_mac_startup_failure()
+        raise

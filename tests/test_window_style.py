@@ -56,6 +56,9 @@ class WindowStyleTests(unittest.TestCase):
              patch.object(desktop_pet, "DesktopPet") as pet:
             self.assertEqual(desktop_pet.main(), 0)
         pet.assert_called_once_with(root)
+        root.withdraw.assert_called_once()
+        root.deiconify.assert_called_once()
+        root.lift.assert_called_once()
         root.mainloop.assert_called_once()
 
     def test_mac_entrypoint_rejects_non_aqua_tk(self):
