@@ -48,9 +48,15 @@ def choose_mookrata_pose(
     if resting_remaining > 0:
         return "sleepy"
     if walking:
-        # Smooth side-view running trot synchronized with stride:
-        # Alternates seamlessly between reaching stride (hop_start) and ground contact (hop_land)
-        return "hop_start" if math.sin(walk_time * 12) > 0 else "hop_land"
+        # Smooth 4-stage quadruped gallop cycle: reach -> flight leap -> ground plant -> drive stride
+        phase = int((walk_time * 8) % 4)
+        if phase == 0:
+            return "hop_start"
+        if phase == 1:
+            return "hop_air"
+        if phase == 2:
+            return "hop_land"
+        return "happy"
     if blink:
         return "smile"
     if now % 7.0 < 1.8:

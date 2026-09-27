@@ -226,10 +226,17 @@
         else if (petX <= 20) { petX = 20; facing = 1; }
 
         const cycle = (tick % 24);
-        if (cycle < 6) currentPose = 'hop_start';
-        else if (cycle < 12) currentPose = 'hop_air';
-        else if (cycle < 18) currentPose = 'hop_land';
-        else currentPose = 'happy';
+        if (currentPet === 'booboo') {
+          if (cycle < 6) currentPose = 'stretch';
+          else if (cycle < 12) currentPose = 'hop_start';
+          else if (cycle < 18) currentPose = 'hop_air';
+          else currentPose = 'hop_land';
+        } else {
+          if (cycle < 6) currentPose = 'hop_start';
+          else if (cycle < 12) currentPose = 'hop_air';
+          else if (cycle < 18) currentPose = 'hop_land';
+          else currentPose = 'happy';
+        }
       } else if (actionOverride) {
         currentPose = actionOverride;
         actionTimer--;

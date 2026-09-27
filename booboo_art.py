@@ -44,6 +44,7 @@ def choose_pose(
     blink: bool,
     resting_remaining: float,
     paused: bool,
+    walk_time: float = 0.0,
 ) -> str:
     """Hold distinct takeoff, midair, and landing frames during each hop."""
     if paused:
@@ -64,8 +65,13 @@ def choose_pose(
         return "sleepy"
     if blink:
         return "smile"
-    if walking and now % 5.2 < 0.55:
-        return "happy"
+    if walking:
+        if now % 5.2 < 0.55:
+            return "happy"
+        if walk_time > 0:
+            phase = int((walk_time * 8) % 4)
+            mapping = {0: "stretch", 1: "hop_start", 2: "hop_air", 3: "hop_land"}
+            return mapping[phase]
     return "idle"
 
 
