@@ -18,7 +18,10 @@ python3 -m PyInstaller \
     --name BooBoo \
     --osx-bundle-identifier com.panithan1991.booboo \
     --icon icons/booboo.png \
-    --add-data 'assets:assets' \
+    --add-data 'assets/booboo-motion.png:assets' \
+    --add-data 'assets/booboo-motion-left.png:assets' \
+    --add-data 'assets/moo-krata-motion.png:assets' \
+    --add-data 'assets/moo-krata-motion-left.png:assets' \
     desktop_pet.py
 
 test -x dist/BooBoo.app/Contents/MacOS/BooBoo

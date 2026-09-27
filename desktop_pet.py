@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import math
+from pathlib import Path
 import random
 import sys
 import time
@@ -25,7 +26,7 @@ from window_style import configure_overlay, configure_pet_window
 WIDTH = 184
 HEIGHT = 174
 OUTLINE = "#30394f"
-PET_CHARACTERS = frozenset({"bunny", "moo"})
+PET_CHARACTERS = frozenset({"bunny", "mookrata"})
 GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", *PET_CHARACTERS})
 
 
@@ -79,8 +80,22 @@ class DesktopPet:
         self.topmost_var = tk.BooleanVar(value=True)
         self.auto_power_var = tk.BooleanVar(value=True)
         self.power_interval_var = tk.IntVar(value=5)
-        self.character_var = tk.StringVar(value="bunny")
-        self.current_character = "bunny"
+        default_character = "bunny"
+        if "mookrata" in Path(sys.argv[0]).stem.lower() or "--mookrata" in sys.argv[1:]:
+            default_character = "mookrata"
+        for argument in sys.argv[1:]:
+            if argument.startswith("--character="):
+                requested = argument.split("=", 1)[1]
+                if requested == "moo":
+                    requested = "mookrata"
+                if requested in PET_CHARACTERS:
+                    default_character = requested
+        self.character_var = tk.StringVar(value=default_character)
+        self.current_character = default_character
+        if default_character == "mookrata":
+            self.idle_until = self.last_tick + 5.0
+            self.next_idle = self.idle_until + 4.0
+            self.next_jump = self.last_tick + self.random.uniform(8, 13)
         self.speed_var = tk.StringVar(value="normal")
         self.pet_sprites = {name: PetSprites(root, name) for name in PET_CHARACTERS}
 
@@ -148,7 +163,7 @@ class DesktopPet:
         )
         menu.add_radiobutton(
             label="Moo Krata ลูกสุนัข", variable=self.character_var,
-            value="moo", command=self._set_character,
+            value="mookrata", command=self._set_character,
         )
         speed_menu = tk.Menu(menu, tearoff=False)
         for label, value in (("ช้า", "slow"), ("ปกติ", "normal"), ("เร็ว", "fast")):
@@ -264,7 +279,7 @@ class DesktopPet:
     def _jump_now(self) -> None:
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
-            delay = self.random.uniform(12, 18) if self.current_character == "bunny" else (self.random.uniform(8, 13) if self.current_character == "moo" else self.random.uniform(3, 6))
+            delay = self.random.uniform(12, 18) if self.current_character == "bunny" else (self.random.uniform(8, 13) if self.current_character == "mookrata" else self.random.uniform(3, 6))
             self.next_jump = time.monotonic() + delay
 
     def _shoot_click(self, _event: tk.Event) -> str:
@@ -371,7 +386,7 @@ class DesktopPet:
                         self.next_jump = now + (
                             self.random.uniform(8, 12)
                             if self.current_character == "bunny"
-                            else (self.random.uniform(8, 13) if self.current_character == "moo" else self.random.uniform(3.5, 6.5))
+                            else (self.random.uniform(8, 13) if self.current_character == "mookrata" else self.random.uniform(3.5, 6.5))
                         )
                     was_airborne = self.jump.airborne
                     if not self.motion.paused:

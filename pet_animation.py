@@ -9,7 +9,7 @@ REST_POSES = {
         ("idle", "curious", "sniff", "alert", "yawn"),
         ("happy", "wave", "stretch", "playbow", "blink"),
     ),
-    "moo": (
+    "mookrata": (
         ("idle", "happy", "tilt_left", "awake_rest", "sleep"),
         ("happy_sit", "paw_up", "tilt_right", "curled_sleep", "stretch"),
         ("sniff_low", "sniff_air", "sniff_close", "playbow", "playbow_two"),
@@ -17,7 +17,7 @@ REST_POSES = {
 }
 WALK_POSES = {
     "bunny": ("side_idle", "run_a", "run_b", "run_a"),
-    "moo": ("stand_3q", "trot_a", "run_a", "trot_b", "run_b", "stand_side"),
+    "mookrata": ("stand_3q", "trot_a", "run_a", "trot_b", "run_b", "stand_side"),
 }
 ROLL_POSES = ("crouch", "roll_a", "roll_b", "roll_c", "dizzy", "playbow")
 

@@ -17,7 +17,7 @@ POSES = {
         "roll_b", "roll_c", "dizzy", "playbow", "wave",
         "groom", "yawn", "sniff", "alert", "loaf",
     ),
-    "moo": (
+    "mookrata": (
         "idle", "happy", "playbow", "hop", "run_a",
         "run_b", "tilt", "sleep", "stand_3q", "stand_side",
         "paw_up", "tilt_left", "tilt_right", "sniff_low", "sniff_air",
@@ -25,13 +25,14 @@ POSES = {
         "trot_a", "trot_b", "hop_two", "land", "sniff_close",
     ),
 }
-FILENAME = {"bunny": "booboo-motion", "moo": "moo-krata-motion"}
+FILENAME = {"bunny": "booboo-motion", "mookrata": "moo-krata-motion"}
 
 
 def atlas_path(character: str, facing: int, platform: str | None = None) -> Path:
     platform = sys.platform if platform is None else platform
     suffix = ("-left" if facing < 0 else "") + ("-windows" if platform == "win32" else "")
-    return Path(__file__).parent / "assets" / f"{FILENAME[character]}{suffix}.png"
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+    return base / "assets" / f"{FILENAME[character]}{suffix}.png"
 
 
 class PetSprites:

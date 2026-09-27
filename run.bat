@@ -1,5 +1,9 @@
 @echo off
 cd /d "%~dp0"
+if exist "%~dp0MooKrata.exe" (
+    start "" "%~dp0MooKrata.exe"
+    exit /b 0
+)
 for /f "delims=" %%P in ('where python 2^>nul') do (
     "%%P" -c "import tkinter as tk; root = tk.Tk(); root.destroy()" >nul 2>nul
     if not errorlevel 1 (

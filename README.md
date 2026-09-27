@@ -6,15 +6,21 @@
 
 เปิดหน้า [Releases](https://github.com/panithan1991/cute-desktop-pet/releases/latest) แล้วเลือกไฟล์ที่ตรงกับเครื่อง:
 
-- **Windows 10/11:** `BooBoo-Windows.zip` แตก ZIP แล้วเปิด `BooBoo/BooBoo.exe`
-- **Mac ชิป M:** `BooBoo-macOS-Apple-Silicon.zip` แตก ZIP แล้วเปิด `BooBoo.app`
-- **Mac ชิป Intel:** `BooBoo-macOS-Intel.zip` แตก ZIP แล้วเปิด `BooBoo.app`
+- **Windows 10/11:** `CuteDesktopPet-Windows.zip` แตก ZIP แล้วเปิด `BooBoo.exe` หรือ `MooKrata.exe`
+- **Mac ชิป M:** `CuteDesktopPet-macOS-Apple-Silicon.zip` แตก ZIP แล้วเปิด `BooBoo.app`
+- **Mac ชิป Intel:** `CuteDesktopPet-macOS-Intel.zip` แตก ZIP แล้วเปิด `BooBoo.app`
 
 ไฟล์ดาวน์โหลดรวม Python, Tk และภาพทั้งหมดไว้แล้ว **ไม่ต้องติดตั้ง Python หรือใช้ Terminal** คลิกขวาที่ตัวละครเพื่อเปลี่ยนระหว่าง BooBoo, Moo Krata และตัวอื่น ๆ
 
 แอปเวอร์ชันฟรีนี้ยังไม่ได้ลงนามและรับรองโดย Apple หาก macOS บล็อกครั้งแรก ให้ไปที่ **System Settings → Privacy & Security → Open Anyway** แล้วยืนยัน **Open** ตาม[คำแนะนำของ Apple](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac) ครั้งถัดไปเปิดตามปกติได้
 
 หากดับเบิลคลิกแล้วไม่เห็น BooBoo ให้ตรวจว่าดาวน์โหลด ZIP จากหน้า **Releases** ที่ตรงกับชิป Mac (ไม่ใช่ **Code → Download ZIP**) และเปิด `BooBoo.app` จากโฟลเดอร์ที่แตกไฟล์แล้ว ลอง **Control+คลิก `BooBoo.app` → Open** หนึ่งครั้ง หากยังไม่ขึ้น ให้ดูข้อความใน `~/Library/Logs/BooBoo/startup.log` (ถ้ามี) แล้วแจ้งรุ่น macOS ชิป Mac และข้อความผิดพลาดนั้น เพื่อให้ตรวจสาเหตุบนเครื่องได้
+
+ทดลองดูการเคลื่อนไหวในเว็บได้จาก [index.html](index.html) โดยเปิดไฟล์ในเบราว์เซอร์ ตัวจริงที่เดินบนหน้าจอเดสก์ท็อปให้ใช้ไฟล์ดาวน์โหลดด้านบน
+
+| BooBoo | Moo Krata |
+|:---:|:---:|
+| ![BooBoo เคลื่อนไหว](assets/booboo-animation.gif) | ![Moo Krata เคลื่อนไหว](assets/mookrata-animation.gif) |
 
 ![ท่าทาง BooBoo ทั้ง 25 ท่าที่ใช้ในแอป](assets/booboo-motion.png)
 

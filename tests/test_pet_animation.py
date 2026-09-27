@@ -41,9 +41,9 @@ class PetAnimationTests(unittest.TestCase):
         self.assertEqual(pose("bunny", airborne=True, jump_velocity=245), "hop_up")
         self.assertEqual(pose("bunny", airborne=True, jump_velocity=-245), "hop_air")
         self.assertEqual(pose("bunny", landed=True), "crouch")
-        self.assertEqual(pose("moo", airborne=True, jump_velocity=300), "hop")
-        self.assertEqual(pose("moo", airborne=True, jump_velocity=-300), "hop_two")
-        self.assertEqual(pose("moo", landed=True), "land")
+        self.assertEqual(pose("mookrata", airborne=True, jump_velocity=300), "hop")
+        self.assertEqual(pose("mookrata", airborne=True, jump_velocity=-300), "hop_two")
+        self.assertEqual(pose("mookrata", landed=True), "land")
 
     def test_atlases_have_25_clear_frames_and_correct_left_facing(self):
         for character in POSES:

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cute Desktop Pet 🐾 Moo Krata & BooBoo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Prompt", sans-serif;
+      background: linear-gradient(135deg, #1e2638 0%, #0f1422 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+    header {
+      text-align: center;
+      padding: 30px 20px 10px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #ffb380, #ffd166, #06d6a0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.subtitle {
+      color: #a0aec0;
+      font-size: 1.05rem;
+    }
+    .playground {
+      position: relative;
+      width: 90vw;
+      max-width: 900px;
+      height: 380px;
+      margin: 25px auto;
+      background: rgba(255, 255, 255, 0.04);
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+    .ground-line {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+    #pet-canvas {
+      position: absolute;
+      bottom: 25px;
+      left: 100px;
+      width: 140px;
+      height: 140px;
+      cursor: grab;
+      user-select: none;
+      filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4));
+    }
+    #pet-canvas:active { cursor: grabbing; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .btn {
+      background: #2d3748;
+      color: #fff;
+      border: 1px solid #4a5568;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:hover { background: #4a5568; transform: translateY(-2px); }
+    .btn.active {
+      background: linear-gradient(135deg, #e53e3e, #dd6b20);
+      border-color: transparent;
+      font-weight: bold;
+    }
+    .downloads {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 25px 30px;
+      max-width: 800px;
+      width: 90vw;
+      margin: 10px auto 40px;
+      text-align: center;
+    }
+    .downloads h3 { margin-bottom: 15px; font-size: 1.25rem; }
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .dl-card {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.25s ease;
+    }
+    .dl-card:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: #ffd166;
+      transform: translateY(-3px);
+    }
+    .dl-icon { font-size: 2rem; }
+    .dl-title { font-weight: bold; font-size: 1rem; }
+    .dl-desc { font-size: 0.8rem; color: #a0aec0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cute Desktop Pet 🐾</h1>
+    <p class="subtitle">สถาปัตยกรรมที่เปิดเล่นได้ทันทีบน Mac ทุกรุ่น (Apple Silicon & Intel) และ Windows</p>
+  </header>
+
+  <div class="controls">
+    <button class="btn active" id="btn-mookrata" onclick="switchPet('mookrata')">🐶 Moo Krata (หมูกระทะ)</button>
+    <button class="btn" id="btn-booboo" onclick="switchPet('booboo')">🐰 BooBoo (กระต่าย)</button>
+    <button class="btn" onclick="triggerAction('jump')">🦘 กระโดด</button>
+    <button class="btn" onclick="triggerAction('stretch')">✨ ชวนเล่น / ยืดเส้น</button>
+    <button class="btn" onclick="triggerAction('sleep')">💤 พักผ่อน</button>
+    <button class="btn" onclick="togglePause()">⏯️ พัก/เดินต่อ</button>
+  </div>
+
+  <div class="playground" id="playground">
+    <div class="ground-line"></div>
+    <canvas id="pet-canvas" width="140" height="140"></canvas>
+  </div>
+
+  <div class="downloads">
+    <h3>📥 ดาวน์โหลดแอปติดตั้งบนคอมพิวเตอร์ (ไม่ต้องลง Python)</h3>
+    <div class="download-grid">
+      <a class="dl-card" href="https://github.com/panithan1991/cute-desktop-pet/releases/latest" target="_blank">
+        <span class="dl-icon">🪟</span>
+        <span class="dl-title">Windows 10 / 11</span>
+        <span class="dl-desc">CuteDesktopPet-Windows.zip (ไฟล์ .exe เปิดได้เลย)</span>
+      </a>
+      <a class="dl-card" href="https://github.com/panithan1991/cute-desktop-pet/releases/latest" target="_blank">
+        <span class="dl-icon">🍏</span>
+        <span class="dl-title">Mac Apple Silicon</span>
+        <span class="dl-desc">Mac ชิป Apple Silicon</span>
+      </a>
+      <a class="dl-card" href="https://github.com/panithan1991/cute-desktop-pet/releases/latest" target="_blank">
+        <span class="dl-icon">💻</span>
+        <span class="dl-title">Mac Intel</span>
+        <span class="dl-desc">Mac ชิป Intel</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('pet-canvas');
+    const ctx = canvas.getContext('2d');
+    const playground = document.getElementById('playground');
+
+    const POSES = {
+      booboo: ['idle','blink','happy','sleep','hop_up','hop_air','curious','tilt','stretch','sit','side_idle','run_a','run_b','crouch','roll_a','roll_b','roll_c','dizzy','playbow','wave','groom','yawn','sniff','alert','loaf'],
+      mookrata: ['idle','happy','playbow','hop','run_a','run_b','tilt','sleep','stand_3q','stand_side','paw_up','tilt_left','tilt_right','sniff_low','sniff_air','happy_sit','awake_rest','curled_sleep','stretch','playbow_two','trot_a','trot_b','hop_two','land','sniff_close']
+    };
+    const REST = {
+      booboo: [
+        ['sit','tilt','groom','loaf','sleep'],
+        ['idle','curious','sniff','alert','yawn'],
+        ['happy','wave','stretch','playbow','blink']
+      ],
+      mookrata: [
+        ['idle','happy','tilt_left','awake_rest','sleep'],
+        ['happy_sit','paw_up','tilt_right','curled_sleep','stretch'],
+        ['sniff_low','sniff_air','sniff_close','playbow','playbow_two']
+      ]
+    };
+    const WALK = {
+      booboo: ['side_idle','run_a','run_b','run_a'],
+      mookrata: ['stand_3q','trot_a','run_a','trot_b','run_b','stand_side']
+    };
+    const ROLL = ['crouch','roll_a','roll_b','roll_c','dizzy','playbow'];
+    const sheets = {right: new Image(), left: new Image()};
+    let currentPet = 'mookrata';
+    let currentPose = 'idle';
+    let petX = 100;
+    let facing = 1;
+    let speed = 80;
+    let paused = false;
+    let mode = 'rest';
+    let modeStart = performance.now();
+    let modeDuration = 5000;
+    let restVariant = 0;
+    let walkTime = 0;
+    let actionOverride = null;
+    let actionUntil = 0;
+    let rollStart = 0;
+    let jumpHeight = 0;
+    let jumpVelocity = 0;
+    let lastFrame = performance.now();
+    let isDragging = false;
+
+    function loadPetSheet(pet) {
+      currentPet = pet;
+      const basename = pet === 'mookrata' ? 'moo-krata-motion' : 'booboo-motion';
+      sheets.right.src = 'assets/' + basename + '.png';
+      sheets.left.src = 'assets/' + basename + '-left.png';
+      mode = 'rest';
+      modeStart = performance.now();
+      modeDuration = pet === 'booboo' ? 8000 : 5000;
+      restVariant = Math.floor(Math.random() * 3);
+      actionOverride = null;
+      jumpHeight = 0;
+      jumpVelocity = 0;
+      document.getElementById('btn-mookrata').classList.toggle('active', pet === 'mookrata');
+      document.getElementById('btn-booboo').classList.toggle('active', pet === 'booboo');
+    }
+    function switchPet(pet) { loadPetSheet(pet); }
+    function triggerAction(action) {
+      const now = performance.now();
+      if (action === 'jump') {
+        actionOverride = 'jump';
+        jumpVelocity = currentPet === 'booboo' ? 245 : 300;
+        jumpHeight = 0;
+      } else if (action === 'stretch') {
+        actionOverride = 'stretch';
+        actionUntil = now + 1800;
+      } else if (action === 'sleep') {
+        actionOverride = 'sleep';
+        actionUntil = now + 4500;
+      }
+    }
+    function togglePause() { paused = !paused; }
+    loadPetSheet('mookrata');
+
+    function loop(now) {
+      const dt = Math.min(Math.max((now - lastFrame) / 1000, 0), 0.1);
+      lastFrame = now;
+      const bounds = Math.max(20, playground.clientWidth - 140);
+      if (!paused && !isDragging && actionOverride !== 'jump') {
+        if (now - modeStart >= modeDuration) {
+          mode = mode === 'rest' ? 'walk' : 'rest';
+          modeStart = now;
+          modeDuration = mode === 'rest'
+            ? (currentPet === 'booboo' ? 7000 + Math.random() * 2000 : 4000 + Math.random() * 2000)
+            : (currentPet === 'booboo' ? 1500 + Math.random() * 1500 : 3000 + Math.random() * 2000);
+          if (mode === 'rest') {
+            restVariant = (restVariant + 1) % 3;
+            if (currentPet === 'booboo' && Math.random() < 0.18) {
+              actionOverride = 'roll';
+              rollStart = now;
+              actionUntil = now + 1050;
+            }
+          }
+        }
+        if (mode === 'walk') {
+          petX += speed * facing * dt;
+          walkTime += dt;
+          if (petX >= bounds) { petX = bounds; facing = -1; }
+          if (petX <= 20) { petX = 20; facing = 1; }
+        }
+      }
+
+      if (actionOverride === 'jump') {
+        jumpHeight = Math.max(0, jumpHeight + jumpVelocity * dt - 525 * dt * dt);
+        jumpVelocity -= 1050 * dt;
+        currentPose = currentPet === 'booboo'
+          ? (jumpVelocity > 85 ? 'hop_up' : 'hop_air')
+          : (jumpVelocity > 85 ? 'hop' : 'hop_two');
+        if (jumpHeight === 0 && jumpVelocity < 0) {
+          actionOverride = 'land';
+          actionUntil = now + 250;
+        }
+      } else if (actionOverride && now < actionUntil) {
+        currentPose = actionOverride === 'roll'
+          ? ROLL[Math.min(ROLL.length - 1, Math.floor((now - rollStart) / 1050 * ROLL.length))]
+          : actionOverride === 'stretch' ? 'stretch'
+          : actionOverride === 'sleep' ? (currentPet === 'booboo' ? 'loaf' : 'curled_sleep')
+          : (currentPet === 'booboo' ? 'crouch' : 'land');
+      } else {
+        actionOverride = null;
+        if (paused) {
+          currentPose = currentPet === 'booboo' ? 'loaf' : 'curled_sleep';
+        } else if (mode === 'walk') {
+          const sequence = WALK[currentPet];
+          currentPose = sequence[Math.floor(walkTime * (currentPet === 'booboo' ? 6.8 : 8.5)) % sequence.length];
+        } else {
+          const sequence = REST[currentPet][restVariant];
+          const progress = Math.min(0.999, (now - modeStart) / modeDuration);
+          currentPose = sequence[Math.floor(progress * sequence.length)];
+        }
+      }
+
+      canvas.style.left = petX + 'px';
+      canvas.style.bottom = (25 + jumpHeight) + 'px';
+      ctx.clearRect(0, 0, 140, 140);
+      const sheet = facing < 0 ? sheets.left : sheets.right;
+      const index = POSES[currentPet].indexOf(currentPose);
+      if (sheet.complete && sheet.naturalWidth === 800 && index >= 0) {
+        ctx.drawImage(sheet, (index % 5) * 160, Math.floor(index / 5) * 160,
+                      160, 160, 0, 0, 140, 140);
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    // Interactive Drag
+    let startX = 0;
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX - petX;
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      petX = Math.max(20, Math.min(playground.clientWidth - 140, e.clientX - startX));
+    });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+  </script>
+</body>
+</html>

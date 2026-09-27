@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 from pathlib import Path
 import struct
+import sys
 import tkinter as tk
 import zlib
 
@@ -43,6 +44,7 @@ def choose_pose(
     blink: bool,
     resting_remaining: float,
     paused: bool,
+    walk_time: float = 0.0,
 ) -> str:
     """Hold distinct takeoff, midair, and landing frames during each hop."""
     if paused:
@@ -63,8 +65,13 @@ def choose_pose(
         return "sleepy"
     if blink:
         return "smile"
-    if walking and now % 5.2 < 0.55:
-        return "happy"
+    if walking:
+        if now % 5.2 < 0.55:
+            return "happy"
+        if walk_time > 0:
+            phase = int((walk_time * 8) % 4)
+            mapping = {0: "stretch", 1: "hop_start", 2: "hop_air", 3: "hop_land"}
+            return mapping[phase]
     return "idle"
 
 
@@ -151,7 +158,8 @@ class BooBooSprites:
     """Keep all Tk frames alive and mirror them for left-facing movement."""
 
     def __init__(self, root: tk.Misc) -> None:
-        path = Path(__file__).parent / "assets" / "booboo-sprites.png"
+        base_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+        path = base_dir / "assets" / "booboo-sprites.png"
         width, height, pixels = _read_rgba_png(path)
         expected = CELL_SIZE * GRID_SIZE
         if (width, height) != (expected, expected):
