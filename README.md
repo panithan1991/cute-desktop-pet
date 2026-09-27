@@ -1,5 +1,7 @@
 # Cute Desktop Pet
 
+[![Mac and Windows builds](https://github.com/panithan1991/cute-desktop-pet/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/panithan1991/cute-desktop-pet/actions/workflows/release.yml)
+
 BooBoo the rabbit and Moo Krata the puppy live on your desktop. Each has 25 poses, including resting, head tilts, walking, and occasional hops. Seven other characters are available from the pet's menu.
 
 | BooBoo | Moo Krata |
@@ -16,7 +18,9 @@ Choose a ZIP from the [latest release](https://github.com/panithan1991/cute-desk
 
 Extract the ZIP. On Windows, open `BooBoo.exe` or `MooKrata.exe`. On Mac, open `BooBoo.app`. The downloads include Python, Tk, and the artwork. Right-click the pet (or Control-click on Mac) to switch characters, pause, or quit. Drag it to move it.
 
-The Mac app is not Apple-notarized. If macOS blocks its first launch, open **System Settings → Privacy & Security → Open Anyway**. If it still does not appear, check `~/Library/Logs/BooBoo/startup.log`.
+Every release ZIP has a [SHA-256 checksum](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/SHA256SUMS.txt) and a GitHub build attestation. Compare `Get-FileHash FILE.zip -Algorithm SHA256` (Windows) or `shasum -a 256 FILE.zip` (Mac) with the checksum file. To confirm the build came from this repository, run `gh attestation verify FILE.zip -R panithan1991/cute-desktop-pet` with the [GitHub CLI](https://cli.github.com/).
+
+These checks do not replace OS publisher verification. Windows may warn about the unsigned executables. The Mac app is not Apple-notarized; if macOS blocks its first launch, open **System Settings → Privacy & Security → Open Anyway**. If it still does not appear, check `~/Library/Logs/BooBoo/startup.log`.
 
 ## Run from source
 

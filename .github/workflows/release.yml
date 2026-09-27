@@ -12,6 +12,10 @@ jobs:
   build-macos:
     name: Build macOS ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -46,6 +50,11 @@ jobs:
         run: |
           ditto -c -k --sequesterRsrc --keepParent dist/BooBoo.app "CuteDesktopPet-macOS-${{ matrix.arch }}.zip"
           shasum -a 256 "CuteDesktopPet-macOS-${{ matrix.arch }}.zip"
+      - name: Attest Mac download
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest@v4
+        with:
+          subject-path: CuteDesktopPet-macOS-${{ matrix.arch }}.zip
       - name: Check downloaded app visibly opens
         shell: bash
         run: |
@@ -79,6 +88,10 @@ jobs:
   build-windows:
     name: Build Windows x64
     runs-on: windows-2022
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v6
@@ -102,6 +115,11 @@ jobs:
             }
             if ($process.ExitCode -ne 0) { throw "$name.exe exited $($process.ExitCode)" }
           }
+      - name: Attest Windows download
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest@v4
+        with:
+          subject-path: CuteDesktopPet-Windows.zip
       - uses: actions/upload-artifact@v4
         with:
           name: CuteDesktopPet-Windows
@@ -127,7 +145,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ls release-files/*.zip
-          gh release create "$GITHUB_REF_NAME" release-files/*.zip \
+          cd release-files
+          sha256sum -- *.zip > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          cd ..
+          gh release create "$GITHUB_REF_NAME" release-files/*.zip release-files/SHA256SUMS.txt \
             --verify-tag --latest --title "Cute Desktop Pet $GITHUB_REF_NAME" \
             --generate-notes --repo "$GITHUB_REPOSITORY"
