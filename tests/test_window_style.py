@@ -1,10 +1,33 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from window_style import configure_overlay
+from window_style import configure_overlay, configure_pet_window
 
 
 class WindowStyleTests(unittest.TestCase):
+    def test_mac_pet_uses_native_floating_window_on_all_spaces(self):
+        window = Mock()
+        window._w = "."
+        configure_pet_window(window, "darwin")
+        window.tk.call.assert_called_once_with(
+            "::tk::unsupported::MacWindowStyle", "style", ".",
+            "floating", "noTitleBar noShadow canJoinAllSpaces",
+        )
+        window.overrideredirect.assert_not_called()
+
+    def test_mac_pet_falls_back_for_older_aqua_tk(self):
+        import tkinter as tk
+
+        window = Mock()
+        window.tk.call.side_effect = tk.TclError("unknown window style")
+        configure_pet_window(window, "darwin")
+        window.overrideredirect.assert_called_once_with(True)
+
+    def test_windows_pet_keeps_borderless_window(self):
+        window = Mock()
+        configure_pet_window(window, "win32")
+        window.overrideredirect.assert_called_once_with(True)
+
     def test_windows_uses_color_key(self):
         window = Mock()
         background = configure_overlay(window, "win32")

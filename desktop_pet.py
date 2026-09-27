@@ -18,7 +18,7 @@ from storybook_art import (
 )
 from pet_motion import FlightMotion, JumpMotion, PetMotion
 from power_effects import AutoPowerTimer, SPECIAL_POWERS, PowerEffectView, launch_power
-from window_style import configure_overlay
+from window_style import configure_overlay, configure_pet_window
 
 
 WIDTH = 184
@@ -77,7 +77,7 @@ class DesktopPet:
         self.speed_var = tk.StringVar(value="normal")
         self.booboo_sprites = BooBooSprites(root)
 
-        root.overrideredirect(True)
+        configure_pet_window(root)
         root.wm_attributes("-topmost", True)
         background = configure_overlay(root)
         self.canvas = tk.Canvas(
