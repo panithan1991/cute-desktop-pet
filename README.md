@@ -20,15 +20,13 @@ Named behaviors, recent activity memory, and cooldowns vary the routine. Painted
 
 <img src="assets/readme/dragon-cloud-scene.png" alt="Smoke rings merge into a distant cloud; green reflections and excited reaction during ignition — still examples" width="1100">
 
-New dragon behaviors are currently available from source on **main**; release downloads will be updated in a later release.
-
 ## Download
 
-Choose a ZIP from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
+Download **v0.11.0** from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
 
 | Download for Window | Download for MAC |
 | --- | --- |
-| [Windows 10/11 ZIP](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-Windows.zip) | [Apple Silicon ZIP](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Apple-Silicon.zip) · [Intel ZIP](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Intel.zip) |
+| [Download Windows — v0.11.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-Windows.zip) | [Download Mac Apple Silicon — v0.11.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Apple-Silicon.zip) · [Download Mac Intel — v0.11.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Intel.zip) |
 
 Extract the ZIP. On Windows, open one of the included pet executables. On Mac, open the included app and choose a character from the pet menu. The downloads include Python, Tk, and the artwork. Right-click the pet (or Control-click on Mac) to switch characters, trigger a playful roll, pause, or quit. Drag it to move it.
 
