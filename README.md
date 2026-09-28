@@ -4,9 +4,13 @@
 
 A rabbit, a puppy, a bald eagle, and a fluffy tabby kitten live on your desktop. Each has 85 animation frames, long walks and naps, occasional small head tilts, and playful rolls. Ground pets sometimes make a short run; the eagle flies across and up the screen before landing. Activities vary in order, duration, and pace. Seven other characters are available from the menu.
 
+The sleepy black dragon has 100 frames for breathing, blinking, tail movements, wing stretches, smoke rings, tiny flames, hovering, yawning, and curling up to sleep. Its wings, tail, flames, and smoke stay inside the pet window.
+
 | Rabbit | Puppy | Bald Eagle | Tabby Kitten |
 | :---: | :---: | :---: | :---: |
 | <img src="assets/readme/booboo.gif" alt="White rabbit animation" width="150"> | <img src="assets/readme/moo-krata.gif" alt="Puppy animation" width="150"> | <img src="assets/readme/bibi.gif" alt="Bald eagle animation" width="150"> | <img src="assets/readme/kitten.gif" alt="Tabby kitten animation" width="150"> |
+
+<img src="assets/readme/dragon.gif" alt="Sleepy black dragon: 100 animation frames" width="170">
 
 ## Download
 

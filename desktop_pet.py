@@ -12,6 +12,7 @@ import tkinter as tk
 
 from app.pet_animation import choose_pet_pose
 from app.pet_behavior import PetBehavior
+from app.dragon_animation import DragonBehavior
 from app.bibi_animation import choose_bibi_pose
 from app.pet_sprites import PetSprites
 from app.fantasy_art import draw_trail_scout
@@ -29,7 +30,8 @@ WIDTH = 184
 HEIGHT = 174
 OUTLINE = "#30394f"
 GROUND_PETS = frozenset({"bunny", "mookrata", "kitten"})
-PET_CHARACTERS = GROUND_PETS | {"bibi"}
+AIR_PETS = frozenset({"bibi", "dragon"})
+PET_CHARACTERS = GROUND_PETS | AIR_PETS
 GROUND_JUMPERS = GROUND_PETS | {"guardian", "moss", "astral", "trail", "ember"}
 
 
@@ -61,6 +63,8 @@ class DesktopPet:
         self.jump = JumpMotion(launch_speed=245, gravity=1050)
         self.flight = FlightMotion(self.x, self.y)
         self.bibi_flight = BibiFlightMotion(self.x, self.y, auto_launch=False)
+        self.dragon_flight = BibiFlightMotion(self.x, self.y, speed=55, auto_launch=False,
+                                             altitude_range=(0.72, 0.85))
         self.dragging = False
         self.drag_offset = (0, 0)
         self.running = True
@@ -86,6 +90,8 @@ class DesktopPet:
             default_character = "bibi"
         if "kitten" in Path(sys.argv[0]).stem.lower() or "--kitten" in sys.argv[1:]:
             default_character = "kitten"
+        if "dragon" in Path(sys.argv[0]).stem.lower() or "--dragon" in sys.argv[1:]:
+            default_character = "dragon"
         for argument in sys.argv[1:]:
             if argument.startswith("--character="):
                 requested = argument.split("=", 1)[1]
@@ -95,7 +101,8 @@ class DesktopPet:
                     default_character = requested
         self.character_var = tk.StringVar(value=default_character)
         self.current_character = default_character
-        self.behavior = PetBehavior(default_character, self.random)
+        self.behavior = (DragonBehavior(self.random) if default_character == "dragon"
+                         else PetBehavior(default_character, self.random))
         if default_character == "mookrata":
             self.jump.launch_speed = 300
         self.speed_var = tk.StringVar(value="normal")
@@ -175,6 +182,8 @@ class DesktopPet:
             label="ลูกแมวลายขนฟู", variable=self.character_var,
             value="kitten", command=self._set_character,
         )
+        menu.add_radiobutton(label="มังกรดำขี้เซา", variable=self.character_var,
+                             value="dragon", command=self._set_character)
         speed_menu = tk.Menu(menu, tearoff=False)
         for label, value in (("ช้า", "slow"), ("ปกติ", "normal"), ("เร็ว", "fast")):
             speed_menu.add_radiobutton(
@@ -201,10 +210,11 @@ class DesktopPet:
             )
         menu.add_cascade(label="ความถี่ใช้พลัง", menu=interval_menu, state="disabled")
         self.power_interval_menu_index = menu.index("end")
-        menu.add_command(label="บิน" if self.current_character == "bibi" else "กระโดด",
+        menu.add_command(label="บิน" if self.current_character in AIR_PETS else "กระโดด",
                          command=self._jump_now)
         self.jump_menu_index = menu.index("end")
-        menu.add_command(label="กลิ้งเล่น / นอนหงาย", command=self._roll_now)
+        menu.add_command(label="ขดตัวนอน" if self.current_character == "dragon" else "กลิ้งเล่น / นอนหงาย",
+                         command=self._roll_now)
         self.roll_menu_index = menu.index("end")
         menu.add_command(label="ยิงพลัง", command=self._fire_now, state="disabled")
         self.fire_menu_index = menu.index("end")
@@ -225,6 +235,7 @@ class DesktopPet:
         self.motion.paused = self.paused_var.get()
         self.flight.paused = self.paused_var.get()
         self.bibi_flight.paused = self.paused_var.get()
+        self.dragon_flight.paused = self.paused_var.get()
 
     def _set_topmost(self) -> None:
         topmost = self.topmost_var.get()
@@ -240,6 +251,7 @@ class DesktopPet:
         self.motion.speed = {"slow": 38, "normal": 65, "fast": 105}[self.speed_var.get()]
         self.flight.speed = {"slow": 85, "normal": 145, "fast": 220}[self.speed_var.get()]
         self.bibi_flight.speed = {"slow": 58, "normal": 95, "fast": 145}[self.speed_var.get()]
+        self.dragon_flight.speed = {"slow": 35, "normal": 55, "fast": 85}[self.speed_var.get()]
 
     def _reset_power_timer(self) -> None:
         self.power_timer.reset(time.monotonic(), self.power_interval_var.get())
@@ -258,11 +270,12 @@ class DesktopPet:
             self.y = self.base_y
             self.motion.x = self.x
             self.jump.reset()
-        if character == "bibi":
+        if character in AIR_PETS:
             self.base_y = bottom - HEIGHT
-            self.bibi_flight.reset(self.x, self.base_y)
+            bird = self.dragon_flight if character == "dragon" else self.bibi_flight
+            bird.reset(self.x, self.base_y)
             self.y = self.base_y
-        elif self.current_character == "bibi" and character != "ship":
+        elif self.current_character in AIR_PETS and character != "ship":
             self.base_y = bottom - HEIGHT
             self.y = self.base_y
             self.motion.x = self.x
@@ -279,7 +292,8 @@ class DesktopPet:
             self.next_idle = time.monotonic() + self.random.uniform(7, 12)
         self.current_character = character
         if character in PET_CHARACTERS:
-            self.behavior = PetBehavior(character, self.random)
+            self.behavior = (DragonBehavior(self.random) if character == "dragon"
+                             else PetBehavior(character, self.random))
             self.walk_time = 0.0
             for view in self.effects:
                 view.close()
@@ -294,17 +308,20 @@ class DesktopPet:
             label=SPECIAL_POWERS.get(character, ("", "พลังพิเศษ"))[1],
             state="normal" if character in SPECIAL_POWERS else "disabled",
         )
-        self.menu.entryconfig(self.jump_menu_index, label="บิน" if character == "bibi" else "กระโดด",
-                              state="normal" if character in GROUND_JUMPERS or character == "bibi" else "disabled")
-        self.menu.entryconfig(self.roll_menu_index, state="normal" if character in PET_CHARACTERS else "disabled")
+        self.menu.entryconfig(self.jump_menu_index, label="บิน" if character in AIR_PETS else "กระโดด",
+                              state="normal" if character in GROUND_JUMPERS or character in AIR_PETS else "disabled")
+        self.menu.entryconfig(self.roll_menu_index,
+                              label="ขดตัวนอน" if character == "dragon" else "กลิ้งเล่น / นอนหงาย",
+                              state="normal" if character in PET_CHARACTERS else "disabled")
         self._place_window()
         self._redraw()
 
     def _jump_now(self) -> None:
-        if self.current_character == "bibi":
-            if self.bibi_flight.launch():
+        if self.current_character in AIR_PETS:
+            bird = self.dragon_flight if self.current_character == "dragon" else self.bibi_flight
+            if bird.launch():
                 self.behavior.force("walk")
-                self.bibi_flight.cruise_duration = self.behavior.duration
+                bird.cruise_duration = self.behavior.duration
             return
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
@@ -318,9 +335,10 @@ class DesktopPet:
     def _roll_now(self) -> None:
         if self.paused_var.get() or self.dragging:
             return
-        if self.current_character == "bibi":
-            if self.bibi_flight.state == "rest":
-                self.behavior.force("roll")
+        if self.current_character in AIR_PETS:
+            bird = self.dragon_flight if self.current_character == "dragon" else self.bibi_flight
+            if bird.state == "rest":
+                self.behavior.force("sleep" if self.current_character == "dragon" else "roll")
             return
         if self.current_character not in GROUND_PETS or self.jump.airborne:
             return
@@ -350,6 +368,7 @@ class DesktopPet:
         self.jump.reset()
         self.flight.y = self.y
         self.bibi_flight.reset(self.x, self.y)
+        self.dragon_flight.reset(self.x, self.y)
         self._place_window()
 
     def _start_drag(self, event: tk.Event) -> None:
@@ -366,6 +385,8 @@ class DesktopPet:
         self.flight.y = self.y
         self.bibi_flight.x = self.x
         self.bibi_flight.y = self.y
+        self.dragon_flight.x = self.x
+        self.dragon_flight.y = self.y
         if self.current_character != "ship":
             self.base_y = self.y
         self._place_window()
@@ -401,16 +422,17 @@ class DesktopPet:
                 self.x, self.y = self.flight.x, self.flight.y
                 if not self.flight.paused:
                     self.walk_time += min(max(dt, 0), 0.1)
-            elif self.current_character == "bibi":
-                if self.bibi_flight.state == "rest":
-                    self.behavior.step(dt, frozen=self.bibi_flight.paused)
-                    if self.behavior.walking and self.bibi_flight.launch():
-                        self.bibi_flight.cruise_duration = self.behavior.duration
-                was_flying = self.bibi_flight.state != "rest"
-                self.bibi_flight.step(dt, left, top, right - WIDTH, bottom - HEIGHT)
-                if was_flying and self.bibi_flight.state == "rest":
+            elif self.current_character in AIR_PETS:
+                bird = self.dragon_flight if self.current_character == "dragon" else self.bibi_flight
+                if bird.state == "rest":
+                    self.behavior.step(dt, frozen=bird.paused)
+                    if self.behavior.walking and bird.launch():
+                        bird.cruise_duration = self.behavior.duration
+                was_flying = bird.state != "rest"
+                bird.step(dt, left, top, right - WIDTH, bottom - HEIGHT)
+                if was_flying and bird.state == "rest":
                     self.behavior.finish()
-                self.x, self.y = self.bibi_flight.x, self.bibi_flight.y
+                self.x, self.y = bird.x, bird.y
             else:
                 moving = (self.behavior.walking if self.current_character in GROUND_PETS
                           else now >= self.idle_until) or self.jump.airborne
@@ -476,6 +498,11 @@ class DesktopPet:
             self._draw_guardian(canvas, bob, stride, blink, facing, self.jump.airborne)
         elif character == "ship":
             self._draw_ship(canvas, now, self.flight.dx, self.flight.dy)
+        elif character == "dragon":
+            pose = self.behavior.pose(self.dragon_flight.state, self.dragon_flight.elapsed)
+            canvas.create_image(WIDTH // 2, HEIGHT - 2,
+                                image=self.pet_sprites["dragon"].get(pose, self.dragon_flight.direction),
+                                anchor="s")
         elif character == "bibi":
             pose = choose_bibi_pose(self.bibi_flight.state, self.bibi_flight.elapsed,
                                     rest_state=self.behavior.state, rest_elapsed=self.behavior.elapsed,

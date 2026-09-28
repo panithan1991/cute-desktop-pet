@@ -1,19 +1,21 @@
-"""Pre-rendered 85-frame atlases; runtime uses only Tk, not image libraries."""
+"""Pre-rendered pet atlases; runtime uses only Tk, not image libraries."""
 
 from pathlib import Path
 import sys
 import tkinter as tk
 
 from app.animation_clips import ALL_POSES
+from app.dragon_animation import DRAGON_POSES
 
 CELL = 160
 COLUMNS = 5
 FILENAME = {
     "bunny": "booboo-motion", "mookrata": "moo-krata-motion",
-    "bibi": "bibi-motion", "kitten": "kitten-motion",
+    "bibi": "bibi-motion", "kitten": "kitten-motion", "dragon": "dragon-motion",
 }
 GRID_COLUMNS = dict.fromkeys(FILENAME, COLUMNS)
 POSES = dict.fromkeys(FILENAME, ALL_POSES)
+POSES["dragon"] = DRAGON_POSES
 
 
 def atlas_path(character: str, facing: int, platform: str | None = None) -> Path:

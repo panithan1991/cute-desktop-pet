@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0\.."
 
-for %%N in (BooBoo MooKrata Bibi Kitten) do (
+for %%N in (BooBoo MooKrata Bibi Kitten Dragon) do (
     python -m PyInstaller ^
         --noconfirm ^
         --clean ^
@@ -18,9 +18,11 @@ for %%N in (BooBoo MooKrata Bibi Kitten) do (
         --add-data "assets\bibi-motion-left-windows.png;assets" ^
         --add-data "assets\kitten-motion-windows.png;assets" ^
         --add-data "assets\kitten-motion-left-windows.png;assets" ^
+        --add-data "assets\dragon-motion-windows.png;assets" ^
+        --add-data "assets\dragon-motion-left-windows.png;assets" ^
         desktop_pet.py
     if errorlevel 1 exit /b 1
 )
 
-powershell -Command "Compress-Archive -Path dist\MooKrata.exe, dist\BooBoo.exe, dist\Bibi.exe, dist\Kitten.exe -DestinationPath CuteDesktopPet-Windows.zip -Force"
+powershell -Command "Compress-Archive -Path dist\MooKrata.exe, dist\BooBoo.exe, dist\Bibi.exe, dist\Kitten.exe, dist\Dragon.exe -DestinationPath CuteDesktopPet-Windows.zip -Force"
 if errorlevel 1 exit /b %errorlevel%

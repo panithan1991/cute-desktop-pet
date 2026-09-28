@@ -123,6 +123,7 @@ class BibiFlightMotion:
     rest_duration: float = 60.0
     altitude: float = 0.18
     wave_speed: float = 0.5
+    altitude_range: tuple[float, float] = (0.14, 0.28)
     rng: random.Random = field(default_factory=random.Random, repr=False)
 
     def launch(self) -> bool:
@@ -131,7 +132,7 @@ class BibiFlightMotion:
         self.state = "takeoff"
         self.elapsed = 0.0
         self.start_y = self.y
-        self.altitude = self.rng.uniform(0.14, 0.28)
+        self.altitude = self.rng.uniform(*self.altitude_range)
         self.wave_speed = self.rng.uniform(0.35, 0.65)
         return True
 

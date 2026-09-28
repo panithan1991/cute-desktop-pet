@@ -39,17 +39,18 @@ class PetAnimationTests(unittest.TestCase):
     def test_atlases_have_85_unique_padded_frames_and_mirrored_facings(self):
         for character, keys in POSES.items():
             with self.subTest(character=character):
-                self.assertEqual(len(keys), 85)
+                expected = 100 if character == "dragon" else 85
+                self.assertEqual(len(keys), expected)
                 right = Image.open(atlas_path(character, 1, "darwin")).convert("RGBA")
                 left = Image.open(atlas_path(character, -1, "darwin")).convert("RGBA")
                 hard = Image.open(atlas_path(character, 1, "win32")).convert("RGBA")
                 hard_left = Image.open(atlas_path(character, -1, "win32")).convert("RGBA")
-                self.assertEqual(right.size, (5 * CELL, 17 * CELL))
+                self.assertEqual(right.size, (5 * CELL, expected // 5 * CELL))
                 self.assertEqual(left.size, right.size)
                 self.assertEqual(hard.size, right.size)
                 self.assertEqual(set(hard.getchannel("A").tobytes()), {0, 255})
                 unique = set()
-                for index in range(85):
+                for index in range(expected):
                     box = ((index % 5) * CELL, (index // 5) * CELL,
                            (index % 5 + 1) * CELL, (index // 5 + 1) * CELL)
                     frame = right.crop(box)
@@ -61,7 +62,11 @@ class PetAnimationTests(unittest.TestCase):
                     unique.add(frame.tobytes())
                     self.assertEqual(ImageOps.mirror(frame).tobytes(), left.crop(box).tobytes())
                     self.assertEqual(ImageOps.mirror(hard.crop(box)).tobytes(), hard_left.crop(box).tobytes())
-                self.assertEqual(len(unique), 85)
+                if character == "dragon":
+                    # Reused painted endpoints keep transitions consistent.
+                    self.assertGreaterEqual(len(unique), 85)
+                else:
+                    self.assertEqual(len(unique), 85)
 
     def test_bibi_uses_flight_and_rest_clips_without_forced_play_after_every_nap(self):
         reached = set()

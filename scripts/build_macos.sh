@@ -26,6 +26,8 @@ python3 -m PyInstaller \
     --add-data 'assets/bibi-motion-left.png:assets' \
     --add-data 'assets/kitten-motion.png:assets' \
     --add-data 'assets/kitten-motion-left.png:assets' \
+    --add-data 'assets/dragon-motion.png:assets' \
+    --add-data 'assets/dragon-motion-left.png:assets' \
     desktop_pet.py
 
 test -x dist/BooBoo.app/Contents/MacOS/BooBoo
