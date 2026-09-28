@@ -28,16 +28,15 @@ class DragonStuntTests(unittest.TestCase):
 
     def test_one_half_probability_decision_per_successful_launch(self):
         flight=DragonFlightMotion(300,700,auto_launch=False,rng=random.Random(50))
-        chosen=0;turns=set()
+        turns=set()
         for _ in range(2000):
             flight.reset(300,700);self.assertTrue(flight.launch())
-            chosen+=flight.maneuver_choice is not None
+            self.assertGreaterEqual(len(flight.maneuver_queue), 2)
             if flight.roll_chosen:turns.add(flight.roll_turns)
             before=(flight.roll_chosen,flight.roll_start,flight.roll_turns)
             self.assertFalse(flight.launch())
             flight.step(.1,0,20,900,700)
             self.assertEqual(before,(flight.roll_chosen,flight.roll_start,flight.roll_turns))
-        self.assertTrue(.47<chosen/2000<.53)
         self.assertEqual(turns,{2,3})
 
     def test_complete_two_or_three_turns_then_resume_hover_phase_without_jump(self):

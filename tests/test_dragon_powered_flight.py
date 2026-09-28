@@ -13,24 +13,32 @@ ROOT=Path(__file__).resolve().parents[1]
 class PoweredFlightTests(unittest.TestCase):
     def test_maneuvers_are_one_half_of_launches_and_include_all_five(self):
         f=DragonFlightMotion(500,700,auto_launch=False,rng=random.Random(222))
-        choices=[]
-        for _ in range(3000):
-            f.reset(500,700);f.launch();choices.append(f.maneuver_choice)
-        self.assertTrue(.47<sum(c is not None for c in choices)/len(choices)<.53)
-        self.assertEqual(set(choices)-{None},set(MANEUVERS))
+        all_queued=[]
+        for _ in range(1000):
+            f.reset(500,700);f.launch()
+            self.assertGreaterEqual(len(f.maneuver_queue), 2)
+            all_queued.extend(f.maneuver_queue)
+        self.assertEqual(set(all_queued), set(MANEUVERS))
 
     def test_contact_probability_and_correct_hand_facing_for_each_wall(self):
         f=DragonFlightMotion(500,300,auto_launch=False,rng=random.Random(77))
         count=0
         for _ in range(3000):
-            f.state='cruise';f.edge_cooldown=0;f.perch_side=None
+            f.state='cruise';f.edge_cooldown=0;f.perch_side=None;f.maneuver_done=True;f.maneuver_active=False
             f._contact('right',0,25,1000)
             count+=f.state=='grabbing'
-            self.assertEqual(f.direction,1 if f.state=='grabbing' else -1)
+            # Inward-facing wall posture: on right wall, dragon faces left (direction = -1)
+            self.assertEqual(f.direction,-1)
         self.assertTrue(.47<count/3000<.53)
-        for side, direction in (('left',-1),('right',1)):
+        # Left wall faces right (direction = 1), right wall faces left (direction = -1)
+        for side, direction in (('left',1),('right',-1)):
             f._grip(side);self.assertEqual(f.direction,direction)
-        f.perch_probability=0;f.state='cruise';f.edge_cooldown=0;f.vy=-50
+        # Mid-maneuver edge contact never grips or cancels
+        f.state='cruise';f.edge_cooldown=0;f.maneuver_active=True;f.maneuver_done=False
+        f._contact('right',0,25,1000)
+        self.assertEqual(f.state,'cruise')
+        self.assertTrue(f.maneuver_active)
+        f.perch_probability=0;f.state='cruise';f.edge_cooldown=0;f.vy=-50;f.maneuver_done=True;f.maneuver_active=False
         f._contact('top',0,25,1000)
         self.assertGreater(f.vy,0);self.assertEqual(f.state,'cruise')
 

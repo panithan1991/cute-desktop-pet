@@ -57,30 +57,35 @@ def build():
     landing=[frames[POSES['dragon'].index(p)] for p in DRAGON_CLIPS['landing']]
     landing[0]=canonical
     write_body('air_land_fold',tween_path(landing,24))
-    corrected=extract(ROOT/'assets/source/dragon-wall-grip-single-tail.png',12,4)
-    edge = normalize_row(corrected[8:],reference)
-    grip,opened = edge[1],edge[2]
-    wall = (tween_path([canonical,edge[0],grip],13)
-            +tween_path([grip,opened],9)[1:]+[opened]*10
-            +tween_path([opened,grip],10)[1:])
-    for pose,frame in zip(EXTRA_CLIPS['dragon']['wall_perch'],wall):
+    edge_cells = extract(ROOT/'assets/source/dragon-edge-perch.png', 8, 4)
+    edge = normalize_row(edge_cells[:4], reference)
+    grip, opened = edge[1], edge[2]
+    wall = (tween_path([canonical, edge[0], grip], 13)
+            + tween_path([grip, opened], 9)[1:] + [opened]*10
+            + tween_path([opened, grip], 10)[1:])
+    for pose, frame in zip(EXTRA_CLIPS['dragon']['wall_perch'], wall):
         frames[POSES['dragon'].index(pose)] = frame
-    top=[frames[POSES['dragon'].index(p)] for p in EXTRA_CLIPS['dragon']['top_perch']]
-    top[:13]=tween_path([canonical,top[6],top[12]],13)
-    for pose,frame in zip(EXTRA_CLIPS['dragon']['top_perch'],top):frames[POSES['dragon'].index(pose)]=frame
-    save('dragon',frames)
-    write_body('extra_wall_perch',wall)
-    write_body('extra_top_perch',top)
-    paw=grip.getchannel('A').point(lambda a:255 if a>32 else 0).getbbox()[2]-1
-    # Restrict red-lip detection below the eyes for the wall pose.
+    top = [frames[POSES['dragon'].index(p)] for p in EXTRA_CLIPS['dragon']['top_perch']]
+    top[:13] = tween_path([canonical, top[6], top[12]], 13)
+    for pose, frame in zip(EXTRA_CLIPS['dragon']['top_perch'], top): frames[POSES['dragon'].index(pose)] = frame
+    save('dragon', frames)
+    write_body('extra_wall_perch', wall)
+    write_body('extra_top_perch', top)
+    paw = grip.getchannel('A').point(lambda a: 255 if a > 32 else 0).getbbox()[0]
     import numpy as np
-    mouths=[]
+    mouths = []
     for frame in wall:
-        roi=np.asarray(frame)[75:89,90:115]
-        red=(roi[:,:,0]>75)&(roi[:,:,0]>roi[:,:,1]*1.6)&(roi[:,:,0]>roi[:,:,2]*1.25)&(roi[:,:,3]>100)
-        ys,xs=np.where(red)
-        mouths.append((90+int(xs.max()),75+round(float(ys.mean()))) if len(xs) else (108,78))
-    (ROOT/'app/dragon_wall_layout.py').write_text('"""Tracked right-facing paw and mouth anchors."""\nWALL_PAW_X='+repr(paw)+'\nWALL_MOUTHS='+repr(tuple(mouths))+'\n',encoding='utf-8')
+        arr = np.asarray(frame)
+        roi = arr[:85, 75:135]
+        alpha = roi[:, :, 3]
+        ys, xs = np.where(alpha > 120)
+        if len(xs):
+            max_x = int(xs.max())
+            snout_y = int(ys[xs >= max_x - 3].mean())
+            mouths.append((int(75 + max_x - 4), int(snout_y + 3)))
+        else:
+            mouths.append((105, 65))
+    (ROOT/'app/dragon_wall_layout.py').write_text('"""Tracked inward-facing paw and mouth anchors."""\nWALL_PAW_X=' + repr(paw) + '\nWALL_MOUTHS=' + repr(tuple(mouths)) + '\n', encoding='utf-8')
     preview = Image.new('RGB',(1600,960),'#dbe6ee')
     for i,frame in enumerate(wing):preview.paste(frame,(i%10*160,i//10*160),frame.getchannel('A'))
     preview.save(ROOT.parent/'dragon-powered-wingbeat-audit.png')

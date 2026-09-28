@@ -371,7 +371,7 @@ class DesktopPet:
             if self.behavior.state!='idle':return False
             self.behavior.force(state)
             return True
-        if (self.current_character=='dragon' and state in AIR_GESTURES
+        if (self.current_character=='dragon' and (state in AIR_GESTURES or state == 'roll')
                 and self.dragon_flight.state=='cruise' and not self.paused_var.get() and not self.dragging):
             bird=self.dragon_flight
             self.behavior.force(state);self.behavior.transition.queue=[]
@@ -379,6 +379,10 @@ class DesktopPet:
             return True
         if (self.current_character == "dragon" and self.dragon_flight.state == "rest"
                 and not self.paused_var.get() and not self.dragging):
+            if (state in AIR_GESTURES or state == 'roll') and state != 'perch_landing':
+                self.dragon_flight.requested_mode = state
+                self._jump_now()
+                return True
             self.behavior.force(state)
             return True
         return False
@@ -624,7 +628,7 @@ class DesktopPet:
                 if bird.perch_side=='top':body_bottom+=round((126-body_bottom)*amount)
                 else:
                     from app.dragon_wall_layout import WALL_PAW_X
-                    target=WIDTH-3-WALL_PAW_X+80 if bird.perch_side=='right' else 3-(159-WALL_PAW_X)+80
+                    target=WIDTH-3-(159-WALL_PAW_X)+80 if bird.perch_side=='right' else 3-WALL_PAW_X+80
                     body_x+=round((target-body_x)*amount)
             canvas.create_image(body_x, body_bottom,
                                 image=self.pet_sprites["dragon"].get(pose,bird.direction),anchor="s")

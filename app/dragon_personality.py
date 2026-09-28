@@ -25,6 +25,7 @@ MENU_LABELS = (
     ('Hover Float (ลอยตัวกลางอากาศ)', 'hover_float'),
     ('Dive and Recover (บินดิ่งแล้วเชิดขึ้น)', 'dive_recover'),
     ('Air Brake (กางปีกเบรก)', 'air_brake'),
+    ('Roll Lightning (ควงสว่านสายฟ้า)', 'roll'),
     ('Perch Landing (ลงเกาะขอบจอ)', 'perch_landing'),
     ('Ember Bubbles (ฟองประกายไฟ)', 'ember_bubbles'),
     ('Static Scale Charge (ชาร์จไฟที่เกล็ด)', 'static_charge'),

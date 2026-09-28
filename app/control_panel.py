@@ -12,7 +12,7 @@ PETS=(('bunny','BooBoo','กระต่ายหูตก','booboo'),
       ('dragon','Sleepy Dragon','มังกรดำขี้เซา','dragon'))
 GROUPS=(
     ('Personality · บุคลิก',('proud','curious_sniff','happy','belly_smoke','threat','roar','fury')),
-    ('Move & Fly · เคลื่อนไหว',('ground_walk','run','walk','hover_float','dive_recover','air_brake','perch_landing')),
+    ('Move & Fly · เคลื่อนไหว',('ground_walk','run','walk','hover_float','dive_recover','air_brake','roll','perch_landing')),
     ('Elemental Magic · พลังธาตุ',('ember_bubbles','static_charge','aurora_breath','thunder_roar','fire','smoke','cloud_flame','storm_hover','wing_gust')),
 )
 LABELS={state:label for label,state in MENU_LABELS}
@@ -158,7 +158,7 @@ class ControlPanel:
         for k,button in self.cards.items():button.configure(style='Selected.Studio.TButton' if key==k else 'Studio.TButton')
         for state,button in self.actions.items():
             allowed=key=='dragon' and not paused and not self.pet.dragging
-            if state in AIR_GESTURES:allowed=allowed and self.pet.dragon_flight.state in {'rest','cruise'}
+            if state in AIR_GESTURES or state == 'roll':allowed=allowed and self.pet.dragon_flight.state in {'rest','cruise'}
             else:allowed=allowed and (self.pet.dragon_flight.state=='rest' or (self.pet.dragon_flight.state=='perched' and state in PERCH_POWERS and self.pet.behavior.state=='idle'))
             button.configure(state='normal' if allowed else 'disabled')
 
