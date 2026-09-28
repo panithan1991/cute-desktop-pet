@@ -22,6 +22,8 @@ DRAGON_ACTIVITIES = {
     "wing_blanket": Activity("Sleep under wings", (5, 7), 60, enter=1, exit=1),
     "threat": Activity("Warning glare and wing display", (3.5, 4.8), 30, enter=1.2, exit=1.2),
     "roar": Activity("Small fierce roar", (3.5, 4.8), 35, enter=1.2, exit=1.2),
+    "fury": Activity("Two-legged fiery thunder fury", (12,16), 90, enter=2, exit=2),
+    "belly_smoke": Activity("Belly-up sky smoke rings", (14,18), 35, enter=3, exit=3),
     "wing_gust": Activity("Seated one-wing whirlwind", (7, 9), 32, enter=1.2, exit=1.5),
     "storm_hover": Activity("Stationary wingbeats and rapid horn lightning", (6.0, 7.5), 35, enter=1, exit=1),
 }
@@ -88,6 +90,8 @@ class DragonBehavior:
                 "smoke": 38,
                 "storm_hover": 24,
                 "wing_gust": 18,
+                "belly_smoke": 20,
+                "fury": 10,
                 "walk": 18,
                 "threat": 15,
                 "roar": 14,

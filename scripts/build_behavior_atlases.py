@@ -118,6 +118,17 @@ def build(character):
     previews = []
     for row, (clip, poses) in enumerate(EXTRA_CLIPS[character].items()):
         ref = sleep if clip in {"hug_tail", "wing_blanket"} else idle
+        if clip == "fury":
+            from build_dragon_stunts import fury_sequence
+            frames.extend(fury_sequence(idle));continue
+        if clip == "belly_smoke":
+            from build_dragon_stunts import belly_sequence
+            frames.extend(belly_sequence(idle));continue
+        if clip.startswith("roll_"):
+            from build_dragon_stunts import roll_sequences
+            if clip=="roll_enter":
+                rolls=roll_sequences(frames[base.index(DRAGON_CLIPS["hover"][0])])
+            frames.extend(rolls[clip]);continue
         if clip == "wing_gust":
             keys = normalize_row(extract(ROOT/"assets/source/dragon-wing-gust.png",count=5),idle)
             keys[0] = keys[-1] = idle

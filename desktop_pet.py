@@ -12,8 +12,12 @@ import tkinter as tk
 
 from app.pet_animation import choose_pet_pose
 from app.pet_behavior import PetBehavior
+from app.dragon_aerobatics import DragonFlightMotion
 from app.dragon_animation import DragonBehavior
 from app.dragon_power_view import DragonPowerView
+from app.dragon_belly_layout import BELLY_MOUTHS
+from app.dragon_roll_layout import ROLL_HORNS
+from app.dragon_fury_layout import FURY_HORNS
 from app.dragon_effect_layout import MOUTH_POSITIONS, HORN_POSITIONS
 from app.dragon_animation import DRAGON_CLIPS
 from app.behavior_art import EXTRA_CLIPS
@@ -67,8 +71,8 @@ class DesktopPet:
         self.jump = JumpMotion(launch_speed=245, gravity=1050)
         self.flight = FlightMotion(self.x, self.y)
         self.bibi_flight = BibiFlightMotion(self.x, self.y, auto_launch=False)
-        self.dragon_flight = BibiFlightMotion(self.x, self.y, speed=72, auto_launch=False,
-                                             altitude_range=(0.22, 0.42))
+        self.dragon_flight = DragonFlightMotion(self.x, self.y, speed=72, auto_launch=False,
+                                             altitude_range=(0.22, 0.42), rng=self.random)
         self.dragging = False
         self.drag_offset = (0, 0)
         self.running = True
@@ -229,6 +233,8 @@ class DesktopPet:
             ("Roar (คำราม)", "roar"),
             ("Horn Lightning (ตีปีกปล่อยสายฟ้า)", "storm_hover"),
             ("Wing Whirlwind (ตีปีกข้างเดียวปล่อยพายุ)", "wing_gust"),
+            ("Belly-up Smoke Rings (นอนหงายพ่นวงควัน)", "belly_smoke"),
+            ("Fury (โกรธจัด)", "fury"),
         ):
             dragon_menu.add_command(label=label, command=lambda state=activity: self._dragon_gesture(state))
         menu.add_cascade(label="Dragon Behaviors (พฤติกรรมมังกร)", menu=dragon_menu,
@@ -536,26 +542,31 @@ class DesktopPet:
             is_hovering = self.behavior.state in {"storm_hover", "walk"} or is_flying
             clock = self.dragon_flight.elapsed if is_flying else self.behavior.elapsed
             bob_y = round(math.sin(clock * 3.8) * 1.8) if is_hovering else 0
-            pose = self.behavior.pose(self.dragon_flight.state, self.dragon_flight.elapsed)
+            bird=self.dragon_flight
+            flight_elapsed=bird.hover_elapsed if bird.state=="cruise" else bird.elapsed
+            pose=bird.roll_pose() or self.behavior.pose(bird.state,flight_elapsed)
             canvas.create_image(WIDTH // 2, HEIGHT - 2 + bob_y,
-                                image=self.pet_sprites["dragon"].get(pose, self.dragon_flight.direction),
-                                anchor="s")
-            active = self.behavior.state in {"fire","storm_hover","wing_gust"} and not self.behavior.transition.active and not is_flying
-            if active:
-                if self.dragon_power is None:
-                    self.dragon_power = DragonPowerView(self.root,self.random)
-                facing = self.dragon_flight.direction
-                names = DRAGON_CLIPS["fire"] if self.behavior.state == "fire" else EXTRA_CLIPS["dragon"][self.behavior.state]
-                index = names.index(pose)
-                mouth = MOUTH_POSITIONS[index] if self.behavior.state == "fire" else (42,105)
-                horns = HORN_POSITIONS[index] if self.behavior.state == "storm_hover" else ((76,60),(94,60))
+                                image=self.pet_sprites["dragon"].get(pose,bird.direction),anchor="s")
+            active=self.behavior.state in {"fire","storm_hover","wing_gust","belly_smoke","fury"} and not self.behavior.transition.active and not is_flying
+            if active or bird.roll_spinning:
+                if self.dragon_power is None:self.dragon_power=DragonPowerView(self.root,self.random)
+                facing=bird.direction
+                if bird.roll_spinning:
+                    index=EXTRA_CLIPS["dragon"]["roll_loop"].index(pose)
+                    state="roll_lightning";elapsed=bird.roll_elapsed-1.2;duration=3*bird.roll_turns
+                    mouth=(80,80);horns=ROLL_HORNS["roll_loop"][index]
+                else:
+                    state=self.behavior.state;elapsed=self.behavior.elapsed;duration=self.behavior.duration
+                    names=DRAGON_CLIPS["fire"] if state=="fire" else EXTRA_CLIPS["dragon"][state]
+                    index=names.index(pose)
+                    mouth=MOUTH_POSITIONS[index] if state=="fire" else BELLY_MOUTHS[index] if state=="belly_smoke" else (80,100) if state=="fury" else (42,105)
+                    horns=HORN_POSITIONS[index] if state=="storm_hover" else FURY_HORNS[index] if state=="fury" else ((76,60),(94,60))
                 def world(point):
-                    px = point[0] if facing >= 0 else 160-point[0]
+                    px=point[0] if facing>=0 else 159-point[0]
                     return self.x+WIDTH/2-80+px,self.y+HEIGHT-2-160+point[1]+bob_y
-                self.dragon_power.draw(self.behavior.state,self.behavior.elapsed,self.behavior.duration,
-                                       world(mouth),sorted([world(p) for p in horns]),facing,self.work_area,self.topmost_var.get())
-            elif self.dragon_power:
-                self.dragon_power.hide()
+                self.dragon_power.draw(state,elapsed,duration,world(mouth),
+                                       sorted([world(p) for p in horns]),facing,self.work_area,self.topmost_var.get())
+            elif self.dragon_power:self.dragon_power.hide()
         elif character == "bibi":
             pose = choose_bibi_pose(self.bibi_flight.state, self.bibi_flight.elapsed,
                                     rest_state=self.behavior.state, rest_elapsed=self.behavior.elapsed,
@@ -787,12 +798,20 @@ def main() -> int:
     pet = DesktopPet(root)
     if smoke_test:
         if pet.character_var.get() == "dragon":
-            for state in ("fire", "storm_hover", "wing_gust"):
+            for state in ("fire", "storm_hover", "wing_gust", "belly_smoke", "fury"):
                 pet.behavior.force(state)
                 pet.behavior.transition.queue = []
                 pet.behavior.elapsed = pet.behavior.duration*.5
                 pet._draw(time.monotonic())
                 root.update_idletasks()
+            pet.dragon_flight.roll_chosen=True
+            pet.dragon_flight.roll_turns=3
+            pet.dragon_flight.roll_start=0
+            pet.dragon_flight.roll_duration=11.4
+            pet.dragon_flight.state="cruise"
+            pet.dragon_flight.elapsed=1.2+9*70/139
+            pet._draw(time.monotonic())
+            root.update_idletasks()
         root.update_idletasks()
         pet.close()
         return 0

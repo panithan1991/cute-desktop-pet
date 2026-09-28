@@ -40,7 +40,7 @@ class PetAnimationTests(unittest.TestCase):
     def test_atlases_have_85_unique_padded_frames_and_mirrored_facings(self):
         for character, keys in POSES.items():
             with self.subTest(character=character):
-                expected = 545 if character == "dragon" else 195
+                expected = 965 if character == "dragon" else 195
                 self.assertEqual(len(keys), expected)
                 right = Image.open(atlas_path(character, 1, "darwin")).convert("RGBA")
                 left = Image.open(atlas_path(character, -1, "darwin")).convert("RGBA")
@@ -63,8 +63,8 @@ class PetAnimationTests(unittest.TestCase):
                     unique.add(frame.tobytes())
                     self.assertEqual(ImageOps.mirror(frame).tobytes(), left.crop(box).tobytes())
                     self.assertEqual(ImageOps.mirror(hard.crop(box)).tobytes(), hard_left.crop(box).tobytes())
-                # Reused exact endpoints keep the joining poses identical.
-                self.assertGreaterEqual(len(unique), expected-35)
+                # Shared endpoints and the reversible flight tuck preserve identical joins.
+                self.assertGreaterEqual(len(unique), expected-(55 if character=="dragon" else 35))
 
     def test_bibi_uses_flight_and_rest_clips_without_forced_play_after_every_nap(self):
         reached = set()

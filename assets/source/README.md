@@ -1,6 +1,6 @@
 # Artwork sources
 
-Created with the built-in ImageGen tool using the supplied animal illustrations as identity references. Four pets have 195 frames. The dragon has 170 base frames plus 375 gesture/transition frames (485 total). These are animation frames, not unrelated poses.
+Created with the built-in ImageGen tool using the supplied animal illustrations as identity references. Four pets have 195 frames. The dragon has 170 base frames plus 795 gesture/transition frames (485 total). These are animation frames, not unrelated poses.
 
 ## Prompt set
 
@@ -33,3 +33,5 @@ Dragon atlas saves also produce `assets/runtime/dragon-{windows,macos}/` pages. 
 `dragon-wing-gust.png` contains five one-wing seated keyframes, expanded into 60 poses with neutral endpoints. `dragon-wing-gust-prompt.txt` records the built-in generation prompt. `dragon-fantasy-fire.png` supplies 16 large flame textures, baked into 32 ignition/flicker/fade drawings per platform and direction; its prompt is recorded alongside it. `python scripts/build_dragon_power_preview.py` refreshes the static README examples.
 
 `dragon-vortex.png` contains eight looping volumetric smoke keyframes from the built-in image tool. Its prompt is in `dragon-vortex-prompt.txt`. Run `python scripts/build_dragon_weather.py` to bake 32 vortex frames and 16 antialiased lightning trees per platform. Lightning trunks spread outwards from the horns, recursively fork into thinner twigs, and use a blue bloom around the white plasma core. Weather images load lazily, adapt to desktop edges, and use the activity clock.
+
+`dragon-belly-smoke.png` and `dragon-fury.png` supply the new resting-on-back and two-legged frontal fury keyframes. Their built-in image generation prompts are saved in `dragon-stunts-prompts.json`. `build_behavior_atlases.py` uses `build_dragon_stunts.py` to add 120 belly-up, 120 flight tuck/spin/exit, and 180 fury frames. Spin frames rotate an unchanged compact original body with rotated horn anchors; no new limbs are drawn. Run `python scripts/build_dragon_stunt_effects.py` after the other builders for sky rings, fire aura and individually anchored lightning trees; `python scripts/build_dragon_stunt_preview.py` creates static README examples. Flame nozzle coordinates are measured from the actual effect image and body lip pixels, for accurate left/right mouth alignment.

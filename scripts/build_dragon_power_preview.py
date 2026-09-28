@@ -8,6 +8,7 @@ sys.path.insert(0,str(ROOT))
 from app.pet_sprites import POSES
 from app.behavior_art import EXTRA_CLIPS
 from app.dragon_power_geometry import gust_transform
+from app.dragon_fire_layout import FIRE_NOZZLES
 from app.dragon_effect_layout import MOUTH_POSITIONS,HORN_POSITIONS
 
 
@@ -25,7 +26,8 @@ def build():
     panels[0].alpha_composite(body(f'dragon_fire_{index:02d}'),(80,130))
     flame=Image.open(ROOT/'assets/readme/dragon-fantasy-fire.png').convert('RGBA')
     mx,my=MOUTH_POSITIONS[index]
-    panels[0].alpha_composite(flame,(80+mx-4,130+my-80))
+    nx,ny=FIRE_NOZZLES[15]
+    panels[0].alpha_composite(flame,(round(80+mx-nx),round(130+my-ny)))
     panels[1].alpha_composite(body(EXTRA_CLIPS['dragon']['storm_hover'][70]),(210,160))
     lightning=Image.open(ROOT/'assets/readme/dragon-lightning.png').convert('RGBA')
     hx,hy=HORN_POSITIONS[70][0]

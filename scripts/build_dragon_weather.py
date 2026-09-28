@@ -17,11 +17,11 @@ def platform_image(im,platform):
     return im
 
 
-def lightning_image(index):
+def lightning_image(index,paths=None):
     scale=3
     size=(560*scale,480*scale)
     glow=Image.new('RGBA',size)
-    paths=bolt_paths([(271,380),(289,380)],(560,480),1000+index,0)
+    if paths is None:paths=bolt_paths([(271,380),(289,380)],(560,480),1000+index,0)
     for image,color,multiplier in ((glow,(70,110,255,155),2.5),):
         draw=ImageDraw.Draw(image)
         for path in paths:

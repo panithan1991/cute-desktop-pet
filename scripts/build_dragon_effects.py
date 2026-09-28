@@ -166,7 +166,14 @@ def build():
             shift = round(16*min(1, progress/.2, (1-progress)/.2))
             clean = Image.new("RGBA", (CELL,CELL)); clean.alpha_composite(body, (-shift,0))
             bounds = clean.getchannel("A").point(lambda a: 255 if a > 80 else 0).getbbox()
-            mouth = (bounds[2]-8, bounds[1]+round((bounds[3]-bounds[1])*.5))
+            mouth = (bounds[2]-13, bounds[1]+round((bounds[3]-bounds[1])*.5)-2)
+            if clip=="fire":
+                # Track red lip pixels inside the snout ROI, excluding the eyes.
+                pixels=np.asarray(clean); xx,yy=mouth
+                roi=pixels[max(0,yy-2):yy+7,max(0,xx-7):xx+8]
+                red=(roi[:,:,0]>60)&(roi[:,:,0]>roi[:,:,1]*1.55)&(roi[:,:,0]>roi[:,:,2]*1.3)&(roi[:,:,3]>100)
+                ys,xs=np.where(red)
+                if len(xs):mouth=(max(0,xx-7)+int(xs.max())+1,max(0,yy-2)+round(float(ys.mean())))
             fx = effect_layer(effects[row], progress, clip, mouth, mouth_fixed=mouth_fixed)
             result = clean if clip == "fire" else Image.alpha_composite(clean, fx)
             if clip == "fire":
@@ -222,6 +229,16 @@ def bake_fantasy_fire():
         f = Image.new("RGBA",(FIRE_WIDTH,FIRE_HEIGHT))
         f.alpha_composite(resized,(4,round(FIRE_HEIGHT/2-resized.height/2)))
         frames.append(f)
+    nozzles=[]
+    for f in frames:
+        pixels=np.asarray(f);roi=pixels[:,:14]
+        weight=np.where((roi[:,:,3]>80)&(roi[:,:,0]>130)&(roi[:,:,1]>80),roi[:,:,3].astype(float),0)
+        columns=np.where(weight.sum(axis=0)>0)[0]
+        tip=int(columns[0]) if len(columns) else 4
+        weight[:,tip+4:]=0
+        ys,xs=np.indices(weight.shape)
+        nozzles.append((tip,round(float((ys*weight).sum()/max(1,weight.sum())),2)))
+    (ROOT/"app/dragon_fire_layout.py").write_text(f'"""Actual nozzle center in each large flame drawing."""\nFIRE_NOZZLES={tuple(nozzles)!r}\n',encoding="utf-8")
     for platform in ("macos","windows"):
         for side in ("right","left"):
             atlas = Image.new("RGBA",(FIRE_WIDTH*4,FIRE_HEIGHT*8))
