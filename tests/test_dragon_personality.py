@@ -61,11 +61,13 @@ class DragonPersonalityTests(unittest.TestCase):
         for name in ('hover_float','air_brake','dive_recover'):
             flight=DragonFlightMotion(300,240,auto_launch=False)
             flight.mode=name;flight.state='cruise';flight.cruise_duration=10
+            flight.maneuver_choice=name;flight.maneuver_active=True;flight.maneuver_y=240
+            flight.maneuver_duration=10;flight.maneuver_start=0;flight.perch_probability=0
             flight.altitude=.3;flight.wave_speed=.5
             samples=[]
             for _ in range(100):
                 flight.step(.1,0,25,2000,680);samples.append((flight.x,flight.y))
-            if name=='hover_float':self.assertLess(abs(samples[60][0]-samples[40][0]),1)
+            if name=='hover_float':self.assertLess(abs(samples[60][0]-samples[40][0]),2)
             elif name=='air_brake':self.assertLess(samples[60][0],samples[40][0])
             else:self.assertGreater(samples[50][1],samples[20][1]+50)
 

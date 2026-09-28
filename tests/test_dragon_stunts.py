@@ -31,7 +31,7 @@ class DragonStuntTests(unittest.TestCase):
         chosen=0;turns=set()
         for _ in range(2000):
             flight.reset(300,700);self.assertTrue(flight.launch())
-            chosen+=flight.roll_chosen
+            chosen+=flight.maneuver_choice is not None
             if flight.roll_chosen:turns.add(flight.roll_turns)
             before=(flight.roll_chosen,flight.roll_start,flight.roll_turns)
             self.assertFalse(flight.launch())
@@ -42,7 +42,7 @@ class DragonStuntTests(unittest.TestCase):
 
     def test_complete_two_or_three_turns_then_resume_hover_phase_without_jump(self):
         flight=DragonFlightMotion(300,300,auto_launch=False)
-        flight.state='cruise';flight.roll_chosen=True;flight.roll_start=5.4
+        flight.state='cruise';flight.roll_chosen=True;flight.roll_start=5.4;flight.maneuver_active=True
         for turns in (2,3):
             flight.roll_turns=turns;flight.roll_duration=2.4+3*turns
             for turn in range(turns):

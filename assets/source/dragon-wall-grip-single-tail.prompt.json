@@ -1,0 +1,7 @@
+{
+  "mode": "built-in image_gen",
+  "reference": "assets/source/dragon-powered-flight.png",
+  "output": "assets/source/dragon-wall-grip-single-tail.png",
+  "prompt": "Precise anatomy correction of this supplied 12-dragon 4-column 3-row sprite sheet. Keep top eight flying dragons completely unchanged. Edit ONLY the four dragons in the bottom row: currently each vertical wall-clinging dragon has TWO tails, a large tail curling left behind body PLUS an erroneous second curled tail hanging downward from between the legs. REMOVE the entire second downward tail. Keep exactly ONE tail attached to the lower BACK, trailing and curling toward LEFT behind the body. Preserve both hindlegs and both forelegs, only four paws. Preserve the exact face, horns, scales, wings, proportions and rendering, hands and face still reaching/looking RIGHT. Replace the removed second tail region with transparent background, rebuild lower belly and hindlegs anatomically clean where necessary. No doubled tails, no extra paws. Maintain exact same 12 subjects and grid positions; transparent background, no text or props. Top two rows unchanged, bottom row one tail per dragon.",
+  "usage": "Only bottom four corrected grip keys; powered wing keys retain the prior source."
+}

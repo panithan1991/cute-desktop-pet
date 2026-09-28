@@ -1,0 +1,10 @@
+{
+  "mode": "built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Reference image 1 dragon-flight-keyframes.png provides EXACT character identity and rendering. Reference image 2 dragon-edge-perch.png is the edit target for wrong hand direction. Produce ONE transparent animation keyframe sheet, exactly 12 complete dragons in FOUR columns THREE rows, no text, no borders, no backdrop, no shadows, separated generous margins. Preserve EXACT same black-chrome baby dragon, sleepy amber eyes, scales, horn shapes, small compact body, two bat wings, four paws and one flexible tail. All look toward RIGHT, same three-quarter camera and lighting. Top TWO rows are eight sequential powered wingbeat poses: wings raised high, begin downstroke, wide horizontal, sweep downward fully, bottom of downstroke, wings lift folded slightly, mid-upstroke, return high. Legs tucked loosely, torso stable, small follow-through in tail, full anatomical two wings in every frame, never extra paws. Eight tiny continuous steps of a realistic symmetrical flap cycle. BOTTOM row four edge-gripping poses: fly toward RIGHT and reach both forepaws toward RIGHT; grip a vertical invisible wall on RIGHT with BOTH forepaws extending RIGHT, face looking RIGHT (never left), feet braced toward RIGHT and wings folding; same grip with mouth open emitting NOTHING; same grip mouth closed. Both hands MUST be on right side of body, head looks at the same right side, tail trailing to LEFT. No wall scenery drawn. Do not crop wingtips, horns, tail or claws. No smoke or magic. Make all 12 sprites consistent same scale.",
+  "reference_images": [
+    "assets/source/dragon-flight-keyframes.png",
+    "assets/source/dragon-edge-perch.png"
+  ],
+  "output": "assets/source/dragon-powered-flight.png",
+  "layout": "4 columns x 2 rows, 8 wingbeat keys; unused incorrect grip row removed"
+}

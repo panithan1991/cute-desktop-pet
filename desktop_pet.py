@@ -375,10 +375,7 @@ class DesktopPet:
                 and self.dragon_flight.state=='cruise' and not self.paused_var.get() and not self.dragging):
             bird=self.dragon_flight
             self.behavior.force(state);self.behavior.transition.queue=[]
-            bird.mode=state;bird.roll_chosen=False;bird.elapsed=0;bird.perch_side=None
-            bird.cruise_duration=self.behavior.duration
-            top=self.work_area[1];ground=self.work_area[3]-HEIGHT
-            bird.altitude=max(0,min(1,(bird.y-top)/max(1,ground-top)))
+            if state!='perch_landing':bird.request_maneuver(state)
             return True
         if (self.current_character == "dragon" and self.dragon_flight.state == "rest"
                 and not self.paused_var.get() and not self.dragging):
@@ -610,10 +607,10 @@ class DesktopPet:
             is_flying = self.dragon_flight.state not in {"rest","perched"}
             is_hovering = (self.behavior.state in {"storm_hover", "walk"} or is_flying) and self.dragon_flight.state not in {'grabbing','perched','unperch'}
             clock = self.dragon_flight.elapsed if is_flying else self.behavior.elapsed
-            bob_y = round(math.sin(clock * 3.8) * 1.8) if is_hovering else 0
+            bob_y = round(math.sin(clock * 3.8) * 1.8) if not is_flying and is_hovering else 0
             bird=self.dragon_flight
             flight_elapsed=bird.hover_elapsed if bird.state=="cruise" else bird.elapsed
-            pose=bird.perch_pose(self.behavior) or bird.roll_pose() or bird.maneuver_pose() or self.behavior.pose(bird.state,flight_elapsed)
+            pose=bird.perch_pose(self.behavior) or bird.roll_pose() or bird.maneuver_pose() or bird.flight_pose() or self.behavior.pose(bird.state,flight_elapsed)
             gripping=pose.startswith(('extra_wall_perch','extra_top_perch'))
             body_x=WIDTH//2
             body_bottom=HEIGHT-2+bob_y
@@ -625,7 +622,10 @@ class DesktopPet:
                 amount=max(0,min(1,(amount-.5)*2))
                 amount=amount*amount*(3-2*amount)
                 if bird.perch_side=='top':body_bottom+=round((126-body_bottom)*amount)
-                else:body_x+=round(((38 if bird.perch_side=='left' else WIDTH-38)-body_x)*amount)
+                else:
+                    from app.dragon_wall_layout import WALL_PAW_X
+                    target=WIDTH-3-WALL_PAW_X+80 if bird.perch_side=='right' else 3-(159-WALL_PAW_X)+80
+                    body_x+=round((target-body_x)*amount)
             canvas.create_image(body_x, body_bottom,
                                 image=self.pet_sprites["dragon"].get(pose,bird.direction),anchor="s")
             active=self.behavior.state in {"fire","cloud_flame","storm_hover","wing_gust","belly_smoke","fury",*POWER_GESTURES} and not self.behavior.transition.active and not is_flying
@@ -646,8 +646,12 @@ class DesktopPet:
                 if state=='static_charge':
                     from app.dragon_charge_layout import charge_horns
                     horns=charge_horns(index)
+                if state in {'aurora_breath','ember_bubbles','thunder_roar'}:
+                    from app.dragon_signature_layout import SIGNATURE_MOUTHS
+                    mouth=SIGNATURE_MOUTHS[state][min(index,39)]
                 if perched:
-                    mouth=(104,83) if bird.perch_side=='top' else (105,73)
+                    from app.dragon_wall_layout import WALL_MOUTHS
+                    mouth=(104,83) if bird.perch_side=='top' else WALL_MOUTHS[EXTRA_CLIPS['dragon']['wall_perch'].index(pose)]
                     horns=((72,40),(87,40))
                 def world(point):
                     px=point[0] if facing>=0 else 159-point[0]
@@ -901,6 +905,7 @@ def main() -> int:
                         pet._draw(time.monotonic())
                         root.update_idletasks()
             pet.dragon_flight.roll_chosen=True
+            pet.dragon_flight.maneuver_active=True
             pet.dragon_flight.roll_turns=3
             pet.dragon_flight.roll_start=0
             pet.dragon_flight.roll_duration=11.4

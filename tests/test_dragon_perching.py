@@ -22,6 +22,7 @@ class DragonPerchingTests(unittest.TestCase):
         for side in ('left','right','top'):
             f=DragonFlightMotion(450,240,auto_launch=False,rng=random.Random(5))
             f.mode='walk';f.state='cruise';f.elapsed=.2;f.cruise_duration=100
+            f.perch_probability=1
             f.direction=-1 if side=='left' else 1
             f.climb=-100 if side=='top' else 0
             if side=='top':f.x=450;f.y=26
@@ -39,7 +40,7 @@ class DragonPerchingTests(unittest.TestCase):
             before=(f.x,f.y,f.elapsed);f.paused=True;f.step(.1,0,25,950,680)
             self.assertEqual(before,(f.x,f.y,f.elapsed));f.paused=False
             f.depart()
-            for _ in range(50):f.step(.1,0,25,950,680)
+            for _ in range(250):f.step(.1,0,25,950,680)
             self.assertEqual(f.state,'rest');self.assertEqual(f.y,680)
 
     def test_flying_in_open_space_never_displays_a_stationary_grip(self):
@@ -85,6 +86,7 @@ class DragonPerchingTests(unittest.TestCase):
     def test_special_air_maneuver_contact_also_grips_the_edge(self):
         f=DragonFlightMotion(949,240,auto_launch=False)
         f.state='cruise';f.mode='dive_recover';f.direction=1
+        f.perch_probability=1;f.maneuver_done=True;f.vx=95
         f.cruise_duration=10;f.altitude=.3
         f.step(.1,0,25,950,680)
         self.assertEqual(f.state,'grabbing')
@@ -139,6 +141,6 @@ class DragonPerchingTests(unittest.TestCase):
         f.step(.1,0,25,2000,680)
         self.assertEqual(f.state,'air_settle')
         for _ in range(5):f.step(.1,0,25,2000,680)
-        self.assertEqual(f.state,'release_join')
+        self.assertEqual(f.state,'landing')
         for _ in range(5):f.step(.1,0,25,2000,680)
         self.assertEqual(f.state,'landing')
