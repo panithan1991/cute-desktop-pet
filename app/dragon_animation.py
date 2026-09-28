@@ -17,6 +17,7 @@ DRAGON_ACTIVITIES = {
     "stretch": Activity("Wing stretch", (3.5, 5), 30, enter=1, exit=1),
     "smoke": Activity("Volumetric smoke ring", (4.5, 6.0), 8, enter=1.2, exit=1.2),
     "fire": Activity("Grand fantasy flame breath", (12, 16), 10, enter=1.5, exit=2),
+    "cloud_flame": Activity("Jade smoke cloud and turquoise ignition", (18, 22), 35, enter=1.5, exit=2),
     "yawn": Activity("Sleepy yawn", (3.0, 4.5), 60, enter=1, exit=1),
     "wake": Activity("Uncurl and wake", (4, 5), enter=4),
     "hug_tail": Activity("Hug tail during a nap", (4, 6), 60, enter=1, exit=1),
@@ -72,7 +73,7 @@ class DragonBehavior:
                 index = ordered.index(source_pose)
                 interrupted_ground = [(ordered[index:], False, max(.1, seconds-self.transition.elapsed))]
                 interrupted_ground += self.transition.queue[1:]
-            source_clip = DRAGON_CLIPS.get(self.state)
+            source_clip = DRAGON_CLIPS.get("fire" if self.state == "cloud_flame" else self.state)
             if source_clip is None:
                 from app.behavior_art import EXTRA_CLIPS
                 source_clip = EXTRA_CLIPS["dragon"].get(self.state)
@@ -103,6 +104,7 @@ class DragonBehavior:
         else:
             self.force(self.memory.choose({
                 "fire": 40,
+                "cloud_flame": 18,
                 "smoke": 38,
                 "storm_hover": 24,
                 "wing_gust": 18,
@@ -180,6 +182,10 @@ class DragonBehavior:
         connecting = self.transition.pose()
         if connecting:
             return connecting
+        if self.state == "cloud_flame":
+            # Exhale slowly, close the mouth, then calmly watch the detached
+            # cloud ignite; body pixels never receive a smoke/fire mask.
+            return dragon_frame("fire", min(1, self.elapsed / (self.duration * .52)))
         if self.state in {"ground_walk", "run"}:
             from app.behavior_art import EXTRA_CLIPS
             frames = EXTRA_CLIPS["dragon"][self.state]

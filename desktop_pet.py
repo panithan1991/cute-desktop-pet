@@ -231,6 +231,7 @@ class DesktopPet:
             ("Run (วิ่งเล่น)", "run"),
             ("Flame Breath (พ่นไฟ)", "fire"),
             ("Smoke Ring (พ่นวงควัน)", "smoke"),
+            ("Jade Cloud Ignition (เมฆควันเขียวลุกเป็นไฟฟ้าเขียว)", "cloud_flame"),
             ("Warning Display (ขู่กางปีก)", "threat"),
             ("Roar (คำราม)", "roar"),
             ("Horn Lightning (ตีปีกปล่อยสายฟ้า)", "storm_hover"),
@@ -557,7 +558,7 @@ class DesktopPet:
             pose=bird.roll_pose() or self.behavior.pose(bird.state,flight_elapsed)
             canvas.create_image(WIDTH // 2, HEIGHT - 2 + bob_y,
                                 image=self.pet_sprites["dragon"].get(pose,bird.direction),anchor="s")
-            active=self.behavior.state in {"fire","storm_hover","wing_gust","belly_smoke","fury"} and not self.behavior.transition.active and not is_flying
+            active=self.behavior.state in {"fire","cloud_flame","storm_hover","wing_gust","belly_smoke","fury"} and not self.behavior.transition.active and not is_flying
             if active or bird.roll_spinning:
                 if self.dragon_power is None:self.dragon_power=DragonPowerView(self.root,self.random)
                 facing=bird.direction
@@ -567,9 +568,9 @@ class DesktopPet:
                     mouth=(80,80);horns=ROLL_HORNS["roll_loop"][index]
                 else:
                     state=self.behavior.state;elapsed=self.behavior.elapsed;duration=self.behavior.duration
-                    names=DRAGON_CLIPS["fire"] if state=="fire" else EXTRA_CLIPS["dragon"][state]
+                    names=DRAGON_CLIPS["fire"] if state in {"fire", "cloud_flame"} else EXTRA_CLIPS["dragon"][state]
                     index=names.index(pose)
-                    mouth=MOUTH_POSITIONS[index] if state=="fire" else BELLY_MOUTHS[index] if state=="belly_smoke" else (80,100) if state=="fury" else (42,105)
+                    mouth=MOUTH_POSITIONS[index] if state in {"fire", "cloud_flame"} else BELLY_MOUTHS[index] if state=="belly_smoke" else (80,100) if state=="fury" else (42,105)
                     horns=HORN_POSITIONS[index] if state=="storm_hover" else FURY_HORNS[index] if state=="fury" else ((76,60),(94,60))
                 def world(point):
                     px=point[0] if facing>=0 else 159-point[0]
@@ -808,7 +809,7 @@ def main() -> int:
     pet = DesktopPet(root)
     if smoke_test:
         if pet.character_var.get() == "dragon":
-            for state in ("fire", "storm_hover", "wing_gust", "belly_smoke", "fury", "ground_walk", "run"):
+            for state in ("fire", "cloud_flame", "storm_hover", "wing_gust", "belly_smoke", "fury", "ground_walk", "run"):
                 pet.behavior.force(state)
                 pet.behavior.transition.queue = []
                 pet.behavior.elapsed = pet.behavior.duration*.5

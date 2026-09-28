@@ -11,6 +11,7 @@ from app.dragon_power_geometry import FIRE_WIDTH, FIRE_HEIGHT, fire_frame, overl
 from app.dragon_weather_layout import LIGHTNING_BOUNDS
 from app.dragon_fire_layout import FIRE_NOZZLES
 from app.dragon_stunt_effect_layout import TREE_BOUNDS
+from app.dragon_cloud import cloud_frame, cloud_center, cloud_sparks, CLOUD_SIZE, CLOUD_FRAMES
 from app.window_style import configure_overlay, configure_pet_window
 
 
@@ -131,20 +132,53 @@ class DragonPowerView:
             self.canvas.create_image(mx-280/scale,my-380/scale,image=image,anchor='nw')
 
     def draw(self,state,elapsed,duration,mouth,horns,facing,bounds,topmost):
-        if state not in {"fire","storm_hover","wing_gust","belly_smoke","roll_lightning","fury"}:
+        if state not in {"fire","cloud_flame","storm_hover","wing_gust","belly_smoke","roll_lightning","fury"}:
             self.hide(); return
         if state != self.previous_state or elapsed < self.previous_elapsed:
             self.seed = self.rng.getrandbits(24)
             self.ring_origins={}
         self.previous_state,self.previous_elapsed = state,elapsed
-        origin = mouth if state in {"fire","wing_gust","belly_smoke","fury"} else ((horns[0][0]+horns[1][0])/2,(horns[0][1]+horns[1][1])/2)
+        origin = mouth if state in {"fire","cloud_flame","wing_gust","belly_smoke","fury"} else ((horns[0][0]+horns[1][0])/2,(horns[0][1]+horns[1][1])/2)
+        if state == 'cloud_flame':
+            # A mouth-anchored emitter feeds a cloud with its own fixed origin.
+            # Recoil and head movement cannot pull the cloud into the face.
+            if elapsed >= duration*.08 and 'cloud' not in self.ring_origins:
+                self.ring_origins['cloud'] = mouth
+            origin = self.ring_origins.get('cloud', mouth)
         x,y,w,h = overlay_rect(origin,bounds)
         if self.last_rect != (x,y,w,h):
             self.window.geometry(f"{w}x{h}{x:+d}{y:+d}"); self.canvas.configure(width=w,height=h)
             self.last_rect = x,y,w,h
         self.window.wm_attributes("-topmost",topmost)
         c = self.canvas; c.delete("all")
-        if state == "fire":
+        if state == 'cloud_flame':
+            index = cloud_frame(elapsed,duration)
+            if index is None:self.window.withdraw();return
+            cx,cy,scale = cloud_center(origin,facing,(x,y,w,h))
+            c.create_image(cx,cy,image=self.clip_image('cloud-flame',index,CLOUD_SIZE,CLOUD_SIZE,CLOUD_FRAMES,scale))
+            p=elapsed/max(duration,.001)
+            if .08 <= p < .35:
+                # Small detached puffs flow outwards, progressively joining
+                # the cloud instead of following the dragon's recoiling head.
+                for i in range(4):
+                    travel=((elapsed-duration*.08)*.55-i*.23)%1
+                    sx=mouth[0]-x+(cx-(mouth[0]-x))*travel
+                    sy=mouth[1]-y+(cy-(mouth[1]-y))*travel-5*math.sin(travel*math.pi)
+                    shrink=max(5,scale*4)
+                    half=CLOUD_SIZE/shrink/2+2
+                    if half<sx<w-half and half<sy<h-half:
+                        c.create_image(sx,sy,image=self.clip_image('cloud-flame',2,CLOUD_SIZE,CLOUD_SIZE,CLOUD_FRAMES,shrink))
+            for dx,dy,fade in cloud_sparks(elapsed,duration,self.seed):
+                sx,sy=cx+dx/scale,cy+dy/scale
+                if not 6<sx<w-6 or not 6<sy<h-6:continue
+                color='#caffee' if fade>.72 else '#65efd7' if fade>.4 else '#299b90' if fade>.15 else '#245b60'
+                radius=max(.5,2.4*fade/scale)
+                c.create_line(sx-.6,sy-4*fade/scale,sx,sy,fill=color,width=max(1,2*fade/scale))
+                c.create_oval(sx-radius,sy-radius,sx+radius,sy+radius,fill=color,outline='')
+                if fade>.8:
+                    c.create_line(sx-3/scale,sy,sx+3/scale,sy,fill='#edfff6',width=1)
+            self.window.wm_attributes('-alpha',1)
+        elif state == "fire":
             index = fire_frame(elapsed,duration)
             if index is None:
                 self.window.withdraw(); return
