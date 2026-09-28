@@ -32,6 +32,8 @@ class DragonEffectTests(unittest.TestCase):
                       EXTRA_CLIPS["dragon"]["hiccup"]):
             self.assertEqual(frame(image, poses.index(names[0])).tobytes(), idle.tobytes())
             self.assertEqual(frame(image, poses.index(names[-1])).tobytes(), idle.tobytes())
+            if names == DRAGON_CLIPS["fire"]:
+                continue  # Large flame is rendered in the independent overlay.
             # Beyond the resting body: emission must become visible, then fade
             # over intermediate frames rather than disappearing in one step.
             masses = [sum(frame(image, poses.index(name)).getchannel("A")

@@ -15,7 +15,7 @@ EXTRA_CLIPS = {
     for character, signatures in SIGNATURES.items()
 }
 EXTRA_CLIPS["dragon"]["hiccup"] = tuple(f"extra_hiccup_{i:02d}" for i in range(25))
-for name, length in (("threat", 30), ("roar", 30), ("storm_hover", 140)):
+for name, length in (("threat", 30), ("roar", 30), ("storm_hover", 140), ("wing_gust", 60)):
     EXTRA_CLIPS["dragon"][name] = tuple(f"extra_{name}_{i:02d}" for i in range(length))
 EXTRA_POSES = {character: tuple(pose for clip in clips.values() for pose in clip)
                for character, clips in EXTRA_CLIPS.items()}
@@ -74,6 +74,6 @@ class PostureTransition:
         if not self.queue:
             return None
         name, reverse, duration = self.queue[0]
-        frames = EXTRA_CLIPS[self.character][name]
+        frames = EXTRA_CLIPS[self.character][name] if isinstance(name,str) else name
         index = min(len(frames)-1, int(self.elapsed / duration * len(frames)))
         return frames[len(frames)-1-index if reverse else index]

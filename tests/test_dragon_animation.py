@@ -9,7 +9,7 @@ from app.behavior_art import EXTRA_CLIPS
 class DragonTests(unittest.TestCase):
     def test_threat_roar_and_stationary_lightning_have_reachable_frames_and_cooldowns(self):
         dragon = DragonBehavior(random.Random(6))
-        for state in ("threat", "roar", "storm_hover"):
+        for state in ("threat", "roar", "storm_hover", "wing_gust"):
             dragon.force(state)
             while dragon.transition.active:
                 dragon.step(.1)
@@ -62,14 +62,14 @@ class DragonTests(unittest.TestCase):
         self.assertEqual(before, (dragon.pose(), dragon.elapsed))
 
     def test_sleepy_dragon_hover_stays_in_work_area_and_lands(self):
-        flight = BibiFlightMotion(300, 700, speed=55, auto_launch=False,
-                                  altitude_range=(.72, .85), cruise_duration=10,
+        flight = BibiFlightMotion(300, 700, speed=72, auto_launch=False,
+                                  altitude_range=(.22, .42), cruise_duration=25,
                                   rng=random.Random(8))
         flight.launch()
         points = []
-        for _ in range(160):
+        for _ in range(320):
             flight.step(.1, 0, 20, 900, 700)
             points.append((flight.x, flight.y))
         self.assertTrue(all(0 <= x <= 900 and 20 <= y <= 700 for x, y in points))
-        self.assertLess(min(y for x, y in points), 600)
+        self.assertLess(min(y for x, y in points), 350)
         self.assertEqual((flight.state, flight.y), ("rest", 700))

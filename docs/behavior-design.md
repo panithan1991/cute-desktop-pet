@@ -69,3 +69,6 @@ atlases remain artwork/test references; page tests compare every pixel.
 Validation: `python -m unittest discover -s tests -q` checks cooldowns, retained
 history, transition routes, gentle movement, pause behavior, all sprite bounds,
 both facings, and the dragon's smoke/flame padding.
+
+
+Dragon powers use a separate transparent native window: 32 large flame drawings, randomly branched lightning stable during each exposure, and a procedural drifting vortex on the flapping wing side. All motion uses the pauseable activity clock. Flame lasts 12–16 seconds including ignition and fade; smoke/fire cooldowns are 8/10 seconds after completion. Flight preserves the higher altitude range (22–42% of the display) and 25–45 second cruise. One-wing gust adds 60 body frames and a 7–9 second activity. Interrupted upright gestures finish their remaining painted exit before starting the requested pose. Body clip endpoints share the canonical neutral pose.

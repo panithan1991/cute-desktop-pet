@@ -7,22 +7,23 @@ from app.behavior_selection import Activity, BehaviorMemory
 from app.behavior_art import PostureTransition, gesture_pose
 
 DRAGON_ACTIVITIES = {
-    "idle": Activity("Sleepy breathing", (18, 32)),
-    "sleep": Activity("Curled nap", (45, 90), 45, enter=4),
-    "walk": Activity("Gentle hover", (8, 14), 90, enter=2.4, exit=2.8),
-    "curious": Activity("Small head tilt", (4, 5), 240, enter=1, exit=1),
-    "tail": Activity("Tail sway", (4, 6), 45, enter=1, exit=1),
-    "stretch": Activity("Wing stretch", (4, 6), 60, enter=1, exit=1),
-    "smoke": Activity("Volumetric smoke ring", (6, 8), 75, enter=1.5, exit=1.5),
-    "fire": Activity("Golden flame breath", (5, 7), 120, enter=1, exit=1.5),
-    "yawn": Activity("Sleepy yawn", (4, 6), 60, enter=1, exit=1),
+    "idle": Activity("Sleepy breathing", (8, 14)),
+    "sleep": Activity("Curled nap", (45, 55), 100, enter=4),
+    "walk": Activity("Soaring flight", (25, 45), 40, enter=2.4, exit=2.8),
+    "curious": Activity("Small head tilt", (2.5, 4.0), 30, enter=1, exit=1),
+    "tail": Activity("Tail sway", (3, 4.5), 25, enter=1, exit=1),
+    "stretch": Activity("Wing stretch", (3.5, 5), 30, enter=1, exit=1),
+    "smoke": Activity("Volumetric smoke ring", (4.5, 6.0), 8, enter=1.2, exit=1.2),
+    "fire": Activity("Grand fantasy flame breath", (12, 16), 10, enter=1.5, exit=2),
+    "yawn": Activity("Sleepy yawn", (3.0, 4.5), 60, enter=1, exit=1),
     "wake": Activity("Uncurl and wake", (4, 5), enter=4),
-    "hug_tail": Activity("Hug tail during a nap", (6, 9), 150, enter=1, exit=1),
-    "hiccup": Activity("Tiny smoky hiccup", (4, 6), 180, enter=1, exit=1),
-    "wing_blanket": Activity("Sleep under wings", (7, 10), 180, enter=1, exit=1),
-    "threat": Activity("Warning glare and wing display", (5, 7), 120, enter=1.5, exit=1.5),
-    "roar": Activity("Small fierce roar", (5, 7), 180, enter=1.5, exit=1.5),
-    "storm_hover": Activity("Stationary wingbeats and rapid horn lightning", (7, 9), 210, enter=1, exit=1),
+    "hug_tail": Activity("Hug tail during a nap", (4, 6), 60, enter=1, exit=1),
+    "hiccup": Activity("Tiny smoky hiccup", (2.5, 3.5), 25, enter=1, exit=1),
+    "wing_blanket": Activity("Sleep under wings", (5, 7), 60, enter=1, exit=1),
+    "threat": Activity("Warning glare and wing display", (3.5, 4.8), 30, enter=1.2, exit=1.2),
+    "roar": Activity("Small fierce roar", (3.5, 4.8), 35, enter=1.2, exit=1.2),
+    "wing_gust": Activity("Seated one-wing whirlwind", (7, 9), 32, enter=1.2, exit=1.5),
+    "storm_hover": Activity("Stationary wingbeats and rapid horn lightning", (6.0, 7.5), 35, enter=1, exit=1),
 }
 
 DRAGON_LENGTHS = {"idle": 8, "blink": 6, "curious": 6, "tail": 6,
@@ -53,15 +54,26 @@ class DragonBehavior:
         if hasattr(self, "state"):
             self.memory.record(self.state, self.clock)
             # The dedicated wake activity already uncurls the body.
+            # Finish the remaining painted exit when a menu command interrupts
+            # an upright gesture. Keep the current frame as the bridge start.
+            source_pose = self.pose()
+            source_clip = DRAGON_CLIPS.get(self.state)
+            if source_clip is None:
+                from app.behavior_art import EXTRA_CLIPS
+                source_clip = EXTRA_CLIPS["dragon"].get(self.state)
             self.transition.connect(self.state, state)
+            if self.state not in {"idle", "sleep", "wake", "walk", "hug_tail", "wing_blanket"} and source_clip and source_pose in source_clip:
+                remainder = source_clip[source_clip.index(source_pose):]
+                if len(remainder)>1:
+                    self.transition.queue.insert(0,(remainder,False,max(.4,min(2.5,len(remainder)*.06))))
             if state == "wake" or self.state == "wake":
                 self.transition.queue = []
         self.previous, self.state = getattr(self, "state", None), state
         self.elapsed = 0.0
-        if state == "sleep" and self.previous in {"hug_tail", "wing_blanket", "sleep"}:
+        if state == "sleep" and (self.transition.active or self.previous in {"hug_tail", "wing_blanket", "sleep"}):
             self.elapsed = 4.0
         self.duration = self.rng.uniform(*DRAGON_ACTIVITIES[state].duration)
-        self.blink_interval = self.rng.uniform(5, 9)
+        self.blink_interval = self.rng.uniform(4, 6.5)
 
     def finish(self):
         if self.state == "sleep":
@@ -71,10 +83,23 @@ class DragonBehavior:
         elif self.state != "idle":
             self.force("idle")
         else:
-            self.force(self.memory.choose({"tail": 15, "stretch": 15, "smoke": 15,
-                       "fire": 8, "yawn": 15, "sleep": 15, "walk": 14, "curious": 3,
-                       "hug_tail": 10, "hiccup": 6, "wing_blanket": 10,
-                       "threat": 8, "roar": 6, "storm_hover": 8}, self.clock))
+            self.force(self.memory.choose({
+                "fire": 40,
+                "smoke": 38,
+                "storm_hover": 24,
+                "wing_gust": 18,
+                "walk": 18,
+                "threat": 15,
+                "roar": 14,
+                "hiccup": 12,
+                "stretch": 8,
+                "tail": 8,
+                "curious": 6,
+                "yawn": 4,
+                "sleep": 3,
+                "hug_tail": 3,
+                "wing_blanket": 3,
+            }, self.clock))
 
     def step(self, seconds, frozen=False, advance_state=True):
         if not frozen:

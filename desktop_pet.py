@@ -13,6 +13,10 @@ import tkinter as tk
 from app.pet_animation import choose_pet_pose
 from app.pet_behavior import PetBehavior
 from app.dragon_animation import DragonBehavior
+from app.dragon_power_view import DragonPowerView
+from app.dragon_effect_layout import MOUTH_POSITIONS, HORN_POSITIONS
+from app.dragon_animation import DRAGON_CLIPS
+from app.behavior_art import EXTRA_CLIPS
 from app.bibi_animation import choose_bibi_pose
 from app.pet_sprites import PetSprites
 from app.fantasy_art import draw_trail_scout
@@ -63,8 +67,8 @@ class DesktopPet:
         self.jump = JumpMotion(launch_speed=245, gravity=1050)
         self.flight = FlightMotion(self.x, self.y)
         self.bibi_flight = BibiFlightMotion(self.x, self.y, auto_launch=False)
-        self.dragon_flight = BibiFlightMotion(self.x, self.y, speed=55, auto_launch=False,
-                                             altitude_range=(0.72, 0.85))
+        self.dragon_flight = BibiFlightMotion(self.x, self.y, speed=72, auto_launch=False,
+                                             altitude_range=(0.22, 0.42))
         self.dragging = False
         self.drag_offset = (0, 0)
         self.running = True
@@ -78,6 +82,7 @@ class DesktopPet:
         self.land_until = 0.0
         self.power_timer = AutoPowerTimer(5, self.last_tick + 5)
         self.effects: list[PowerEffectView] = []
+        self.dragon_power = None
 
         self.paused_var = tk.BooleanVar(value=False)
         self.topmost_var = tk.BooleanVar(value=True)
@@ -223,6 +228,7 @@ class DesktopPet:
             ("Warning Display (ขู่กางปีก)", "threat"),
             ("Roar (คำราม)", "roar"),
             ("Horn Lightning (ตีปีกปล่อยสายฟ้า)", "storm_hover"),
+            ("Wing Whirlwind (ตีปีกข้างเดียวปล่อยพายุ)", "wing_gust"),
         ):
             dragon_menu.add_command(label=label, command=lambda state=activity: self._dragon_gesture(state))
         menu.add_cascade(label="Dragon Behaviors (พฤติกรรมมังกร)", menu=dragon_menu,
@@ -263,13 +269,15 @@ class DesktopPet:
         self.motion.speed = {"slow": 38, "normal": 65, "fast": 105}[self.speed_var.get()]
         self.flight.speed = {"slow": 85, "normal": 145, "fast": 220}[self.speed_var.get()]
         self.bibi_flight.speed = {"slow": 58, "normal": 95, "fast": 145}[self.speed_var.get()]
-        self.dragon_flight.speed = {"slow": 35, "normal": 55, "fast": 85}[self.speed_var.get()]
+        self.dragon_flight.speed = {"slow": 48, "normal": 72, "fast": 106}[self.speed_var.get()]
 
     def _reset_power_timer(self) -> None:
         self.power_timer.reset(time.monotonic(), self.power_interval_var.get())
 
     def _set_character(self) -> None:
         character = self.character_var.get()
+        if character != "dragon" and self.dragon_power:
+            self.dragon_power.hide()
         if character in PET_CHARACTERS and character not in self.pet_sprites:
             self.pet_sprites[character] = PetSprites(self.root, character)
         left, top, right, bottom = self.work_area
@@ -329,10 +337,12 @@ class DesktopPet:
         self._place_window()
         self._redraw()
 
-    def _dragon_gesture(self, state: str) -> None:
+    def _dragon_gesture(self, state: str) -> bool:
         if (self.current_character == "dragon" and self.dragon_flight.state == "rest"
                 and not self.paused_var.get() and not self.dragging):
             self.behavior.force(state)
+            return True
+        return False
 
     def _jump_now(self) -> None:
         if self.current_character in AIR_PETS:
@@ -364,6 +374,8 @@ class DesktopPet:
         self.behavior.force("roll")
 
     def _fire_now(self, special: bool = False) -> bool:
+        if self.current_character == "dragon":
+            return self._dragon_gesture("storm_hover" if special else "fire")
         if self.current_character in PET_CHARACTERS:
             return False
         if special and self.current_character not in SPECIAL_POWERS:
@@ -520,10 +532,30 @@ class DesktopPet:
         elif character == "ship":
             self._draw_ship(canvas, now, self.flight.dx, self.flight.dy)
         elif character == "dragon":
+            is_flying = self.dragon_flight.state != "rest"
+            is_hovering = self.behavior.state in {"storm_hover", "walk"} or is_flying
+            clock = self.dragon_flight.elapsed if is_flying else self.behavior.elapsed
+            bob_y = round(math.sin(clock * 3.8) * 1.8) if is_hovering else 0
             pose = self.behavior.pose(self.dragon_flight.state, self.dragon_flight.elapsed)
-            canvas.create_image(WIDTH // 2, HEIGHT - 2,
+            canvas.create_image(WIDTH // 2, HEIGHT - 2 + bob_y,
                                 image=self.pet_sprites["dragon"].get(pose, self.dragon_flight.direction),
                                 anchor="s")
+            active = self.behavior.state in {"fire","storm_hover","wing_gust"} and not self.behavior.transition.active and not is_flying
+            if active:
+                if self.dragon_power is None:
+                    self.dragon_power = DragonPowerView(self.root,self.random)
+                facing = self.dragon_flight.direction
+                names = DRAGON_CLIPS["fire"] if self.behavior.state == "fire" else EXTRA_CLIPS["dragon"][self.behavior.state]
+                index = names.index(pose)
+                mouth = MOUTH_POSITIONS[index] if self.behavior.state == "fire" else (42,105)
+                horns = HORN_POSITIONS[index] if self.behavior.state == "storm_hover" else ((76,60),(94,60))
+                def world(point):
+                    px = point[0] if facing >= 0 else 160-point[0]
+                    return self.x+WIDTH/2-80+px,self.y+HEIGHT-2-160+point[1]+bob_y
+                self.dragon_power.draw(self.behavior.state,self.behavior.elapsed,self.behavior.duration,
+                                       world(mouth),sorted([world(p) for p in horns]),facing,self.work_area,self.topmost_var.get())
+            elif self.dragon_power:
+                self.dragon_power.hide()
         elif character == "bibi":
             pose = choose_bibi_pose(self.bibi_flight.state, self.bibi_flight.elapsed,
                                     rest_state=self.behavior.state, rest_elapsed=self.behavior.elapsed,
@@ -726,6 +758,8 @@ class DesktopPet:
 
     def close(self) -> None:
         self.running = False
+        if self.dragon_power:
+            self.dragon_power.close()
         for view in self.effects:
             view.close()
         self.effects.clear()
@@ -752,6 +786,13 @@ def main() -> int:
     smoke_test = "--smoke-test" in sys.argv[1:]
     pet = DesktopPet(root)
     if smoke_test:
+        if pet.character_var.get() == "dragon":
+            for state in ("fire", "storm_hover", "wing_gust"):
+                pet.behavior.force(state)
+                pet.behavior.transition.queue = []
+                pet.behavior.elapsed = pet.behavior.duration*.5
+                pet._draw(time.monotonic())
+                root.update_idletasks()
         root.update_idletasks()
         pet.close()
         return 0

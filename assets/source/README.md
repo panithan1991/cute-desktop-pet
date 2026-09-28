@@ -1,6 +1,6 @@
 # Artwork sources
 
-Created with the built-in ImageGen tool using the supplied animal illustrations as identity references. Four pets have 195 frames. The dragon has 170 base frames plus 315 gesture/transition frames (485 total). These are animation frames, not unrelated poses.
+Created with the built-in ImageGen tool using the supplied animal illustrations as identity references. Four pets have 195 frames. The dragon has 170 base frames plus 375 gesture/transition frames (485 total). These are animation frames, not unrelated poses.
 
 ## Prompt set
 
@@ -26,6 +26,8 @@ python scripts/build_dragon_effects.py
 
 `*-behaviors.png` contains five rows of five painted keyframes: waking/stretching, three species-specific gestures, and preparing to travel. The builder appends 110 frames and preserves canonical joining endpoints. `behavior-prompts.json` records the original prompts; `anatomy-repair-prompts.json` records corrections to lifted paws and folded wings. Raised forepaws must replace their grounded counterparts; mammals have four legs and two ears, birds two feet and two wings, dragons four legs and two wings.
 
-`dragon-vfx.png` contains 18 independent effects without a dragon body. `dragon-actions.png` contains 20 clean exhale, threat, roar and wingbeat keyframes. `dragon-v09-prompts.json` records their generation and padding prompts. The effects builder runs last; it composites fire/smoke over intact body poses, adds coherent procedural horn lightning, and saves `dragon-effect-bodies.png` as a pixel-loss regression reference. Older combined-effect sources document the earlier artwork only. Review final frames visually for anatomy; bounds tests cannot count limbs.
+`dragon-vfx.png` contains 18 independent effects without a dragon body. `dragon-actions.png` contains 20 clean exhale, threat, roar and wingbeat keyframes. `dragon-v09-prompts.json` records their generation and padding prompts. The effects builder runs last; it composites smoke over intact body poses, exports mouth/horn anchors for the independent large power overlay, and saves `dragon-effect-bodies.png` as a pixel-loss regression reference. Older combined-effect sources document the earlier artwork only. Review final frames visually for anatomy; bounds tests cannot count limbs.
 
 Dragon atlas saves also produce `assets/runtime/dragon-{windows,macos}/` pages. Ship those platform-specific pages in apps; the full dragon atlas is only a reference. Each page has at most 40 frames to keep Tk startup fast.
+
+`dragon-wing-gust.png` contains five one-wing seated keyframes, expanded into 60 poses with neutral endpoints. `dragon-wing-gust-prompt.txt` records the built-in generation prompt. `dragon-fantasy-fire.png` supplies 16 large flame textures, baked into 32 ignition/flicker/fade drawings per platform and direction; its prompt is recorded alongside it. `python scripts/build_dragon_power_preview.py` refreshes the static README examples.

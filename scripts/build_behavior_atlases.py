@@ -118,6 +118,11 @@ def build(character):
     previews = []
     for row, (clip, poses) in enumerate(EXTRA_CLIPS[character].items()):
         ref = sleep if clip in {"hug_tail", "wing_blanket"} else idle
+        if clip == "wing_gust":
+            keys = normalize_row(extract(ROOT/"assets/source/dragon-wing-gust.png",count=5),idle)
+            keys[0] = keys[-1] = idle
+            frames.extend(tween_path(keys,len(poses)))
+            continue
         cells = (actions[(row-4)*5:(row-3)*5] if row >= 5 else painted[row*5:(row+1)*5])
         keys = normalize_row(cells, ref, 4 if row == 0 else 0)
         keys[0] = sleep if row == 0 else ref
