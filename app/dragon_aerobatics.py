@@ -3,7 +3,7 @@ import math
 from app.pet_motion import BibiFlightMotion
 from app.behavior_art import EXTRA_CLIPS
 from app.dragon_personality import AIR_GESTURES, envelope
-from app.dragon_flight_joins import JOIN_SECONDS,JOIN_FRAMES,LANDING_JOIN_POSES
+from app.dragon_flight_joins import JOIN_SECONDS,JOIN_FRAMES,LANDING_JOIN_POSES,TOUCHDOWN_JOIN_POSES
 
 
 class DragonFlightMotion(BibiFlightMotion):
@@ -37,6 +37,11 @@ class DragonFlightMotion(BibiFlightMotion):
         if self.state=='perched':
             self.state='unperch';self.elapsed=0
 
+    def begin_landing(self,settle=True):
+        self.flight_join_index=min(9,int((self.hover_elapsed%1.8)/1.8*10))
+        self.state='air_settle' if settle else 'release_join'
+        self.elapsed=0
+
     def _grip(self,side):
         self.flight_join_index=min(9,int((self.hover_elapsed%1.8)/1.8*10))
         self.perch_side=side
@@ -50,6 +55,8 @@ class DragonFlightMotion(BibiFlightMotion):
         return 1 if self.state=='perched' else 0
 
     def perch_pose(self,behavior):
+        if self.state=='touchdown':return TOUCHDOWN_JOIN_POSES[min(JOIN_FRAMES-1,int(self.elapsed/JOIN_SECONDS*JOIN_FRAMES))]
+        if self.state=='air_settle':return f'flight_join_{self.flight_join_index:02d}_{min(JOIN_FRAMES-1,int(self.elapsed/JOIN_SECONDS*JOIN_FRAMES)):02d}'
         if self.state=='release_join':return LANDING_JOIN_POSES[min(JOIN_FRAMES-1,int(self.elapsed/JOIN_SECONDS*JOIN_FRAMES))]
         if self.state not in {'grabbing','perched','unperch'}:return None
         name='top_perch' if getattr(self,'perch_side',None)=='top' else 'wall_perch'
@@ -67,7 +74,7 @@ class DragonFlightMotion(BibiFlightMotion):
         return frames[min(39,index)]
 
     def step(self,seconds,left,top,right,ground):
-        if self.state in {'grabbing','perched','unperch','release_join'}:
+        if self.state in {'grabbing','perched','unperch','release_join','air_settle','touchdown'}:
             if self.paused:return
             self.elapsed+=min(max(seconds,0),.1)
             self.x=max(left,min(right,self.x));self.y=max(top,min(ground,self.y))
@@ -77,6 +84,10 @@ class DragonFlightMotion(BibiFlightMotion):
                 self.state='release_join';self.elapsed=0
             elif self.state=='release_join' and self.elapsed>=JOIN_SECONDS:
                 self.state='landing';self.elapsed=0;self.landing_y=self.y
+            elif self.state=='air_settle' and self.elapsed>=JOIN_SECONDS:
+                self.state='release_join';self.elapsed=0
+            elif self.state=='touchdown' and self.elapsed>=JOIN_SECONDS:
+                self.state='rest';self.elapsed=0
             return
         if self.state=='cruise' and self.mode in {'walk','perch_landing'}:
             if self.paused:return
@@ -97,10 +108,13 @@ class DragonFlightMotion(BibiFlightMotion):
             if self.y>=ground:self.climb=-abs(self.climb)
             if side:self._grip(side)
             elif self.elapsed>=self.cruise_duration:
-                self.state='landing';self.elapsed=0;self.landing_y=self.y
+                self.begin_landing()
             return
         if self.mode not in AIR_GESTURES or self.state!='cruise':
+            previous=self.state
             super().step(seconds,left,top,right,ground)
+            if previous=='landing' and self.state=='rest':
+                self.state='touchdown';self.elapsed=0
             return
         if self.paused:return
         dt=min(max(seconds,0),.1)
@@ -132,8 +146,7 @@ class DragonFlightMotion(BibiFlightMotion):
             elif self.x<=left:self.x,self.direction=left,1
         self.y=max(top,min(ground,self.y))
         if p>=1:
-            self.landing_y=self.y;self.elapsed=0
-            self.state='landing'
+            self.begin_landing(settle=False)
 
     def maneuver_pose(self):
         if self.mode not in AIR_GESTURES or self.mode=='perch_landing' or self.state!='cruise':return None

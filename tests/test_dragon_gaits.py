@@ -1,6 +1,6 @@
 import random
 import unittest
-from PIL import Image
+from PIL import Image, ImageOps
 from app.behavior_art import EXTRA_CLIPS
 from app.dragon_animation import DragonBehavior
 from app.pet_motion import PetMotion
@@ -79,6 +79,19 @@ class DragonGaitTests(unittest.TestCase):
             pet.transition.queue = []
             pet.finish()
         self.assertTrue({'ground_walk', 'run'}.issubset(seen))
+
+    def test_repaired_running_frames_are_uncropped_and_mirrored(self):
+        with Image.open(atlas_path('dragon', 1, 'darwin')) as right, \
+                Image.open(atlas_path('dragon', -1, 'darwin')) as left:
+            for pose in EXTRA_CLIPS['dragon']['run']:
+                index = POSES['dragon'].index(pose)
+                box = (index % 5*CELL, index // 5*CELL,
+                       index % 5*CELL+CELL, index // 5*CELL+CELL)
+                frame = right.crop(box)
+                bounds = frame.getchannel('A').point(lambda a: 255 if a > 32 else 0).getbbox()
+                self.assertIsNotNone(bounds, pose)
+                self.assertGreaterEqual(min(bounds[0], bounds[1], CELL-bounds[2], CELL-bounds[3]), 6, pose)
+                self.assertEqual(ImageOps.mirror(frame).tobytes(), left.crop(box).tobytes(), pose)
 
     def test_interrupted_ground_entry_preserves_current_painted_pose(self):
         pet = DragonBehavior(random.Random(3))

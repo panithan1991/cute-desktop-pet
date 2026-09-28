@@ -104,3 +104,41 @@ class DragonPerchingTests(unittest.TestCase):
             with Image.open(root/'landing_join_00.png') as first,Image.open(root/'landing_join_05.png') as last:
                 self.assertEqual(first.tobytes(),body(DRAGON_CLIPS['hover'][0]))
                 self.assertEqual(last.tobytes(),body(DRAGON_CLIPS['landing'][0]))
+
+    def test_touchdown_bridge_joins_ground_pose_to_idle_exactly(self):
+        from app.dragon_animation import DRAGON_CLIPS
+        root=ROOT/'assets/runtime/dragon-macos/body-fx/right'
+        with Image.open(ROOT/'assets/dragon-motion.png') as atlas:
+            def pixels(pose):
+                i=POSES['dragon'].index(pose)
+                return atlas.crop((i%5*160,i//5*160,i%5*160+160,i//5*160+160)).tobytes()
+            with Image.open(root/'touchdown_join_00.png') as first,Image.open(root/'touchdown_join_05.png') as last:
+                self.assertEqual(first.tobytes(),pixels(DRAGON_CLIPS['landing'][-1]))
+                self.assertEqual(last.tobytes(),pixels(DRAGON_CLIPS['idle'][0]))
+
+    def test_interrupted_posture_transitions_preserve_the_displayed_frame(self):
+        for source,target in (('sleep','fire'),('walk','sleep'),('ground_walk','fire')):
+            pet=DragonBehavior(random.Random(10));pet.force(source)
+            self.assertTrue(pet.transition.active)
+            pet.transition.elapsed=pet.transition.queue[0][2]*.45
+            before=pet.pose();pet.force(target)
+            self.assertEqual(pet.pose(),before,(source,target))
+            elapsed=pet.transition.elapsed
+            pet.step(.1,frozen=True)
+            self.assertEqual(pet.pose(),before)
+            self.assertEqual(pet.transition.elapsed,elapsed)
+            for _ in range(160):
+                if not pet.transition.active:break
+                pet.step(.1)
+            self.assertFalse(pet.transition.active)
+
+    def test_normal_flight_timeout_settles_wingbeat_before_landing(self):
+        f=DragonFlightMotion(450,240,auto_launch=False)
+        f.state='cruise';f.mode='walk';f.elapsed=.45;f.cruise_duration=.5
+        f.climb=0
+        f.step(.1,0,25,2000,680)
+        self.assertEqual(f.state,'air_settle')
+        for _ in range(5):f.step(.1,0,25,2000,680)
+        self.assertEqual(f.state,'release_join')
+        for _ in range(5):f.step(.1,0,25,2000,680)
+        self.assertEqual(f.state,'landing')

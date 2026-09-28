@@ -1,0 +1,13 @@
+{
+  "mode": "built-in image_gen",
+  "use_case": "precise-object-edit",
+  "reference_image": "assets/source/dragon-ground-gaits.png",
+  "output": "assets/source/dragon-run-wings-fixed.png",
+  "prompt": "Edit the supplied baby black dragon character into a production animation keyframe sheet: EXACT SAME identity, face, sleepy amber eyes, obsidian metallic scales, horns, body size, tail and lighting. Eight sequential right-facing ground RUN poses, arranged precisely FOUR columns TWO rows, isolated on actual transparent background. One complete dragon per cell, no overlap, no text, no borders, no shadow background. Crucial repair: every single dragon MUST retain TWO anatomically attached leathery bat wings on its back. Near-side wing is clearly visible folded or half-folded as a small triangular silver-black membrane with articulated dark fingers, and far-side wing peeks behind upper back. Wings NEVER disappear, NEVER turn into tail, and do not cover eyes. Only four legs/paws, two wings, one tail, consistent horn count. Pose sequence small continuous changes in gentle quadruped running, forepaw contact, crouch, hindleg push, airborne small leap, front legs extend, front paws land, hind legs follow, contact returns. Body remains horizontal low to ground, face looks right in same three-quarter view, no takeoff or aerial flight. Small natural wing follow-through attached at same shoulder positions throughout. Complete horns, wings, tail and claws with generous transparent margins around all eight subjects. Keep the exact realistic cute rendering of the supplied reference.",
+  "layout": {
+    "columns": 4,
+    "rows": 2,
+    "keyframes": 8
+  },
+  "repair": "Retain attached leathery wings throughout the running stride."
+}

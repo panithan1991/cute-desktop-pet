@@ -16,6 +16,11 @@ def ground_sequences(idle):
     result = {'ground_ready': ready}
     for name, row in (('ground_walk', 1), ('run', 2)):
         path = keys[row*5:(row+1)*5]
+        if name == 'run':
+            # The original leap keys lost their wings. Use the repaired eight
+            # painted poses for the complete stride, retaining contact joins.
+            path = normalize_row(extract(ROOT / 'assets/source/dragon-run-wings-fixed.png',
+                                         count=8, columns=4), contact)
         path[0] = path[-1] = contact
         result[name] = tween_path(path, 40)
         result[name][0] = result[name][-1] = contact

@@ -69,29 +69,34 @@ class DragonBehavior:
             # an upright gesture. Keep the current frame as the bridge start.
             source_pose = self.pose()
             interrupted_ground = []
-            if self.transition.active and self.transition.queue[0][0] == "ground_ready":
+            if self.transition.active and isinstance(self.transition.queue[0][0],str) and self.transition.queue[0][0] in {'ground_ready','travel_ready','wake_stretch'}:
                 from app.behavior_art import EXTRA_CLIPS
-                name, reverse, seconds = self.transition.queue[0]
-                frames = EXTRA_CLIPS["dragon"][name]
-                ordered = frames[::-1] if reverse else frames
-                index = ordered.index(source_pose)
-                interrupted_ground = [(ordered[index:], False, max(.1, seconds-self.transition.elapsed))]
-                interrupted_ground += self.transition.queue[1:]
+                name,reverse,seconds=self.transition.queue[0]
+                frames=EXTRA_CLIPS['dragon'][name]
+                ordered=frames[::-1] if reverse else frames
+                index=ordered.index(source_pose)
+                neutral_at_end=(name=='wake_stretch' and not reverse) or (name!='wake_stretch' and reverse)
+                return_frames=ordered[index:] if neutral_at_end else ordered[:index+1][::-1]
+                if len(return_frames)>1:
+                    interrupted_ground=[(return_frames,False,max(.12,seconds*(len(return_frames)-1)/(len(frames)-1)))]
             source_clip = DRAGON_CLIPS.get("fire" if self.state == "cloud_flame" else self.state)
+            if self.state=='wake':
+                from app.behavior_art import EXTRA_CLIPS
+                source_clip=EXTRA_CLIPS['dragon']['wake_stretch']
             if self.state == 'cloud_flame' and source_pose not in source_clip:
                 from app.behavior_art import EXTRA_CLIPS
                 source_clip=EXTRA_CLIPS['dragon']['ignition_reaction']
             if source_clip is None:
                 from app.behavior_art import EXTRA_CLIPS
                 source_clip = EXTRA_CLIPS["dragon"].get(self.state)
-            self.transition.connect(self.state, state)
+            self.transition.connect("idle" if interrupted_ground else self.state, state)
             if interrupted_ground:
                 self.transition.queue = interrupted_ground + self.transition.queue
             if self.state not in {"idle", "sleep", "wake", "walk", "hug_tail", "wing_blanket", *AIR_GESTURES} and source_clip and source_pose in source_clip:
                 remainder = source_clip[source_clip.index(source_pose):]
                 if len(remainder)>1:
                     self.transition.queue.insert(0,(remainder,False,max(.4,min(2.5,len(remainder)*.06))))
-            if state == "wake" or self.state == "wake":
+            if state == "wake" and self.state == "sleep":
                 self.transition.queue = []
         self.previous, self.state = getattr(self, "state", None), state
         self.elapsed = 0.0
@@ -124,7 +129,7 @@ class DragonBehavior:
             self.force("idle")
         else:
             self.force(self.memory.choose({
-                **{name: (14 if name in {'proud','curious_sniff','happy'} else 8) for name in NEW_ACTIVITIES},
+                **{name: (14 if name in {'proud','curious_sniff','happy'} else 10 if name=='perch_landing' else 8) for name in NEW_ACTIVITIES},
                 "fire": 40,
                 "cloud_flame": 18,
                 "smoke": 38,
@@ -132,7 +137,7 @@ class DragonBehavior:
                 "wing_gust": 18,
                 "belly_smoke": 20,
                 "fury": 10,
-                "walk": 18,
+                "walk": 24,
                 "ground_walk": 24,
                 "run": 5,
                 "threat": 15,

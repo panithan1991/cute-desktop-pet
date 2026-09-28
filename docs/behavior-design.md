@@ -109,3 +109,7 @@ Edge contact now triggers a 1.2-second painted grip transition after normal diag
 Flight transitions add 66 standalone body frames: six bridge frames for each of ten hover wingbeat phases plus a six-frame hover-to-landing bridge. They are loaded directly through the existing bounded sprite cache. Aurora breath now uses 64 pre-rendered flow frames from one painted plume, a stationary nozzle at (8,80), downstream-only periodic deformation and identical first/last frames. No source switching or image warping occurs at runtime.
 
 Static charge uses tracked horn tips and two directional pre-baked coronas (rear 32 degrees, front 18 degrees), mirrored with the body. Each corona is rooted at the horn tip, pointing away from the head rather than into the forehead.
+
+Transition audit: all normal landings now settle the current wingbeat, bridge into landing, then use six touchdown-to-idle frames before resuming a resting routine. Interrupted waking/lying/travel preparation returns continuously from the displayed frame to neutral before entering the next posture. Idle selection increases ordinary-flight weight from 18 to 24 and edge-flight weight from 8 to 10.
+
+Running uses eight repaired painted keys from `assets/source/dragon-run-wings-fixed.png`, with attached wings retained through the airborne stride. The 40 interpolated frames retain the original ground-contact endpoints. `python scripts/fix_dragon_run_wings.py` rebuilds only this clip and its mirrored platform atlases; the full behavior builder uses the same repaired source.

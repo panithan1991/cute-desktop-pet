@@ -535,7 +535,8 @@ class DesktopPet:
                     self.behavior.begin_perch()
                 if was_flying and bird.state == "rest":
                     if self.current_character=='dragon':self.behavior.perched=False
-                    self.behavior.finish()
+                    if self.current_character=='dragon':self.behavior.force('idle')
+                    else:self.behavior.finish()
                     if self.current_character=='dragon':self.behavior.transition.queue=[]
                 self.x, self.y = bird.x, bird.y
             else:
