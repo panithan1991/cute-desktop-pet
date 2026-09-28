@@ -74,6 +74,9 @@ class DragonBehavior:
                 interrupted_ground = [(ordered[index:], False, max(.1, seconds-self.transition.elapsed))]
                 interrupted_ground += self.transition.queue[1:]
             source_clip = DRAGON_CLIPS.get("fire" if self.state == "cloud_flame" else self.state)
+            if self.state == 'cloud_flame' and source_pose not in source_clip:
+                from app.behavior_art import EXTRA_CLIPS
+                source_clip=EXTRA_CLIPS['dragon']['ignition_reaction']
             if source_clip is None:
                 from app.behavior_art import EXTRA_CLIPS
                 source_clip = EXTRA_CLIPS["dragon"].get(self.state)
@@ -183,9 +186,12 @@ class DragonBehavior:
         if connecting:
             return connecting
         if self.state == "cloud_flame":
-            # Exhale slowly, close the mouth, then calmly watch the detached
-            # cloud ignite; body pixels never receive a smoke/fire mask.
-            return dragon_frame("fire", min(1, self.elapsed / (self.duration * .52)))
+            if self.elapsed < self.duration*.52:
+                return dragon_frame("fire", self.elapsed / (self.duration * .52))
+            # Painted eyes, wing movement and directional green reflections
+            # brighten with ignition, then settle back to the exact idle pose.
+            return gesture_pose('dragon','ignition_reaction',
+                                max(0,self.elapsed-self.duration*.52),self.duration*.45)
         if self.state in {"ground_walk", "run"}:
             from app.behavior_art import EXTRA_CLIPS
             frames = EXTRA_CLIPS["dragon"][self.state]

@@ -6,8 +6,8 @@ import sys
 import tkinter as tk
 
 from app.animation_clips import ALL_POSES
-from app.dragon_animation import DRAGON_POSES
-from app.behavior_art import EXTRA_POSES
+from app.dragon_animation import DRAGON_POSES,DRAGON_CLIPS
+from app.behavior_art import EXTRA_POSES,EXTRA_CLIPS
 
 CELL = 160
 COLUMNS = 5
@@ -20,6 +20,7 @@ GRID_COLUMNS = dict.fromkeys(FILENAME, COLUMNS)
 POSES = dict.fromkeys(FILENAME, ALL_POSES)
 POSES["dragon"] = DRAGON_POSES
 POSES = {character: base + EXTRA_POSES[character] for character, base in POSES.items()}
+DIRECT_DRAGON_POSES=frozenset((*DRAGON_CLIPS['fire'],*EXTRA_CLIPS['dragon']['ignition_reaction']))
 
 
 def atlas_path(character: str, facing: int, platform: str | None = None) -> Path:
@@ -58,6 +59,16 @@ class PetSprites:
         if key in self.frames:
             self.frames.move_to_end(key)
             return self.frames[key]
+        if pose in DIRECT_DRAGON_POSES:
+            base=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[1]))
+            platform='windows' if sys.platform=='win32' else 'macos'
+            side='left' if facing<0 else 'right'
+            extension='ppm' if platform=='windows' else 'png'
+            image=tk.PhotoImage(master=self.root,file=str(base/f'assets/runtime/dragon-{platform}/body-fx/{side}/{pose}.{extension}'))
+            if (image.width(),image.height()) != (CELL,CELL):raise ValueError('Invalid dragon effect body frame')
+            self.frames[key]=image
+            if len(self.frames)>80:self.frames.popitem(last=False)
+            return image
         index = self.indices[pose]
         page, local = divmod(index, PAGE_FRAMES)
         page_key = (key[1], page)

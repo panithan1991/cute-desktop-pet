@@ -530,7 +530,8 @@ class DesktopPet:
                 view.close()
         self.effects = live_effects
         self._draw(now)
-        self.root.after(33, self._tick)
+        # Keep the intended cadence including the time spent drawing.
+        self.root.after(max(1, 33-round((time.monotonic()-now)*1000)), self._tick)
 
     def _draw(self, now: float) -> None:
         canvas = self.canvas
@@ -568,9 +569,10 @@ class DesktopPet:
                     mouth=(80,80);horns=ROLL_HORNS["roll_loop"][index]
                 else:
                     state=self.behavior.state;elapsed=self.behavior.elapsed;duration=self.behavior.duration
-                    names=DRAGON_CLIPS["fire"] if state in {"fire", "cloud_flame"} else EXTRA_CLIPS["dragon"][state]
+                    reacting=state=='cloud_flame' and pose in EXTRA_CLIPS['dragon']['ignition_reaction']
+                    names=EXTRA_CLIPS['dragon']['ignition_reaction'] if reacting else DRAGON_CLIPS["fire"] if state in {"fire", "cloud_flame"} else EXTRA_CLIPS["dragon"][state]
                     index=names.index(pose)
-                    mouth=MOUTH_POSITIONS[index] if state in {"fire", "cloud_flame"} else BELLY_MOUTHS[index] if state=="belly_smoke" else (80,100) if state=="fury" else (42,105)
+                    mouth=MOUTH_POSITIONS[-1] if reacting else MOUTH_POSITIONS[index] if state in {"fire", "cloud_flame"} else BELLY_MOUTHS[index] if state=="belly_smoke" else (80,100) if state=="fury" else (42,105)
                     horns=HORN_POSITIONS[index] if state=="storm_hover" else FURY_HORNS[index] if state=="fury" else ((76,60),(94,60))
                 def world(point):
                     px=point[0] if facing>=0 else 159-point[0]
@@ -815,6 +817,11 @@ def main() -> int:
                 pet.behavior.elapsed = pet.behavior.duration*.5
                 pet._draw(time.monotonic())
                 root.update_idletasks()
+                if state == 'cloud_flame':
+                    for fraction in (.24,.70,.91):
+                        pet.behavior.elapsed=pet.behavior.duration*fraction
+                        pet._draw(time.monotonic())
+                        root.update_idletasks()
             pet.dragon_flight.roll_chosen=True
             pet.dragon_flight.roll_turns=3
             pet.dragon_flight.roll_start=0

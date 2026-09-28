@@ -15,7 +15,7 @@ EXTRA_CLIPS = {
     for character, signatures in SIGNATURES.items()
 }
 EXTRA_CLIPS["dragon"]["hiccup"] = tuple(f"extra_hiccup_{i:02d}" for i in range(25))
-for name, length in (("threat", 30), ("roar", 30), ("storm_hover", 140), ("wing_gust", 60), ("belly_smoke", 120), ("roll_enter", 15), ("roll_loop", 90), ("roll_exit", 15), ("fury", 180), ("ground_ready", 25), ("ground_walk", 40), ("run", 40)):
+for name, length in (("threat", 30), ("roar", 30), ("storm_hover", 140), ("wing_gust", 60), ("belly_smoke", 120), ("roll_enter", 15), ("roll_loop", 90), ("roll_exit", 15), ("fury", 180), ("ground_ready", 25), ("ground_walk", 40), ("run", 40), ("ignition_reaction", 40)):
     EXTRA_CLIPS["dragon"][name] = tuple(f"extra_{name}_{i:02d}" for i in range(length))
 EXTRA_POSES = {character: tuple(pose for clip in clips.values() for pose in clip)
                for character, clips in EXTRA_CLIPS.items()}

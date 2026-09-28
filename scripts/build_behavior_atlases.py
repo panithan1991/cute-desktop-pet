@@ -118,6 +118,10 @@ def build(character):
     previews = []
     for row, (clip, poses) in enumerate(EXTRA_CLIPS[character].items()):
         ref = sleep if clip in {"hug_tail", "wing_blanket"} else idle
+        if clip == 'ignition_reaction':
+            keys=normalize_row(extract(ROOT/'assets/source/dragon-ignition-reaction.png',count=10),idle)
+            keys[0]=keys[-1]=idle
+            frames.extend(tween_path(keys,len(poses)));continue
         if clip in {"ground_ready", "ground_walk", "run"}:
             from build_dragon_gaits import ground_sequences
             if clip == "ground_ready":

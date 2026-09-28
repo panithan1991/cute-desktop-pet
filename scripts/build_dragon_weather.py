@@ -90,4 +90,7 @@ def build():
     print('Weather: 32 vortex frames and 16 lateral branching lightning patterns per platform')
 
 
-if __name__=='__main__':build()
+if __name__=='__main__':
+    build()
+    from bake_effect_frames import bake
+    bake(('vortex-left','vortex-right'))

@@ -53,16 +53,21 @@ def build():
         atlas=Image.new('RGBA',(960,2880))
         for i,frame in enumerate(frames):
             if platform=='windows':
-                frame=frame.copy();alpha=np.asarray(frame.getchannel('A'))
-                threshold=np.tile(np.array([[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]])*16+8,(60,60))
-                frame.putalpha(Image.fromarray(np.uint8(alpha>=threshold)*255))
+                # Large dithered masks contain thousands of tiny regions,
+                # which Tk/Windows can spend >100ms constructing per frame.
+                # A coherent contour stays fast; window opacity supplies the
+                # final smooth fade, while Mac retains full per-pixel alpha.
+                frame=frame.copy()
+                frame.putalpha(frame.getchannel('A').point(lambda a:255 if a>=48 else 0))
             atlas.alpha_composite(frame,(i%4*240,i//4*240))
         atlas.save(ROOT/f'assets/runtime/dragon-{platform}/cloud-flame.png',optimize=True)
     preview=Image.new('RGB',(960,275),'#14222b');draw=ImageDraw.Draw(preview)
     for column,(i,label) in enumerate(((5,'Slow emission'),(18,'Cloud gathers'),(29,'Turquoise ignition'),(36,'Blue-green flame'))):
         preview.paste(frames[i],(column*240,20),frames[i].getchannel('A'));draw.text((column*240+12,8),label,fill='white')
     preview.save(ROOT/'assets/readme/dragon-cloud-flame.png')
-    print('Jade cloud: 48 padded frames, both platforms, dithered Windows alpha')
+    from bake_effect_frames import bake
+    bake(('cloud-flame',))
+    print('Jade cloud: 48 padded frames, both platforms, fast Windows contours')
 
 
 if __name__=='__main__':build()

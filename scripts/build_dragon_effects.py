@@ -254,3 +254,5 @@ def bake_fantasy_fire():
 
 if __name__ == "__main__":
     build()
+    from bake_effect_frames import bake,bake_body
+    bake(('fire-left','fire-right'));bake_body()

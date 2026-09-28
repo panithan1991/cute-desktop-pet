@@ -11,7 +11,7 @@ from app.dragon_power_geometry import FIRE_WIDTH, FIRE_HEIGHT, fire_frame, overl
 from app.dragon_weather_layout import LIGHTNING_BOUNDS
 from app.dragon_fire_layout import FIRE_NOZZLES
 from app.dragon_stunt_effect_layout import TREE_BOUNDS
-from app.dragon_cloud import cloud_frame, cloud_center, cloud_sparks, CLOUD_SIZE, CLOUD_FRAMES
+from app.dragon_cloud import cloud_frame, cloud_center, cloud_overlay_rect, gas_ring, RING_BIRTHS, cloud_sparks, CLOUD_SIZE, CLOUD_FRAMES
 
 SKY_RING_LIFETIME = 6.0
 from app.window_style import configure_overlay, configure_pet_window
@@ -27,8 +27,8 @@ class DragonPowerView:
         background = configure_overlay(self.window)
         self.canvas = tk.Canvas(self.window, background=background, highlightthickness=0,borderwidth=0)
         self.canvas.pack()
-        self.frames, self.scaled = {}, OrderedDict()
         self.weather = OrderedDict()
+        self.clip_frames = OrderedDict()
         self.previous_state, self.previous_elapsed = None,0
         self.seed = 0
         self.last_rect = None
@@ -40,52 +40,16 @@ class DragonPowerView:
 
     def flame(self, index, facing, scale):
         side = "left" if facing < 0 else "right"
-        if side not in self.frames:
-            base = Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parents[1]))
-            platform = "windows" if sys.platform == "win32" else "macos"
-            atlas = tk.PhotoImage(master=self.window,file=str(base/f"assets/runtime/dragon-{platform}/fire-{side}.png"))
-            images = []
-            for i in range(32):
-                image = tk.PhotoImage(master=self.window,width=FIRE_WIDTH,height=FIRE_HEIGHT)
-                x,y = i%4*FIRE_WIDTH,i//4*FIRE_HEIGHT
-                self.window.tk.call(str(image),"copy",str(atlas),"-from",x,y,x+FIRE_WIDTH,y+FIRE_HEIGHT,"-to",0,0)
-                images.append(image)
-            self.frames[side] = images
-        original = self.frames[side][index]
-        if scale == 1:
-            return original
-        key = side,index,scale
-        if key not in self.scaled:
-            self.scaled[key] = original.subsample(scale,scale)
-        self.scaled.move_to_end(key)
-        if len(self.scaled)>64:
-            self.scaled.popitem(last=False)
-        return self.scaled[key]
+        return self.clip_image(f'fire-{side}', index, FIRE_WIDTH, FIRE_HEIGHT, 32, scale)
 
-    def asset_path(self,name):
+    def asset_path(self,name,extension='png'):
         base=Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parents[1]))
         platform="windows" if sys.platform=="win32" else "macos"
-        return str(base/f"assets/runtime/dragon-{platform}/{name}.png")
+        return str(base/f"assets/runtime/dragon-{platform}/{name}.{extension}")
 
     def vortex(self,index,facing,scale=1):
         side="left" if facing<0 else "right"
-        key=f"vortex-{side}"
-        if key not in self.frames:
-            atlas=tk.PhotoImage(master=self.window,file=self.asset_path(key))
-            frames=[]
-            for i in range(32):
-                image=tk.PhotoImage(master=self.window,width=180,height=200)
-                x,y=i%4*180,i//4*200
-                self.window.tk.call(str(image),"copy",str(atlas),"-from",x,y,x+180,y+200,"-to",0,0)
-                frames.append(image)
-            self.frames[key]=frames
-        original=self.frames[key][index]
-        if scale==1:return original
-        cache_key=key,index,scale
-        if cache_key not in self.scaled:self.scaled[cache_key]=original.subsample(scale,scale)
-        self.scaled.move_to_end(cache_key)
-        if len(self.scaled)>64:self.scaled.popitem(last=False)
-        return self.scaled[cache_key]
+        return self.clip_image(f'vortex-{side}', index, 180, 200, 32, scale)
 
     def lightning(self,index,scale):
         key=index,scale
@@ -97,22 +61,22 @@ class DragonPowerView:
         return self.weather[key]
 
     def clip_image(self,name,index,width,height,count,scale=1):
-        if name not in self.frames:
-            atlas=tk.PhotoImage(master=self.window,file=self.asset_path(name))
-            images=[]
-            for i in range(count):
-                image=tk.PhotoImage(master=self.window,width=width,height=height)
-                xx,yy=i%4*width,i//4*height
-                self.window.tk.call(str(image),"copy",str(atlas),"-from",xx,yy,xx+width,yy+height,"-to",0,0)
-                images.append(image)
-            self.frames[name]=images
-        original=self.frames[name][index]
-        if scale==1:return original
+        if not 0<=index<count:raise IndexError(index)
         key=name,index,scale
-        if key not in self.scaled:self.scaled[key]=original.subsample(scale,scale)
-        self.scaled.move_to_end(key)
-        if len(self.scaled)>64:self.scaled.popitem(last=False)
-        return self.scaled[key]
+        if key in self.clip_frames:
+            self.clip_frames.move_to_end(key)
+            return self.clip_frames[key]
+        original_key=name,index,1
+        if original_key not in self.clip_frames:
+            original=tk.PhotoImage(master=self.window,file=self.asset_path(f'fx/{name}/{index:02d}'))
+            if (original.width(),original.height()) != (width,height):
+                raise ValueError(f'Invalid effect frame {name}:{index}')
+            self.clip_frames[original_key]=original
+        original=self.clip_frames[original_key]
+        self.clip_frames[key]=original if scale==1 else original.subsample(scale,scale)
+        self.clip_frames.move_to_end(key)
+        while len(self.clip_frames)>96:self.clip_frames.popitem(last=False)
+        return self.clip_frames[key]
 
     def tree(self,side,index,scale):
         key=side,index,scale
@@ -144,10 +108,10 @@ class DragonPowerView:
         if state == 'cloud_flame':
             # A mouth-anchored emitter feeds a cloud with its own fixed origin.
             # Recoil and head movement cannot pull the cloud into the face.
-            if elapsed >= duration*.08 and 'cloud' not in self.ring_origins:
+            if elapsed >= duration*.07 and 'cloud' not in self.ring_origins:
                 self.ring_origins['cloud'] = mouth
             origin = self.ring_origins.get('cloud', mouth)
-        x,y,w,h = overlay_rect(origin,bounds)
+        x,y,w,h = cloud_overlay_rect(origin,bounds,facing) if state=='cloud_flame' else overlay_rect(origin,bounds)
         if self.last_rect != (x,y,w,h):
             self.window.geometry(f"{w}x{h}{x:+d}{y:+d}"); self.canvas.configure(width=w,height=h)
             self.last_rect = x,y,w,h
@@ -155,21 +119,26 @@ class DragonPowerView:
         c = self.canvas; c.delete("all")
         if state == 'cloud_flame':
             index = cloud_frame(elapsed,duration)
-            if index is None:self.window.withdraw();return
             cx,cy,scale = cloud_center(origin,facing,(x,y,w,h))
-            c.create_image(cx,cy,image=self.clip_image('cloud-flame',index,CLOUD_SIZE,CLOUD_SIZE,CLOUD_FRAMES,scale))
-            p=elapsed/max(duration,.001)
-            if .08 <= p < .35:
-                # Small detached puffs flow outwards, progressively joining
-                # the cloud instead of following the dragon's recoiling head.
-                for i in range(4):
-                    travel=((elapsed-duration*.08)*.55-i*.23)%1
-                    sx=mouth[0]-x+(cx-(mouth[0]-x))*travel
-                    sy=mouth[1]-y+(cy-(mouth[1]-y))*travel-5*math.sin(travel*math.pi)
-                    shrink=max(5,scale*4)
-                    half=CLOUD_SIZE/shrink/2+2
-                    if half<sx<w-half and half<sy<h-half:
-                        c.create_image(sx,sy,image=self.clip_image('cloud-flame',2,CLOUD_SIZE,CLOUD_SIZE,CLOUD_FRAMES,shrink))
+            visible=False
+            target=(cx+x,cy+y)
+            for i,birth in enumerate(RING_BIRTHS):
+                if elapsed<duration*birth:continue
+                key=('gas',i)
+                if key not in self.ring_origins:self.ring_origins[key]=mouth
+                ring=gas_ring(elapsed,duration,i,self.ring_origins[key],target)
+                if ring is None:continue
+                sx,sy,frame=ring;sx-=x;sy-=y
+                shrink=max(scale,math.ceil(96/max(8,2*min(sx,w-sx,sy,h-sy)-4)))
+                side='left' if facing<0 else 'right'
+                c.create_image(sx,sy,image=self.clip_image(f'jade-rings-{side}',frame,96,96,24,shrink))
+                visible=True
+            # Arriving rings dissolve underneath the accumulated cloud, with
+            # fixed world origins rather than a loop teleporting back to mouth.
+            if index is not None:
+                c.create_image(cx,cy,image=self.clip_image('cloud-flame',index,CLOUD_SIZE,CLOUD_SIZE,CLOUD_FRAMES,scale))
+                visible=True
+            if not visible:self.window.withdraw();return
             for dx,dy,fade in cloud_sparks(elapsed,duration,self.seed):
                 sx,sy=cx+dx/scale,cy+dy/scale
                 if not 6<sx<w-6 or not 6<sy<h-6:continue
@@ -179,7 +148,8 @@ class DragonPowerView:
                 c.create_oval(sx-radius,sy-radius,sx+radius,sy+radius,fill=color,outline='')
                 if fade>.8:
                     c.create_line(sx-3/scale,sy,sx+3/scale,sy,fill='#edfff6',width=1)
-            self.window.wm_attributes('-alpha',1)
+            opacity=max(0,min(1,(.97-elapsed/max(duration,.001))/.12)) if sys.platform=='win32' else 1
+            self.window.wm_attributes('-alpha',opacity)
         elif state == "fire":
             index = fire_frame(elapsed,duration)
             if index is None:
