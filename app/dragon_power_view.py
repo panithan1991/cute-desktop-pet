@@ -12,6 +12,9 @@ from app.dragon_weather_layout import LIGHTNING_BOUNDS
 from app.dragon_fire_layout import FIRE_NOZZLES
 from app.dragon_stunt_effect_layout import TREE_BOUNDS
 from app.dragon_cloud import cloud_frame, cloud_center, cloud_overlay_rect, gas_ring, RING_BIRTHS, cloud_sparks, CLOUD_SIZE, CLOUD_FRAMES
+from app.dragon_personality import POWER_GESTURES
+from app.dragon_signature_effects import draw_signature
+from app.dragon_belly_timing import SKY_RING_BIRTHS
 
 SKY_RING_LIFETIME = 6.0
 from app.window_style import configure_overlay, configure_pet_window
@@ -98,26 +101,29 @@ class DragonPowerView:
             self.canvas.create_image(mx-280/scale,my-380/scale,image=image,anchor='nw')
 
     def draw(self,state,elapsed,duration,mouth,horns,facing,bounds,topmost):
-        if state not in {"fire","cloud_flame","storm_hover","wing_gust","belly_smoke","roll_lightning","fury"}:
+        if state not in {"fire","cloud_flame","storm_hover","wing_gust","belly_smoke","roll_lightning","fury", *POWER_GESTURES}:
             self.hide(); return
         if state != self.previous_state or elapsed < self.previous_elapsed:
             self.seed = self.rng.getrandbits(24)
             self.ring_origins={}
         self.previous_state,self.previous_elapsed = state,elapsed
-        origin = mouth if state in {"fire","cloud_flame","wing_gust","belly_smoke","fury"} else ((horns[0][0]+horns[1][0])/2,(horns[0][1]+horns[1][1])/2)
+        origin = mouth if state in {"fire","cloud_flame","wing_gust","belly_smoke","fury", *POWER_GESTURES} else ((horns[0][0]+horns[1][0])/2,(horns[0][1]+horns[1][1])/2)
         if state == 'cloud_flame':
             # A mouth-anchored emitter feeds a cloud with its own fixed origin.
             # Recoil and head movement cannot pull the cloud into the face.
             if elapsed >= duration*.07 and 'cloud' not in self.ring_origins:
                 self.ring_origins['cloud'] = mouth
             origin = self.ring_origins.get('cloud', mouth)
-        x,y,w,h = cloud_overlay_rect(origin,bounds,facing) if state=='cloud_flame' else overlay_rect(origin,bounds)
+        x,y,w,h = cloud_overlay_rect(origin,bounds,facing) if state in {'cloud_flame','thunder_roar'} else overlay_rect(origin,bounds)
         if self.last_rect != (x,y,w,h):
             self.window.geometry(f"{w}x{h}{x:+d}{y:+d}"); self.canvas.configure(width=w,height=h)
             self.last_rect = x,y,w,h
         self.window.wm_attributes("-topmost",topmost)
         c = self.canvas; c.delete("all")
-        if state == 'cloud_flame':
+        if state in POWER_GESTURES:
+            if not draw_signature(self,state,elapsed,duration,mouth,horns,facing,(x,y,w,h)):
+                self.window.withdraw();return
+        elif state == 'cloud_flame':
             index = cloud_frame(elapsed,duration)
             cx,cy,scale = cloud_center(origin,facing,(x,y,w,h))
             visible=False
@@ -186,7 +192,7 @@ class DragonPowerView:
             self.window.wm_attributes("-alpha",max(0,min(1,envelope)))
         elif state=='belly_smoke':
             visible=False
-            for i,at in enumerate((.27,.47,.67)):
+            for i,at in enumerate(SKY_RING_BIRTHS):
                 age=elapsed-duration*at
                 if not 0<=age<SKY_RING_LIFETIME:continue
                 visible=True

@@ -21,6 +21,8 @@ from app.dragon_fury_layout import FURY_HORNS
 from app.dragon_effect_layout import MOUTH_POSITIONS, HORN_POSITIONS
 from app.dragon_animation import DRAGON_CLIPS
 from app.behavior_art import EXTRA_CLIPS
+from app.dragon_personality import PERCH_POWERS, AIR_GESTURES, POWER_GESTURES, MENU_LABELS
+from app.control_panel import ControlPanel
 from app.bibi_animation import choose_bibi_pose
 from app.pet_sprites import PetSprites
 from app.fantasy_art import draw_trail_scout
@@ -87,6 +89,7 @@ class DesktopPet:
         self.power_timer = AutoPowerTimer(5, self.last_tick + 5)
         self.effects: list[PowerEffectView] = []
         self.dragon_power = None
+        self.control_panel = None
 
         self.paused_var = tk.BooleanVar(value=False)
         self.topmost_var = tk.BooleanVar(value=True)
@@ -141,7 +144,7 @@ class DesktopPet:
             self.canvas.bind("<Control-ButtonPress-1>", self._show_menu)
         else:
             self.canvas.bind("<Control-ButtonPress-1>", self._shoot_click)
-        self.canvas.bind("<Double-Button-1>", self._toggle_pause)
+        self.canvas.bind("<Double-Button-1>", lambda _event:self._open_studio())
         root.bind("<Escape>", lambda _event: self.close())
         root.bind("<KeyPress-f>", lambda _event: self._fire_now())
         root.bind("<KeyPress-t>", lambda _event: self._fire_now(special=True))
@@ -226,7 +229,7 @@ class DesktopPet:
                          command=self._roll_now)
         self.roll_menu_index = menu.index("end")
         dragon_menu = tk.Menu(menu, tearoff=False)
-        for label, activity in (
+        for label, activity in (*MENU_LABELS,
             ("Walk (เดินบนพื้น)", "ground_walk"),
             ("Run (วิ่งเล่น)", "run"),
             ("Flame Breath (พ่นไฟ)", "fire"),
@@ -254,6 +257,22 @@ class DesktopPet:
         menu.add_separator()
         menu.add_command(label="Quit (ออกจากแอป)", command=self.close)
         self.menu = menu
+        quick=tk.Menu(self.root,tearoff=False)
+        quick.add_command(label='Pet Studio… (หน้าควบคุม)',command=self._open_studio)
+        quick.add_separator()
+        quick.add_checkbutton(label='Pause (พัก)',variable=self.paused_var,command=self._set_paused)
+        quick.add_command(label='Fly / Jump (บิน / กระโดด)',command=self._jump_now)
+        quick.add_command(label='Rest / Roll (พัก / กลิ้ง)',command=self._roll_now)
+        quick.add_command(label='Return to Bottom (กลับขอบล่าง)',command=self._move_to_bottom)
+        quick.add_separator()
+        quick.add_cascade(label='More Options (ตัวเลือกเพิ่มเติม)',menu=menu)
+        quick.add_command(label='Quit (ออกจากแอป)',command=self.close)
+        self.quick_menu=quick
+
+    def _open_studio(self):
+        self.dragging=False
+        if self.control_panel is None:self.control_panel=ControlPanel(self)
+        else:self.control_panel.show()
 
     def _place_window(self) -> None:
         self.root.geometry(f"{WIDTH}x{HEIGHT}+{round(self.x)}+{round(self.y)}")
@@ -347,6 +366,20 @@ class DesktopPet:
         self._redraw()
 
     def _dragon_gesture(self, state: str) -> bool:
+        if (self.current_character=='dragon' and self.dragon_flight.state=='perched'
+                and state in PERCH_POWERS and not self.paused_var.get() and not self.dragging):
+            if self.behavior.state!='idle':return False
+            self.behavior.force(state)
+            return True
+        if (self.current_character=='dragon' and state in AIR_GESTURES
+                and self.dragon_flight.state=='cruise' and not self.paused_var.get() and not self.dragging):
+            bird=self.dragon_flight
+            self.behavior.force(state);self.behavior.transition.queue=[]
+            bird.mode=state;bird.roll_chosen=False;bird.elapsed=0;bird.perch_side=None
+            bird.cruise_duration=self.behavior.duration
+            top=self.work_area[1];ground=self.work_area[3]-HEIGHT
+            bird.altitude=max(0,min(1,(bird.y-top)/max(1,ground-top)))
+            return True
         if (self.current_character == "dragon" and self.dragon_flight.state == "rest"
                 and not self.paused_var.get() and not self.dragging):
             self.behavior.force(state)
@@ -356,6 +389,9 @@ class DesktopPet:
     def _jump_now(self) -> None:
         if self.current_character in AIR_PETS:
             bird = self.dragon_flight if self.current_character == "dragon" else self.bibi_flight
+            if self.current_character=='dragon' and bird.state=='perched' and not bird.paused:
+                bird.depart();self.behavior.perched=False
+                self.behavior.force('idle');self.behavior.transition.queue=[]
             if bird.state == "rest" and not bird.paused:
                 self.behavior.force("walk")
             return
@@ -409,9 +445,15 @@ class DesktopPet:
         self.flight.y = self.y
         self.bibi_flight.reset(self.x, self.y)
         self.dragon_flight.reset(self.x, self.y)
+        if self.current_character=='dragon':self.behavior.perched=False
+        if self.current_character in AIR_PETS:
+            self.behavior.force('idle');self.behavior.transition.queue=[]
         self._place_window()
 
     def _start_drag(self, event: tk.Event) -> None:
+        if self.current_character=='dragon' and self.dragon_flight.state in {'perched','unperch'}:
+            self.dragon_flight.reset(self.x,self.y);self.behavior.perched=False
+            self.behavior.force('idle');self.behavior.transition.queue=[]
         self.dragging = True
         self.drag_offset = (event.x, event.y)
         self.jump.reset()
@@ -435,10 +477,13 @@ class DesktopPet:
         self.dragging = False
 
     def _show_menu(self, event: tk.Event) -> None:
+        self.quick_menu.entryconfig(3,label='Fly (บิน)' if self.current_character in AIR_PETS else 'Jump (กระโดด)',
+                                    state='normal' if self.current_character in GROUND_JUMPERS|AIR_PETS else 'disabled')
+        self.quick_menu.entryconfig(4,state='normal' if self.current_character in PET_CHARACTERS else 'disabled')
         try:
-            self.menu.tk_popup(event.x_root, event.y_root)
+            self.quick_menu.tk_popup(event.x_root, event.y_root)
         finally:
-            self.menu.grab_release()
+            self.quick_menu.grab_release()
 
     def _tick(self) -> None:
         if not self.running:
@@ -474,14 +519,24 @@ class DesktopPet:
                             self.behavior.turn_pending = False
                         self.behavior.move_ground(self.motion, dt, left, right - WIDTH)
                         bird.x, bird.direction = self.motion.x, self.motion.direction
-                    if self.behavior.walking and bird.launch():
-                        bird.cruise_duration = self.behavior.duration
+                    if self.behavior.walking:
+                        if self.current_character=='dragon':bird.requested_mode=self.behavior.state
+                        if bird.launch():bird.cruise_duration = self.behavior.duration
+                elif self.current_character=='dragon' and bird.state=='perched':
+                    self.behavior.step(dt,frozen=bird.paused)
+                    if bird.elapsed>=bird.perch_duration and self.behavior.state=='idle' and not bird.paused:
+                        bird.depart();self.behavior.perched=False
                 else:
                     self.behavior.step(dt, frozen=bird.paused, advance_state=False)
+                was_perched=bird.state=="perched"
                 was_flying = bird.state != "rest"
                 bird.step(dt, left, top, right - WIDTH, bottom - HEIGHT)
+                if self.current_character=='dragon' and bird.state=='perched' and not was_perched:
+                    self.behavior.perched=True;self.behavior.force('idle')
                 if was_flying and bird.state == "rest":
+                    if self.current_character=='dragon':self.behavior.perched=False
                     self.behavior.finish()
+                    if self.current_character=='dragon':self.behavior.transition.queue=[]
                 self.x, self.y = bird.x, bird.y
             else:
                 moving = (self.behavior.walking if self.current_character in GROUND_PETS
@@ -550,16 +605,30 @@ class DesktopPet:
         elif character == "ship":
             self._draw_ship(canvas, now, self.flight.dx, self.flight.dy)
         elif character == "dragon":
-            is_flying = self.dragon_flight.state != "rest"
-            is_hovering = self.behavior.state in {"storm_hover", "walk"} or is_flying
+            perched=self.dragon_flight.state=="perched"
+            is_flying = self.dragon_flight.state not in {"rest","perched"}
+            is_hovering = (self.behavior.state in {"storm_hover", "walk"} or is_flying) and not perched
             clock = self.dragon_flight.elapsed if is_flying else self.behavior.elapsed
             bob_y = round(math.sin(clock * 3.8) * 1.8) if is_hovering else 0
             bird=self.dragon_flight
             flight_elapsed=bird.hover_elapsed if bird.state=="cruise" else bird.elapsed
-            pose=bird.roll_pose() or self.behavior.pose(bird.state,flight_elapsed)
-            canvas.create_image(WIDTH // 2, HEIGHT - 2 + bob_y,
+            pose=bird.perch_pose(self.behavior) or bird.roll_pose() or bird.maneuver_pose() or self.behavior.pose(bird.state,flight_elapsed)
+            gripping=pose.startswith(('extra_wall_perch','extra_top_perch'))
+            body_x=WIDTH//2
+            body_bottom=HEIGHT-2+bob_y
+            if gripping:
+                amount=1
+                if bird.state=='cruise':amount=min(1,bird.elapsed/max(.001,bird.cruise_duration)/.66)
+                elif bird.state=='unperch':amount=max(0,1-bird.elapsed/1.2)
+                # Fold the wide approach wings before bringing the grip close
+                # to the window boundary; reverse that order on departure.
+                amount=max(0,min(1,(amount-.5)*2))
+                amount=amount*amount*(3-2*amount)
+                if bird.perch_side=='top':body_bottom+=round((126-body_bottom)*amount)
+                else:body_x+=round(((38 if bird.perch_side=='left' else WIDTH-38)-body_x)*amount)
+            canvas.create_image(body_x, body_bottom,
                                 image=self.pet_sprites["dragon"].get(pose,bird.direction),anchor="s")
-            active=self.behavior.state in {"fire","cloud_flame","storm_hover","wing_gust","belly_smoke","fury"} and not self.behavior.transition.active and not is_flying
+            active=self.behavior.state in {"fire","cloud_flame","storm_hover","wing_gust","belly_smoke","fury",*POWER_GESTURES} and not self.behavior.transition.active and not is_flying
             if active or bird.roll_spinning:
                 if self.dragon_power is None:self.dragon_power=DragonPowerView(self.root,self.random)
                 facing=bird.direction
@@ -571,12 +640,16 @@ class DesktopPet:
                     state=self.behavior.state;elapsed=self.behavior.elapsed;duration=self.behavior.duration
                     reacting=state=='cloud_flame' and pose in EXTRA_CLIPS['dragon']['ignition_reaction']
                     names=EXTRA_CLIPS['dragon']['ignition_reaction'] if reacting else DRAGON_CLIPS["fire"] if state in {"fire", "cloud_flame"} else EXTRA_CLIPS["dragon"][state]
-                    index=names.index(pose)
-                    mouth=MOUTH_POSITIONS[-1] if reacting else MOUTH_POSITIONS[index] if state in {"fire", "cloud_flame"} else BELLY_MOUTHS[index] if state=="belly_smoke" else (80,100) if state=="fury" else (42,105)
+                    index=names.index(pose) if pose in names else 0
+                    mouth=MOUTH_POSITIONS[-1] if reacting else MOUTH_POSITIONS[index] if state in {"fire", "cloud_flame"} else BELLY_MOUTHS[index] if state=="belly_smoke" else (80,100) if state=="fury" else (119,92) if state in POWER_GESTURES else (42,105)
                     horns=HORN_POSITIONS[index] if state=="storm_hover" else FURY_HORNS[index] if state=="fury" else ((76,60),(94,60))
+                if perched:
+                    mouth=(104,83) if bird.perch_side=='top' else (105,73)
+                    horns=((72,40),(87,40))
                 def world(point):
                     px=point[0] if facing>=0 else 159-point[0]
-                    return self.x+WIDTH/2-80+px,self.y+HEIGHT-2-160+point[1]+bob_y
+                    return self.x+body_x-80+px,self.y+body_bottom-160+point[1]
+                self.dragon_power.downward=perched and bird.perch_side=='top'
                 self.dragon_power.draw(state,elapsed,duration,world(mouth),
                                        sorted([world(p) for p in horns]),facing,self.work_area,self.topmost_var.get())
             elif self.dragon_power:self.dragon_power.hide()
@@ -782,6 +855,7 @@ class DesktopPet:
 
     def close(self) -> None:
         self.running = False
+        if self.control_panel:self.control_panel.close()
         if self.dragon_power:
             self.dragon_power.close()
         for view in self.effects:
@@ -811,7 +885,8 @@ def main() -> int:
     pet = DesktopPet(root)
     if smoke_test:
         if pet.character_var.get() == "dragon":
-            for state in ("fire", "cloud_flame", "storm_hover", "wing_gust", "belly_smoke", "fury", "ground_walk", "run"):
+            pet._open_studio();root.update_idletasks();pet.control_panel.hide()
+            for state in ("fire", "cloud_flame", "storm_hover", "wing_gust", "belly_smoke", "fury", "ground_walk", "run", *[n for n in dict(MENU_LABELS).values() if n not in AIR_GESTURES]):
                 pet.behavior.force(state)
                 pet.behavior.transition.queue = []
                 pet.behavior.elapsed = pet.behavior.duration*.5
@@ -830,6 +905,20 @@ def main() -> int:
             pet.dragon_flight.elapsed=1.2+9*70/139
             pet._draw(time.monotonic())
             root.update_idletasks()
+            for mode in AIR_GESTURES:
+                pet.dragon_flight.mode=mode;pet.dragon_flight.roll_chosen=False
+                pet.dragon_flight.state='cruise';pet.dragon_flight.cruise_duration=10
+                for fraction in (.0,.35,.65,.99):
+                    pet.dragon_flight.elapsed=10*fraction
+                    pet._draw(time.monotonic());root.update_idletasks()
+            for side in ('left','right','top'):
+                bird=pet.dragon_flight
+                bird.mode='perch_landing';bird.state='perched';bird.perch_side=side
+                bird.direction=-1 if side=='right' else 1
+                pet.behavior.perched=True
+                for power in sorted(PERCH_POWERS):
+                    pet.behavior.force(power);pet.behavior.elapsed=pet.behavior.duration*.6
+                    pet._draw(time.monotonic());root.update_idletasks()
         root.update_idletasks()
         pet.close()
         return 0

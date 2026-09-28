@@ -8,6 +8,7 @@ import tkinter as tk
 from app.animation_clips import ALL_POSES
 from app.dragon_animation import DRAGON_POSES,DRAGON_CLIPS
 from app.behavior_art import EXTRA_POSES,EXTRA_CLIPS
+from app.dragon_personality import NEW_ACTIVITIES, PERCH_CLIPS
 
 CELL = 160
 COLUMNS = 5
@@ -20,7 +21,8 @@ GRID_COLUMNS = dict.fromkeys(FILENAME, COLUMNS)
 POSES = dict.fromkeys(FILENAME, ALL_POSES)
 POSES["dragon"] = DRAGON_POSES
 POSES = {character: base + EXTRA_POSES[character] for character, base in POSES.items()}
-DIRECT_DRAGON_POSES=frozenset((*DRAGON_CLIPS['fire'],*EXTRA_CLIPS['dragon']['ignition_reaction']))
+DIRECT_DRAGON_POSES=frozenset((*DRAGON_CLIPS['fire'],*EXTRA_CLIPS['dragon']['ignition_reaction'],
+                             *(p for n in (*NEW_ACTIVITIES,*PERCH_CLIPS) for p in EXTRA_CLIPS['dragon'][n])))
 
 
 def atlas_path(character: str, facing: int, platform: str | None = None) -> Path:

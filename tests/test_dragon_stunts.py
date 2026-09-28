@@ -16,7 +16,15 @@ class DragonStuntTests(unittest.TestCase):
         from app.dragon_animation import DRAGON_ACTIVITIES
         from app.dragon_power_view import SKY_RING_LIFETIME
         self.assertEqual(SKY_RING_LIFETIME,6)
-        self.assertEqual(DRAGON_ACTIVITIES['belly_smoke'].duration,(22,28))
+        self.assertEqual(DRAGON_ACTIVITIES['belly_smoke'].duration,(36,42))
+        from app.dragon_belly_timing import SKY_RING_BIRTHS,belly_pose_index
+        self.assertEqual(len(SKY_RING_BIRTHS),6)
+        self.assertEqual(len(set(SKY_RING_BIRTHS)),6)
+        for birth in SKY_RING_BIRTHS:
+            self.assertTrue(24<=belly_pose_index(birth)<96)
+        self.assertLess(SKY_RING_BIRTHS[-1]*36+SKY_RING_LIFETIME,36)
+        self.assertEqual(belly_pose_index(0),0)
+        self.assertEqual(belly_pose_index(1),119)
 
     def test_one_half_probability_decision_per_successful_launch(self):
         flight=DragonFlightMotion(300,700,auto_launch=False,rng=random.Random(50))

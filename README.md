@@ -20,17 +20,27 @@ Named behaviors, recent activity memory, and cooldowns vary the routine. Painted
 
 <img src="assets/readme/dragon-cloud-scene.png" alt="Smoke rings merge into a distant cloud; green reflections and excited reaction during ignition — still examples" width="1100">
 
+Eleven new gestures add proud chest puffs, curious sniffing, happy wiggles, hover float, dive and recover, air braking, clinging to the left, right or top screen edge, ember bubbles, static scale charge, aurora breath, and thunder roar. Each has 40 body frames, shared posture joins, and cooldowns. Charging leads into lightning; successful powers can end with a proud or happy reaction. While perched, the dragon randomly breathes fire, jade gas, mouth lightning or ember bubbles, with short rests between powers. It finishes the current breath before releasing its grip and landing. Pet Studio adds portrait cards, grouped actions, bilingual controls, and a compact context menu.
+
+<img src="assets/readme/dragon-personality.png" alt="Eleven new dragon gestures — still examples" width="960">
+
+<img src="assets/readme/dragon-roar-and-bubbles.png" alt="Giant mouth-rooted lightning cone and the growing, bursting ember bubble lifecycle" width="960">
+
+<img src="assets/readme/pet-studio.png" alt="Pet Studio companion cards and bilingual controls" width="920">
+
+<img src="assets/readme/dragon-signature-powers.png" alt="Ember bubbles, scale charge, aurora breath and thunder roar — still examples" width="1200">
+
 ## Download
 
-Download **v0.11.0** from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
+Download **v0.12.0** from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
 
 | Download for Window | Download for MAC |
 | --- | --- |
-| [Download Windows — v0.11.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-Windows.zip) | [Download Mac Apple Silicon — v0.11.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Apple-Silicon.zip) · [Download Mac Intel — v0.11.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Intel.zip) |
+| [Download Windows — v0.12.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-Windows.zip) | [Download Mac Apple Silicon — v0.12.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Apple-Silicon.zip) · [Download Mac Intel — v0.12.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Intel.zip) |
 
-Extract the ZIP. On Windows, open one of the included pet executables. On Mac, open the included app and choose a character from the pet menu. The downloads include Python, Tk, and the artwork. Right-click the pet (or Control-click on Mac) to switch characters, trigger a playful roll, pause, or quit. Drag it to move it.
+Extract the ZIP. On Windows, open one of the included pet executables. On Mac, open the included app and choose a character from the pet menu. The downloads include Python, Tk, and the artwork. Double-click the pet to open **Pet Studio**, or right-click (Control-click on Mac) and choose **Pet Studio**. Pick a companion from portrait cards, choose dragon gestures by category, and adjust speed or pause. English and Thai labels appear together. Drag the pet to move it.
 
-Choose **Dragon Behaviors** to try **Walk / Run**, **Jade Cloud Ignition**, flame breath, smoke rings, warning displays, roars, horn lightning a wing whirlwind, belly-up smoke rings or fury. The dragon also selects these activities automatically with cooldowns.
+In Pet Studio, open **Dragon** to try **Walk / Run**, **Jade Cloud Ignition**, flame breath, smoke rings, warning displays, roars, horn lightning, a wing whirlwind, six belly-up smoke rings over a relaxed 36–42 seconds, or fury. The dragon also selects these activities automatically with cooldowns.
 
 Every release ZIP has a [SHA-256 checksum](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/SHA256SUMS.txt) and a GitHub build attestation. Compare `Get-FileHash FILE.zip -Algorithm SHA256` (Windows) or `shasum -a 256 FILE.zip` (Mac) with the checksum file. To confirm the build came from this repository, run `gh attestation verify FILE.zip -R panithan1991/cute-desktop-pet` with the [GitHub CLI](https://cli.github.com/).
 

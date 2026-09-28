@@ -118,6 +118,10 @@ def build(character):
     previews = []
     for row, (clip, poses) in enumerate(EXTRA_CLIPS[character].items()):
         ref = sleep if clip in {"hug_tail", "wing_blanket"} else idle
+        from app.dragon_personality import NEW_ACTIVITIES, PERCH_CLIPS
+        if character=='dragon' and clip in (*NEW_ACTIVITIES,*PERCH_CLIPS):
+            from build_dragon_personality import sequences
+            frames.extend(sequences()[clip]);continue
         if clip == 'ignition_reaction':
             keys=normalize_row(extract(ROOT/'assets/source/dragon-ignition-reaction.png',count=10),idle)
             keys[0]=keys[-1]=idle

@@ -45,3 +45,13 @@ Dragon atlas saves also produce `assets/runtime/dragon-{windows,macos}/` pages. 
 Run `python scripts/bake_effect_frames.py` after rebuilding art to export small individual effects and exhale/reaction body frames. The updated builders also refresh their individual files automatically. Effects preserve full RGB/alpha on both platforms. Windows body frames use lossless RGB PPM with the native magenta color key; Mac body frames retain smooth-alpha PNG. `python scripts/build_dragon_cloud_scene.py` refreshes the static README scene.
 
 The exact prompt set and selected source image paths are in `dragon-cloud-refinement-prompts.json` (built-in image generation; no API fallback).
+
+### Dragon personality expansion
+
+`dragon-personality-keyframes.png` contains 24 painted keys (six rows of four); `dragon-flight-keyframes.png` contains 16 flight keys. They preserve the existing black dragon identity, two wings and four paws. `dragon-personality-prompts.json` records both complete prompts and the built-in generation mode. `scripts/build_dragon_personality.py` appends eleven 40-frame clips while preserving the first 1,110 frames, then rebuilds padded mirrored platform atlases. `scripts/build_dragon_personality_effects.py` procedurally bakes ember bubbles, aurora wisps and pressure waves. `scripts/bake_effect_frames.py` exports small cached body/effect files for the app. Preview images stay static.
+
+`dragon-signature-effects.png` adds realistic painted fire orbs, aurora wisps and electrical plasma artwork. The effect builder interpolates premultiplied alpha, loops the aurora/halo at identical endpoints, and fades individual bubbles. `scripts/build_ui_icons.py` crops and normalizes existing portraits into the small `assets/ui` directory bundled on both platforms.
+
+`dragon-roar-lightning-cone.png` contains four branching electrical cones; `scripts/build_dragon_roar_cone.py` produces 16 mouth-aligned variations per facing/platform. The complete prompt is recorded alongside the other generation prompts. Ember bubble frames are 96×96 with a 36-frame growth/rupture/dissolution lifecycle.
+
+`dragon-edge-perch.png` contains eight complete wall and overhead grip keyframes. The personality builder interpolates two 40-frame clips and exports them as individual runtime body frames. Prompts are stored with the source artwork.

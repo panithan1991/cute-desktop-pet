@@ -5,6 +5,7 @@ import math
 
 from app.behavior_selection import Activity, BehaviorMemory
 from app.behavior_art import PostureTransition, gesture_pose
+from app.dragon_personality import NEW_ACTIVITIES, AIR_GESTURES, PERCH_POWERS
 
 DRAGON_ACTIVITIES = {
     "idle": Activity("Sleepy breathing", (8, 14)),
@@ -26,10 +27,12 @@ DRAGON_ACTIVITIES = {
     "threat": Activity("Warning glare and wing display", (3.5, 4.8), 30, enter=1.2, exit=1.2),
     "roar": Activity("Small fierce roar", (3.5, 4.8), 35, enter=1.2, exit=1.2),
     "fury": Activity("Two-legged fiery thunder fury", (12,16), 90, enter=2, exit=2),
-    "belly_smoke": Activity("Belly-up sky smoke rings", (22,28), 35, enter=3, exit=3),
+    "belly_smoke": Activity("Belly-up six sky smoke rings", (36,42), 35, enter=3, exit=3),
     "wing_gust": Activity("Seated one-wing whirlwind", (7, 9), 32, enter=1.2, exit=1.5),
     "storm_hover": Activity("Stationary wingbeats and rapid horn lightning", (6.0, 7.5), 35, enter=1, exit=1),
 }
+
+DRAGON_ACTIVITIES.update(NEW_ACTIVITIES)
 
 DRAGON_LENGTHS = {"idle": 8, "blink": 6, "curious": 6, "tail": 6,
                   "stretch": 6, "smoke": 43, "fire": 43, "takeoff": 10,
@@ -53,6 +56,7 @@ class DragonBehavior:
         self.transition = PostureTransition("dragon")
         self.ground_distance = 0.0
         self.turn_pending = False
+        self.perched = False
         self.force("idle")
 
     def force(self, state):
@@ -83,7 +87,7 @@ class DragonBehavior:
             self.transition.connect(self.state, state)
             if interrupted_ground:
                 self.transition.queue = interrupted_ground + self.transition.queue
-            if self.state not in {"idle", "sleep", "wake", "walk", "hug_tail", "wing_blanket"} and source_clip and source_pose in source_clip:
+            if self.state not in {"idle", "sleep", "wake", "walk", "hug_tail", "wing_blanket", *AIR_GESTURES} and source_clip and source_pose in source_clip:
                 remainder = source_clip[source_clip.index(source_pose):]
                 if len(remainder)>1:
                     self.transition.queue.insert(0,(remainder,False,max(.4,min(2.5,len(remainder)*.06))))
@@ -96,9 +100,19 @@ class DragonBehavior:
             self.elapsed = 4.0
         self.duration = self.rng.uniform(*DRAGON_ACTIVITIES[state].duration)
         self.blink_interval = self.rng.uniform(4, 6.5)
+        if self.perched:
+            self.transition.queue=[]
+            if state=='idle':self.duration=self.rng.uniform(4,7)
 
     def finish(self):
-        if self.state == "sleep":
+        if self.perched:
+            self.force(self.memory.choose({name:1 for name in sorted(PERCH_POWERS)},self.clock)
+                       if self.state=='idle' else 'idle')
+        elif self.state == 'static_charge':
+            self.force('storm_hover')
+        elif self.state in {'fire', 'cloud_flame', 'aurora_breath', 'ember_bubbles', 'thunder_roar'} and self.rng.random()<.35:
+            self.force(self.rng.choice(('proud', 'happy')))
+        elif self.state == "sleep":
             self.force("wake")
         elif self.state in {"yawn", "hug_tail", "wing_blanket"}:
             self.force("sleep")
@@ -106,6 +120,7 @@ class DragonBehavior:
             self.force("idle")
         else:
             self.force(self.memory.choose({
+                **{name: (14 if name in {'proud','curious_sniff','happy'} else 8) for name in NEW_ACTIVITIES},
                 "fire": 40,
                 "cloud_flame": 18,
                 "smoke": 38,
@@ -145,7 +160,7 @@ class DragonBehavior:
     def walking(self):
         # Legacy travel name used by the shared flight launcher; ground travel
         # must never launch wings or borrow the airborne motion clock.
-        return self.state == "walk" and not self.transition.active
+        return self.state in {'walk', *AIR_GESTURES} and not self.transition.active
 
     @property
     def grounded_travel(self):
@@ -197,6 +212,10 @@ class DragonBehavior:
             frames = EXTRA_CLIPS["dragon"][self.state]
             stride = 44 if self.state == "ground_walk" else 72
             return frames[int((self.ground_distance % stride) / stride * (len(frames)-1))]
+        if self.state=='belly_smoke':
+            from app.dragon_belly_timing import belly_pose_index
+            from app.behavior_art import EXTRA_CLIPS
+            return EXTRA_CLIPS['dragon']['belly_smoke'][belly_pose_index(self.elapsed/self.duration)]
         extra = gesture_pose("dragon", "wake_stretch" if self.state == "wake" else self.state,
                              self.elapsed, self.duration)
         if extra:

@@ -40,7 +40,7 @@ class PetAnimationTests(unittest.TestCase):
     def test_atlases_have_85_unique_padded_frames_and_mirrored_facings(self):
         for character, keys in POSES.items():
             with self.subTest(character=character):
-                expected = 1110 if character == "dragon" else 195
+                expected = 1630 if character == "dragon" else 195
                 self.assertEqual(len(keys), expected)
                 right = Image.open(atlas_path(character, 1, "darwin")).convert("RGBA")
                 left = Image.open(atlas_path(character, -1, "darwin")).convert("RGBA")
@@ -64,7 +64,9 @@ class PetAnimationTests(unittest.TestCase):
                     self.assertEqual(ImageOps.mirror(frame).tobytes(), left.crop(box).tobytes())
                     self.assertEqual(ImageOps.mirror(hard.crop(box)).tobytes(), hard_left.crop(box).tobytes())
                 # Shared endpoints, ground contact joins and the reversible flight tuck.
-                self.assertGreaterEqual(len(unique), expected-(60 if character=="dragon" else 35))
+                # Breath clips intentionally share anatomy; different VFX
+                # supply the elemental identity without inventing more limbs.
+                self.assertGreaterEqual(len(unique), expected-(270 if character=="dragon" else 35))
 
     def test_bibi_uses_flight_and_rest_clips_without_forced_play_after_every_nap(self):
         reached = set()

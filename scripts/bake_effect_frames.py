@@ -6,6 +6,9 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 CLIPS={'cloud-flame':(240,240,48),'sky-rings':(96,96,24),
+       'ember-bubble':(96,96,36),'aurora-left':(240,160,32),'aurora-right':(240,160,32),'shockwave':(240,240,32),
+       'roar-cone-left':(640,360,16),'roar-cone-right':(640,360,16),
+       'scale-charge':(96,96,32),
        'fury-aura':(240,200,32),
        **{f'jade-rings-{s}':(96,96,24) for s in ('left','right')},
        **{f'fire-{s}':(240,160,32) for s in ('left','right')},
@@ -33,7 +36,8 @@ def bake_body():
     from app.dragon_animation import DRAGON_CLIPS
     from app.behavior_art import EXTRA_CLIPS
     from app.pet_sprites import POSES
-    poses=(*DRAGON_CLIPS['fire'],*EXTRA_CLIPS['dragon']['ignition_reaction'])
+    from app.pet_sprites import DIRECT_DRAGON_POSES
+    poses=DIRECT_DRAGON_POSES
     for platform in ('macos','windows'):
         suffix='-windows' if platform=='windows' else ''
         with Image.open(ROOT/f'assets/dragon-motion{suffix}.png') as atlas:
