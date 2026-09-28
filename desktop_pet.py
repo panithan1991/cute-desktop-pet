@@ -451,7 +451,7 @@ class DesktopPet:
         self._place_window()
 
     def _start_drag(self, event: tk.Event) -> None:
-        if self.current_character=='dragon' and self.dragon_flight.state in {'perched','unperch'}:
+        if self.current_character=='dragon' and self.dragon_flight.state in {'grabbing','perched','unperch'}:
             self.dragon_flight.reset(self.x,self.y);self.behavior.perched=False
             self.behavior.force('idle');self.behavior.transition.queue=[]
         self.dragging = True
@@ -524,7 +524,7 @@ class DesktopPet:
                         if bird.launch():bird.cruise_duration = self.behavior.duration
                 elif self.current_character=='dragon' and bird.state=='perched':
                     self.behavior.step(dt,frozen=bird.paused)
-                    if bird.elapsed>=bird.perch_duration and self.behavior.state=='idle' and not bird.paused:
+                    if self.behavior.state=='idle' and not bird.paused:
                         bird.depart();self.behavior.perched=False
                 else:
                     self.behavior.step(dt, frozen=bird.paused, advance_state=False)
@@ -532,7 +532,7 @@ class DesktopPet:
                 was_flying = bird.state != "rest"
                 bird.step(dt, left, top, right - WIDTH, bottom - HEIGHT)
                 if self.current_character=='dragon' and bird.state=='perched' and not was_perched:
-                    self.behavior.perched=True;self.behavior.force('idle')
+                    self.behavior.begin_perch()
                 if was_flying and bird.state == "rest":
                     if self.current_character=='dragon':self.behavior.perched=False
                     self.behavior.finish()
@@ -607,7 +607,7 @@ class DesktopPet:
         elif character == "dragon":
             perched=self.dragon_flight.state=="perched"
             is_flying = self.dragon_flight.state not in {"rest","perched"}
-            is_hovering = (self.behavior.state in {"storm_hover", "walk"} or is_flying) and not perched
+            is_hovering = (self.behavior.state in {"storm_hover", "walk"} or is_flying) and self.dragon_flight.state not in {'grabbing','perched','unperch'}
             clock = self.dragon_flight.elapsed if is_flying else self.behavior.elapsed
             bob_y = round(math.sin(clock * 3.8) * 1.8) if is_hovering else 0
             bird=self.dragon_flight
@@ -618,8 +618,7 @@ class DesktopPet:
             body_bottom=HEIGHT-2+bob_y
             if gripping:
                 amount=1
-                if bird.state=='cruise':amount=min(1,bird.elapsed/max(.001,bird.cruise_duration)/.66)
-                elif bird.state=='unperch':amount=max(0,1-bird.elapsed/1.2)
+                amount=bird.grip_amount
                 # Fold the wide approach wings before bringing the grip close
                 # to the window boundary; reverse that order on departure.
                 amount=max(0,min(1,(amount-.5)*2))

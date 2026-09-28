@@ -104,10 +104,14 @@ class DragonBehavior:
             self.transition.queue=[]
             if state=='idle':self.duration=self.rng.uniform(4,7)
 
+    def begin_perch(self):
+        self.perched=True
+        choice=self.memory.choose({name:1 for name in sorted(PERCH_POWERS)},self.clock)
+        self.force(choice if choice in PERCH_POWERS else self.rng.choice(sorted(PERCH_POWERS)))
+
     def finish(self):
         if self.perched:
-            self.force(self.memory.choose({name:1 for name in sorted(PERCH_POWERS)},self.clock)
-                       if self.state=='idle' else 'idle')
+            self.force('idle')
         elif self.state == 'static_charge':
             self.force('storm_hover')
         elif self.state in {'fire', 'cloud_flame', 'aurora_breath', 'ember_bubbles', 'thunder_roar'} and self.rng.random()<.35:

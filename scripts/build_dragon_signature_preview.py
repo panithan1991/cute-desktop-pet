@@ -31,18 +31,18 @@ def build():
                 corona=Image.open(ROOT/'assets/runtime/dragon-macos/fx/scale-charge/12.png').resize((48,48),Image.Resampling.LANCZOS)
                 for dx in (-9,9):scene.alpha_composite(corona,(hx+dx-24,hy-40))
             elif state=='thunder_roar':
-                shock=Image.open(ROOT/'assets/runtime/dragon-macos/fx/shockwave/12.png').resize((150,150))
-                scene.alpha_composite(shock,(mx-75,my-75))
-                cone=Image.open(ROOT/'assets/runtime/dragon-macos/fx/roar-cone-right/03.png').resize((192,108),Image.Resampling.LANCZOS)
-                scene.alpha_composite(cone,(mx-2,my-96))
+                for j in range(4):
+                    tree=Image.open(ROOT/f'assets/runtime/dragon-macos/tree-right-{(3+j*5)%16:02d}.png').resize((280,240),Image.Resampling.LANCZOS)
+                    scene.alpha_composite(tree,(mx-140,my-190))
     scene.convert('RGB').save(ROOT/'assets/readme/dragon-signature-powers.png')
     detail=Image.new('RGBA',(960,640),'#14222b');labels=ImageDraw.Draw(detail)
-    labels.text((18,12),'Thunder Roar — mouth-rooted branching cone',fill='white')
+    labels.text((18,12),'Thunder Roar — 3–4 rapid mouth-rooted branching channels',fill='white')
     i=POSES['dragon'].index(EXTRA_CLIPS['dragon']['thunder_roar'][20])
     body=Image.open(ROOT/'assets/dragon-motion.png').crop((i%5*160,i//5*160,i%5*160+160,i//5*160+160))
     detail.alpha_composite(body,(22,220))
-    cone=Image.open(ROOT/'assets/runtime/dragon-macos/fx/roar-cone-right/03.png')
-    detail.alpha_composite(cone,(22+119-8,220+92-320))
+    for j in range(4):
+        tree=Image.open(ROOT/f'assets/runtime/dragon-macos/tree-right-{(3+j*5)%16:02d}.png').resize((280,240),Image.Resampling.LANCZOS)
+        detail.alpha_composite(tree,(22+119-140,220+92-190))
     labels.text((18,424),'Ember Bubbles — emerge, expand, rupture, dissolve',fill='white')
     for j,(k,title) in enumerate(((4,'Emerge'),(14,'Expand'),(26,'Delicate fiery membrane'),(32,'Burst and dissolve'))):
         bubble=Image.open(ROOT/f'assets/runtime/dragon-macos/fx/ember-bubble/{k:02d}.png')

@@ -16,37 +16,54 @@ class DragonPerchingTests(unittest.TestCase):
         f=DragonFlightMotion(450,680,auto_launch=False)
         self.assertIsNone(f.perch_side)
         f.mode='perch_landing';f.state='cruise'
-        self.assertIsNotNone(f.perch_pose(DragonBehavior()))
+        self.assertIsNone(f.perch_pose(DragonBehavior()))
 
-    def test_all_three_edges_grip_pause_and_depart_without_teleporting(self):
+    def test_all_three_edges_require_real_contact_then_grip_and_depart(self):
         for side in ('left','right','top'):
             f=DragonFlightMotion(450,240,auto_launch=False,rng=random.Random(5))
-            f.mode='perch_landing';f.state='cruise';f.cruise_duration=12;f.perch_side=side
-            for _ in range(121):
-                before=(f.x,f.y);f.step(.1,0,25,950,680)
-                self.assertLess(abs(f.x-before[0]),15)
-                self.assertLess(abs(f.y-before[1]),15)
-            self.assertEqual(f.state,'perched')
-            if side=='top':self.assertEqual(f.y,25)
-            else:self.assertEqual(f.x,0 if side=='left' else 950)
-            if side!='top':self.assertEqual(f.direction,1 if side=='left' else -1)
+            f.mode='walk';f.state='cruise';f.elapsed=.2;f.cruise_duration=100
+            f.direction=-1 if side=='left' else 1
+            f.climb=-100 if side=='top' else 0
+            if side=='top':f.x=450;f.y=26
+            elif side=='left':f.x=1
+            else:f.x=949
+            self.assertIsNone(f.perch_pose(DragonBehavior()))
+            for _ in range(5):
+                f.step(.1,0,25,950,680)
+                if f.state=='grabbing':break
+                self.assertIsNone(f.perch_pose(DragonBehavior()))
+            self.assertEqual(f.state,'grabbing');self.assertEqual(f.perch_side,side)
+            contact=(f.x,f.y)
+            for _ in range(13):f.step(.1,0,25,950,680)
+            self.assertEqual(f.state,'perched');self.assertEqual((f.x,f.y),contact)
             before=(f.x,f.y,f.elapsed);f.paused=True;f.step(.1,0,25,950,680)
-            self.assertEqual(before,(f.x,f.y,f.elapsed))
-            f.paused=False
-            for _ in range(100):f.step(.1,0,25,950,680)
-            self.assertEqual((f.x,f.y),before[:2])
+            self.assertEqual(before,(f.x,f.y,f.elapsed));f.paused=False
             f.depart()
             for _ in range(45):f.step(.1,0,25,950,680)
             self.assertEqual(f.state,'rest');self.assertEqual(f.y,680)
 
-    def test_random_perched_routine_uses_only_requested_powers_and_rests(self):
-        pet=DragonBehavior(random.Random(21));pet.perched=True;pet.force('idle')
-        reached=set()
+    def test_flying_in_open_space_never_displays_a_stationary_grip(self):
+        f=DragonFlightMotion(450,400,auto_launch=False,rng=random.Random(9))
+        f.mode='perch_landing';f.state='cruise';f.cruise_duration=50
+        pet=DragonBehavior()
+        for _ in range(20):
+            self.assertIsNone(f.perch_pose(pet))
+            before=(f.x,f.y);f.step(.1,0,25,2000,680)
+            self.assertGreater(abs(f.x-before[0]),0)
+            self.assertGreater(abs(f.y-before[1]),0)
+            self.assertEqual(f.state,'cruise')
+
+    def test_each_perch_selects_exactly_one_power_then_finishes(self):
+        pet=DragonBehavior(random.Random(21));reached=set()
         for _ in range(120):
-            pet.clock+=pet.duration;pet.finish();reached.add(pet.state)
-            self.assertIn(pet.state,PERCH_POWERS|{'idle'})
+            pet.begin_perch();reached.add(pet.state)
+            self.assertIn(pet.state,PERCH_POWERS)
             self.assertFalse(pet.transition.active)
-        self.assertEqual(reached,PERCH_POWERS|{'idle'})
+            pet.clock+=pet.duration;pet.finish()
+            self.assertEqual(pet.state,'idle')
+            self.assertFalse(pet.transition.active)
+            pet.perched=False
+        self.assertEqual(reached,PERCH_POWERS)
 
     def test_grip_remains_at_body_clip_boundary_and_downward_cones_match(self):
         with Image.open(ROOT/'assets/dragon-motion.png') as atlas:

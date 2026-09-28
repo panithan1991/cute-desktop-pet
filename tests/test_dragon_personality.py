@@ -39,7 +39,7 @@ class DragonPersonalityTests(unittest.TestCase):
             self.assertFalse(flight.roll_chosen)
             reached=set();positions=[]
             for _ in range(1000):
-                if flight.state=='perched' and flight.elapsed>=flight.perch_duration:flight.depart()
+                if flight.state=='perched' and flight.elapsed>=1:flight.depart()
                 before=(flight.x,flight.y)
                 flight.step(.1,0,25,950,680)
                 self.assertTrue(0<=flight.x<=950 and 25<=flight.y<=680,mode)
@@ -50,7 +50,7 @@ class DragonPersonalityTests(unittest.TestCase):
                 if flight.state=='rest':break
             self.assertEqual(flight.state,'rest',mode)
             self.assertEqual(flight.y,680)
-            self.assertGreater(len(reached),10 if mode=='perch_landing' else 30)
+            self.assertGreater(len(reached),8 if mode=='perch_landing' else 30)
             flight.state='cruise';flight.elapsed=3;flight.paused=True
             before=(flight.x,flight.y,flight.elapsed,flight.maneuver_pose())
             flight.step(.1,0,25,950,680)
@@ -88,7 +88,7 @@ class DragonPersonalityTests(unittest.TestCase):
             view.window=MagicMock();view.parent=MagicMock();view.canvas=MagicMock();view.rng=random.Random(2)
             view.previous_state=None;view.previous_elapsed=0;view.last_rect=None
             view.ring_origins={};view.clip_frames=OrderedDict();view.weather=OrderedDict()
-            view.clip_image=MagicMock();view.draw_trees=MagicMock()
+            view.clip_image=MagicMock();view.tree=MagicMock();view.draw_trees=MagicMock()
             for elapsed in (0,3,5,8,10):
                 view.draw(state,elapsed,10,(300,400),((270,360),(290,360)),1,(0,20,1200,800),True)
             self.assertTrue(view.window.withdraw.called)
@@ -130,4 +130,17 @@ class DragonPersonalityTests(unittest.TestCase):
         self.assertLess(sum(alpha(33).tobytes()),sum(alpha(26).tobytes()))
 
 
-if __name__=='__main__':unittest.main()
+
+
+    def test_mouth_lightning_has_three_or_four_separate_fast_channels(self):
+        from app.dragon_signature_effects import draw_signature
+        from app.dragon_lightning import STRIKES,STORM_FRAMES
+        for seed in (10,11):
+            view=MagicMock();view.seed=seed;view.downward=False
+            elapsed=STRIKES[4][0]/(STORM_FRAMES-1)*8
+            self.assertTrue(draw_signature(view,'thunder_roar',elapsed,8,(150,250),((130,200),(145,200)),1,(0,0,840,480)))
+            self.assertEqual(view.tree.call_count,3+seed%2)
+            self.assertFalse(view.clip_image.called)
+            view.reset_mock()
+            self.assertFalse(draw_signature(view,'thunder_roar',55/(STORM_FRAMES-1)*8,8,(150,250),((130,200),(145,200)),1,(0,0,840,480)))
+            self.assertFalse(view.tree.called)

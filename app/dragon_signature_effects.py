@@ -47,23 +47,22 @@ def draw_signature(view,state,elapsed,duration,mouth,horns,facing,rect):
                     c.create_line(sx-1.5,sy,sx+1.5,sy,fill='#b9eaff',width=1)
                     c.create_line(sx,sy-1.5,sx,sy+1.5,fill='#8bd7ff',width=1)
     elif state=='thunder_roar':
-        # Several expanding pressure waves; lightning strikes remain fast.
-        for i in range(3):
-            age=elapsed-duration*(.28+.15*i)
-            if not 0<=age<1.5:continue
-            scale=max(1,math.ceil(240/max(8,2*min(mx,w-mx,my,h-my)-4)))
-            c.create_image(mx,my,image=view.clip_image('shockwave',min(31,int(age/1.5*32)),240,240,32,scale))
+        # Three or four separate branching channels, with the same short
+        # exposure/dark-gap rhythm as horn lightning. Every root is the mouth.
         strike,strength,_=flash_at(round(p*(STORM_FRAMES-1)))
-        if strength and .25<p<.83:
+        if not strength or not .20<p<.86:return False
+        count=3+(view.seed%2)
+        side='right' if facing>0 else 'left'
+        for i in range(count):
+            index=(view.seed+strike*7+i*5)%16
+            from app.dragon_stunt_effect_layout import TREE_BOUNDS
+            l,t,r,b=TREE_BOUNDS[index][side]
             available=w-mx-4 if facing>0 else mx-4
-            down=getattr(view,'downward',False) is True
-            above,below=(40,320) if down else (320,40)
-            scale=max(1,math.ceil(632/max(8,available)),math.ceil(above/max(8,my-4)),math.ceil(below/max(8,h-my-4)))
-            side='right' if facing>0 else 'left'
-            image=view.clip_image(f'roar-{"down" if down else "cone"}-{side}',(view.seed+strike*7)%16,640,360,16,scale)
-            nozzle=8 if facing>0 else 631
-            c.create_image(mx-nozzle/scale,my-(39 if down else 320)/scale,image=image,anchor='nw')
-            fade*=strength
-        else:fade*=.28
+            extent=r-280 if facing>0 else 280-l
+            scale=max(2,math.ceil(extent/max(8,available)),
+                      math.ceil((380-t)/max(8,my-4)),math.ceil((b-380)/max(8,h-my-4)))
+            image=view.tree(side,index,scale)
+            c.create_image(mx-280/scale,my-380/scale,image=image,anchor='nw')
+        fade*=strength
     view.window.wm_attributes('-alpha',fade)
     return True

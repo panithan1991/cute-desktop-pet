@@ -17,7 +17,7 @@ NEW_ACTIVITIES = {
 AIR_GESTURES = frozenset(('hover_float', 'dive_recover', 'air_brake', 'perch_landing'))
 POWER_GESTURES = frozenset(('ember_bubbles', 'static_charge', 'aurora_breath', 'thunder_roar'))
 PERCH_CLIPS = ('wall_perch', 'top_perch')
-PERCH_POWERS = frozenset(('fire', 'cloud_flame', 'thunder_roar', 'ember_bubbles'))
+PERCH_POWERS = frozenset(('fire', 'cloud_flame', 'thunder_roar'))
 MENU_LABELS = (
     ('Proud Chest Puff (ยืดอกภูมิใจ)', 'proud'),
     ('Curious Sniff (ดมอย่างสงสัย)', 'curious_sniff'),

@@ -22,6 +22,7 @@ class DragonFlightMotion(BibiFlightMotion):
         self.roll_chosen=self.rng.random()<.5 and self.mode=='walk'
         self.roll_turns=self.rng.choice((2,3)) if self.roll_chosen else 0
         self.roll_start=math.ceil(self.rng.uniform(4,10)/1.8)*1.8
+        if self.roll_chosen:self.roll_start=0
         self.roll_duration=2.4+3*self.roll_turns
         return True
 
@@ -35,22 +36,22 @@ class DragonFlightMotion(BibiFlightMotion):
         if self.state=='perched':
             self.state='unperch';self.elapsed=0
 
-    def _perch_target(self,left,top,right,ground):
-        if not getattr(self,'perch_side',None):
-            self.perch_side=self.rng.choice(('left','right','top'))
-        self.perch_x,self.perch_y=self.x,self.y
-        self.perch_target_x=left if self.perch_side=='left' else right if self.perch_side=='right' else self.rng.uniform(left+(right-left)*.25,left+(right-left)*.75)
-        self.perch_target_y=top if self.perch_side=='top' else top+(ground-top)*self.rng.uniform(.25,.55)
-        self.direction=-1 if self.perch_side=='right' else 1
-        self.perch_duration=self.rng.uniform(50,80)
+    def _grip(self,side):
+        self.perch_side=side
+        self.state='grabbing';self.elapsed=0;self.roll_chosen=False
+        self.direction=-1 if side=='right' else 1
+
+    @property
+    def grip_amount(self):
+        if self.state=='grabbing':return min(1,self.elapsed/1.2)
+        if self.state=='unperch':return max(0,1-self.elapsed/1.2)
+        return 1 if self.state=='perched' else 0
 
     def perch_pose(self,behavior):
-        if self.mode!='perch_landing':return None
+        if self.state not in {'grabbing','perched','unperch'}:return None
         name='top_perch' if getattr(self,'perch_side',None)=='top' else 'wall_perch'
         frames=EXTRA_CLIPS['dragon'][name]
-        if self.state=='cruise':
-            p=min(1,self.elapsed/max(.001,self.cruise_duration)/.66)
-            return frames[min(12,int(p*12))]
+        if self.state=='grabbing':return frames[min(12,int(self.elapsed/1.2*12))]
         if self.state=='unperch':return frames[max(0,12-int(self.elapsed/1.2*12))]
         if self.state!='perched':return None
         if behavior.state=='idle':return frames[12]
@@ -60,11 +61,36 @@ class DragonFlightMotion(BibiFlightMotion):
         return frames[min(39,index)]
 
     def step(self,seconds,left,top,right,ground):
-        if self.state in {'perched','unperch'}:
+        if self.state in {'grabbing','perched','unperch'}:
             if self.paused:return
             self.elapsed+=min(max(seconds,0),.1)
             self.x=max(left,min(right,self.x));self.y=max(top,min(ground,self.y))
-            if self.state=='unperch' and self.elapsed>=1.2:
+            if self.state=='grabbing' and self.elapsed>=1.2:
+                self.state='perched';self.elapsed=0
+            elif self.state=='unperch' and self.elapsed>=1.2:
+                self.state='landing';self.elapsed=0;self.landing_y=self.y
+            return
+        if self.state=='cruise' and self.mode in {'walk','perch_landing'}:
+            if self.paused:return
+            dt=min(max(seconds,0),.1);self.elapsed+=dt
+            # True diagonal flight: neither position nor grip is interpolated
+            # toward a preselected edge. Contact alone starts the grip clip.
+            if self.elapsed<=dt:
+                self.climb=-self.speed*self.rng.uniform(1.35,1.95)
+            acceleration=min(1,self.elapsed/.8)
+            horizontal_gap=right-self.x if self.direction>0 else self.x-left
+            vertical_gap=self.y-top if getattr(self,'climb',-self.speed)<0 else ground-self.y
+            self.x+=self.direction*self.speed*dt*acceleration*max(.2,min(1,horizontal_gap/65))
+            self.y+=getattr(self,'climb',-self.speed)*dt*acceleration*max(.2,min(1,vertical_gap/65))
+            side='top' if self.y<=top else 'left' if self.x<=left else 'right' if self.x>=right else None
+            self.x=max(left,min(right,self.x));self.y=max(top,min(ground,self.y))
+            if self.y>=ground:self.climb=-abs(self.climb)
+            if side:
+                if self.rolling:
+                    if side=='top':self.climb=abs(self.climb)
+                    else:self.direction=1 if side=='left' else -1
+                else:self._grip(side)
+            elif self.elapsed>=self.cruise_duration:
                 self.state='landing';self.elapsed=0;self.landing_y=self.y
             return
         if self.mode not in AIR_GESTURES or self.state!='cruise':
@@ -89,12 +115,6 @@ class DragonFlightMotion(BibiFlightMotion):
             self.y=high+wave-16*e
             # Slow through zero before a small backwards drift, then recover.
             speed=self.speed*(1-1.18*e)
-        else:
-            if old==0:self._perch_target(left,top,right,ground)
-            t=min(1,p/.66);s=t*t*(3-2*t)
-            self.x=self.perch_x+(self.perch_target_x-self.perch_x)*s
-            self.y=self.perch_y+(self.perch_target_y-self.perch_y)*s
-            speed=0
         if self.mode!='perch_landing':self.x+=self.direction*speed*dt
         if self.mode!='perch_landing':
             if self.x>=right:self.x,self.direction=right,-1
@@ -102,7 +122,7 @@ class DragonFlightMotion(BibiFlightMotion):
         self.y=max(top,min(ground,self.y))
         if p>=1:
             self.landing_y=self.y;self.elapsed=0
-            self.state='perched' if self.mode=='perch_landing' else 'landing'
+            self.state='landing'
 
     def maneuver_pose(self):
         if self.mode not in AIR_GESTURES or self.mode=='perch_landing' or self.state!='cruise':return None
