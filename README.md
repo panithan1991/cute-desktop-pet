@@ -2,7 +2,7 @@
 
 [![Mac and Windows builds](https://github.com/panithan1991/cute-desktop-pet/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/panithan1991/cute-desktop-pet/actions/workflows/release.yml)
 
-A rabbit, a puppy, a bald eagle, and a fluffy tabby kitten live on your desktop. Each has 85 animation frames for calm head tilts, naps, belly-up play, rolling, and movement. The eagle flies across and up the screen before landing. Seven other characters are available from the menu.
+A rabbit, a puppy, a bald eagle, and a fluffy tabby kitten live on your desktop. Each has 85 animation frames, long walks and naps, occasional small head tilts, and playful rolls. Ground pets sometimes make a short run; the eagle flies across and up the screen before landing. Activities vary in order, duration, and pace. Seven other characters are available from the menu.
 
 | Rabbit | Puppy | Bald Eagle | Tabby Kitten |
 | :---: | :---: | :---: | :---: |

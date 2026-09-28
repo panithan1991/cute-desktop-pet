@@ -1,7 +1,8 @@
 """Small, testable movement model for the desktop pet."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import math
+import random
 
 
 @dataclass
@@ -117,6 +118,12 @@ class BibiFlightMotion:
     elapsed: float = 0.0
     start_y: float = 0.0
     landing_y: float = 0.0
+    auto_launch: bool = True
+    cruise_duration: float = 30.0
+    rest_duration: float = 60.0
+    altitude: float = 0.18
+    wave_speed: float = 0.5
+    rng: random.Random = field(default_factory=random.Random, repr=False)
 
     def launch(self) -> bool:
         if self.paused or self.state != "rest":
@@ -124,6 +131,8 @@ class BibiFlightMotion:
         self.state = "takeoff"
         self.elapsed = 0.0
         self.start_y = self.y
+        self.altitude = self.rng.uniform(0.14, 0.28)
+        self.wave_speed = self.rng.uniform(0.35, 0.65)
         return True
 
     def reset(self, x: float, ground: float) -> None:
@@ -142,7 +151,7 @@ class BibiFlightMotion:
         self.elapsed += dt
         if self.state == "rest":
             self.y = ground
-            if self.elapsed >= 13.2:
+            if self.auto_launch and self.elapsed >= self.rest_duration:
                 self.launch()
             return
 
@@ -153,8 +162,8 @@ class BibiFlightMotion:
         elif self.x <= left:
             self.x, self.direction = left, 1
 
-        # Target 18% down from the top, visibly above the desktop midpoint.
-        high = top + (ground - top) * 0.18
+        # Vary the cruising height while staying above the desktop midpoint.
+        high = top + (ground - top) * self.altitude
         if self.state == "takeoff":
             progress = min(self.elapsed / 2.4, 1.0)
             eased = progress * progress * (3 - 2 * progress)
@@ -163,8 +172,8 @@ class BibiFlightMotion:
                 self.state, self.elapsed = "cruise", 0.0
         elif self.state == "cruise":
             amplitude = min(64.0, (ground - top) * 0.08)
-            self.y = high + amplitude * math.sin(self.elapsed * 1.5)
-            if self.elapsed >= 10.0:
+            self.y = high + amplitude * math.sin(self.elapsed * self.wave_speed)
+            if self.elapsed >= self.cruise_duration:
                 self.state, self.elapsed = "landing", 0.0
                 self.landing_y = self.y
         else:

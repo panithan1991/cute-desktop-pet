@@ -11,6 +11,7 @@ import time
 import tkinter as tk
 
 from app.pet_animation import choose_pet_pose
+from app.pet_behavior import PetBehavior
 from app.bibi_animation import choose_bibi_pose
 from app.pet_sprites import PetSprites
 from app.fantasy_art import draw_trail_scout
@@ -59,20 +60,15 @@ class DesktopPet:
         self.motion = PetMotion(self.x)
         self.jump = JumpMotion(launch_speed=245, gravity=1050)
         self.flight = FlightMotion(self.x, self.y)
-        self.bibi_flight = BibiFlightMotion(self.x, self.y)
+        self.bibi_flight = BibiFlightMotion(self.x, self.y, auto_launch=False)
         self.dragging = False
         self.drag_offset = (0, 0)
         self.running = True
         self.last_tick = time.monotonic()
         self.walk_time = 0.0
-        self.rest_start = self.last_tick
-        self.rest_variant = 0
         self.idle_until = self.last_tick + 7.0
         self.next_idle = self.idle_until + 2.5
         self.next_jump = self.last_tick + self.random.uniform(12, 18)
-        self.roll_start = 0.0
-        self.roll_until = 0.0
-        self.next_roll = self.last_tick + self.random.uniform(20, 30)
         self.next_blink = self.last_tick + self.random.uniform(2, 5)
         self.blink_until = 0.0
         self.land_until = 0.0
@@ -99,10 +95,9 @@ class DesktopPet:
                     default_character = requested
         self.character_var = tk.StringVar(value=default_character)
         self.current_character = default_character
+        self.behavior = PetBehavior(default_character, self.random)
         if default_character == "mookrata":
-            self.idle_until = self.last_tick + 5.0
-            self.next_idle = self.idle_until + 4.0
-            self.next_jump = self.last_tick + self.random.uniform(8, 13)
+            self.jump.launch_speed = 300
         self.speed_var = tk.StringVar(value="normal")
         self.pet_sprites = {default_character: PetSprites(root, default_character)}
 
@@ -277,13 +272,6 @@ class DesktopPet:
             self.jump.reset()
             self.jump.launch_speed = 245 if character in {"bunny", "kitten"} else 300
             self.jump.gravity = 1050
-            now = time.monotonic()
-            self.rest_start = now
-            self.rest_variant = self.random.randrange(3)
-            self.idle_until = now + self.random.uniform(7, 9) if character in {"bunny", "kitten"} else now + self.random.uniform(4, 6)
-            self.next_idle = self.idle_until + (self.random.uniform(1.5, 3) if character in {"bunny", "kitten"} else self.random.uniform(3, 5))
-            self.next_jump = now + (self.random.uniform(12, 18) if character in {"bunny", "kitten"} else self.random.uniform(8, 13))
-            self.roll_until = 0.0
         else:
             self.jump.launch_speed = 340
             self.jump.gravity = 1050
@@ -291,6 +279,8 @@ class DesktopPet:
             self.next_idle = time.monotonic() + self.random.uniform(7, 12)
         self.current_character = character
         if character in PET_CHARACTERS:
+            self.behavior = PetBehavior(character, self.random)
+            self.walk_time = 0.0
             for view in self.effects:
                 view.close()
             self.effects.clear()
@@ -312,7 +302,9 @@ class DesktopPet:
 
     def _jump_now(self) -> None:
         if self.current_character == "bibi":
-            self.bibi_flight.launch()
+            if self.bibi_flight.launch():
+                self.behavior.force("walk")
+                self.bibi_flight.cruise_duration = self.behavior.duration
             return
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
@@ -328,15 +320,11 @@ class DesktopPet:
             return
         if self.current_character == "bibi":
             if self.bibi_flight.state == "rest":
-                self.bibi_flight.elapsed = 10.0
+                self.behavior.force("roll")
             return
         if self.current_character not in GROUND_PETS or self.jump.airborne:
             return
-        now = time.monotonic()
-        self.roll_start, self.roll_until = now, now + 3.2
-        self.idle_until = max(self.idle_until, self.roll_until)
-        self.next_idle = max(self.next_idle, self.roll_until + 1.0)
-        self.next_roll = now + self.random.uniform(20, 30)
+        self.behavior.force("roll")
 
     def _fire_now(self, special: bool = False) -> bool:
         if self.current_character in PET_CHARACTERS:
@@ -397,24 +385,15 @@ class DesktopPet:
         now = time.monotonic()
         dt = now - self.last_tick
         self.last_tick = now
-        if now >= self.next_idle and self.current_character not in {"ship", "bibi"} and not self.jump.airborne:
-            if self.current_character in PET_CHARACTERS:
-                self.rest_start = now
-                self.rest_variant = self.random.randrange(3)
-                resting = self.random.uniform(7, 9) if self.current_character in {"bunny", "kitten"} else self.random.uniform(4, 6)
-                active = self.random.uniform(1.5, 3) if self.current_character in {"bunny", "kitten"} else self.random.uniform(3, 5)
-                self.idle_until = now + resting
-                self.next_idle = self.idle_until + active
-                self.next_jump = max(self.next_jump, self.idle_until + self.random.uniform(1, 2))
-            else:
-                self.idle_until = now + self.random.uniform(0.7, 1.5)
-                self.next_idle = now + self.random.uniform(7, 12)
+        if (now >= self.next_idle and self.current_character not in PET_CHARACTERS | {"ship"}
+                and not self.jump.airborne):
+            self.idle_until = now + self.random.uniform(0.7, 1.5)
+            self.next_idle = now + self.random.uniform(7, 12)
         if now >= self.next_blink:
             self.blink_until = now + 0.16
             self.next_blink = now + self.random.uniform(2.5, 5.5)
-        if (self.current_character in GROUND_PETS and now >= self.next_roll
-                and not self.jump.airborne and not self.motion.paused and not self.dragging):
-            self._roll_now()
+        if self.current_character in GROUND_PETS:
+            self.behavior.step(dt, frozen=self.motion.paused or self.dragging or self.jump.airborne)
         if not self.dragging:
             left, top, right, bottom = self.work_area
             if self.current_character == "ship":
@@ -423,26 +402,36 @@ class DesktopPet:
                 if not self.flight.paused:
                     self.walk_time += min(max(dt, 0), 0.1)
             elif self.current_character == "bibi":
+                if self.bibi_flight.state == "rest":
+                    self.behavior.step(dt, frozen=self.bibi_flight.paused)
+                    if self.behavior.walking and self.bibi_flight.launch():
+                        self.bibi_flight.cruise_duration = self.behavior.duration
+                was_flying = self.bibi_flight.state != "rest"
                 self.bibi_flight.step(dt, left, top, right - WIDTH, bottom - HEIGHT)
+                if was_flying and self.bibi_flight.state == "rest":
+                    self.behavior.finish()
                 self.x, self.y = self.bibi_flight.x, self.bibi_flight.y
             else:
-                moving = now >= self.idle_until or self.jump.airborne
+                moving = (self.behavior.walking if self.current_character in GROUND_PETS
+                          else now >= self.idle_until) or self.jump.airborne
                 if moving:
+                    speed = self.motion.speed
+                    pace = self.behavior.pace if self.current_character in GROUND_PETS else 1.0
+                    self.motion.speed *= pace
                     self.motion.step(dt, left, right - WIDTH)
+                    self.motion.speed = speed
                     self.x = self.motion.x
                     if not self.motion.paused:
-                        self.walk_time += min(max(dt, 0), 0.1)
+                        self.walk_time += min(max(dt, 0), 0.1) * pace * speed / 65
                 if self.current_character in GROUND_JUMPERS:
                     if (
-                        now >= self.next_jump and not self.motion.paused
-                        and (self.current_character not in PET_CHARACTERS or now >= self.idle_until)
+                        not self.motion.paused and (
+                            self.behavior.consume_hop() if self.current_character in GROUND_PETS
+                            else now >= self.next_jump)
                     ):
                         self.jump.jump()
-                        self.next_jump = now + (
-                            self.random.uniform(8, 12)
-                            if self.current_character in {"bunny", "kitten"}
-                            else (self.random.uniform(8, 13) if self.current_character == "mookrata" else self.random.uniform(3.5, 6.5))
-                        )
+                        if self.current_character not in GROUND_PETS:
+                            self.next_jump = now + self.random.uniform(3.5, 6.5)
                     was_airborne = self.jump.airborne
                     if not self.motion.paused:
                         self.jump.step(dt, self.base_y - top)
@@ -476,7 +465,8 @@ class DesktopPet:
         canvas.delete("all")
         character = self.character_var.get()
         walking = not self.motion.paused and not self.dragging and (
-            now >= self.idle_until or self.jump.airborne
+            (self.behavior.walking if character in GROUND_PETS else now >= self.idle_until)
+            or self.jump.airborne
         )
         stride = math.sin(self.walk_time * 12) if walking else 0.0
         bob = abs(stride) * 3 if walking else math.sin(now * 2) * 1.5
@@ -488,7 +478,9 @@ class DesktopPet:
             self._draw_ship(canvas, now, self.flight.dx, self.flight.dy)
         elif character == "bibi":
             pose = choose_bibi_pose(self.bibi_flight.state, self.bibi_flight.elapsed,
-                                    self.paused_var.get())
+                                    rest_state=self.behavior.state, rest_elapsed=self.behavior.elapsed,
+                                    rest_duration=self.behavior.duration, variant=self.behavior.variant,
+                                    blink=blink and not self.paused_var.get())
             canvas.create_image(WIDTH // 2, HEIGHT - 2,
                                 image=self.pet_sprites["bibi"].get(pose, self.bibi_flight.direction),
                                 anchor="s")
@@ -551,25 +543,23 @@ class DesktopPet:
         self, c: tk.Canvas, now: float, bob: float,
         walking: bool, blink: bool, facing: int, character: str,
     ) -> None:
-        rest_duration = max(0.001, self.idle_until - self.rest_start)
         pose = choose_pet_pose(
             character,
-            walking=walking,
+            walking=self.behavior.walking,
             walk_time=self.walk_time,
-            rest_progress=(now - self.rest_start) / rest_duration,
-            rest_variant=self.rest_variant,
+            rest_progress=self.behavior.elapsed / self.behavior.duration,
+            rest_variant=self.behavior.variant,
             airborne=self.jump.airborne,
             jump_velocity=self.jump.velocity,
             landed=now < self.land_until,
-            blink=blink,
-            paused=self.paused_var.get(),
-            roll_progress=((now - self.roll_start) / (self.roll_until - self.roll_start)
-                           if now < self.roll_until else None),
+            blink=blink and not self.paused_var.get(),
+            paused=False,
             jump_progress=0.5 - self.jump.velocity / (2 * self.jump.launch_speed),
-            rest_time=now - self.rest_start,
+            rest_time=self.behavior.elapsed,
+            rest_state=self.behavior.state, rest_duration=self.behavior.duration,
         )
         c.create_image(
-            WIDTH // 2, HEIGHT - 2 - bob,
+            WIDTH // 2, HEIGHT - 2,
             image=self.pet_sprites[character].get(pose, facing), anchor="s",
         )
 

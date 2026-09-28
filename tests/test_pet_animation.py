@@ -63,12 +63,18 @@ class PetAnimationTests(unittest.TestCase):
                     self.assertEqual(ImageOps.mirror(hard.crop(box)).tobytes(), hard_left.crop(box).tobytes())
                 self.assertEqual(len(unique), 85)
 
-    def test_bibi_reaches_all_85_frames_in_real_flight_phases(self):
+    def test_bibi_uses_flight_and_rest_clips_without_forced_play_after_every_nap(self):
         reached = set()
-        for state, duration in (("rest", 13.2), ("takeoff", 2.4), ("cruise", 10), ("landing", 2.8)):
+        for state, duration in (("takeoff", 2.4), ("cruise", 30), ("landing", 2.8)):
             for step in range(1000):
                 reached.add(choose_bibi_pose(state, duration * step / 999))
-        self.assertEqual(reached, set(POSES["bibi"]))
+        self.assertTrue(set(CLIPS["walk"] + CLIPS["hop"]).issubset(reached))
+        for step in range(1000):
+            reached.add(choose_bibi_pose("rest", 0, rest_state="roll",
+                                         rest_elapsed=6 * step / 999, rest_duration=6))
+        self.assertTrue(set(CLIPS["roll"]).issubset(reached))
+        self.assertIn(choose_bibi_pose("rest", 80, rest_state="sleep",
+                                      rest_elapsed=40, rest_duration=80), CLIPS["sleep"][8:11])
 
 
 if __name__ == "__main__":

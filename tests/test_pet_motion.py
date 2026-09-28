@@ -66,7 +66,7 @@ class FlightMotionTests(unittest.TestCase):
 
 class BibiFlightMotionTests(unittest.TestCase):
     def test_bibi_climbs_above_mid_screen_while_moving_sideways_then_lands(self):
-        bird = BibiFlightMotion(x=300, y=700)
+        bird = BibiFlightMotion(x=300, y=700, cruise_duration=10)
         self.assertTrue(bird.launch())
         self.assertFalse(bird.launch())
         positions = []
