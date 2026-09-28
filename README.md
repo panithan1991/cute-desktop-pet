@@ -12,7 +12,9 @@ Named behaviors, recent activity memory, and cooldowns vary the routine. Painted
 | :---: | :---: | :---: | :---: |
 | <img src="assets/readme/booboo.png" alt="Rabbit" width="150"> | <img src="assets/readme/moo-krata.png" alt="Puppy" width="150"> | <img src="assets/readme/bibi.png" alt="Bald eagle" width="150"> | <img src="assets/readme/kitten.png" alt="Tabby kitten" width="150"> |
 
-<img src="assets/readme/dragon.png" alt="Black baby dragon" width="170">
+| Sleepy Dragon | 
+| :---: | 
+|<img src="assets/readme/dragon.png" alt="Black baby dragon" width="170">|
 
 <img src="assets/readme/dragon-powers.png" alt="Dragon smoke, flame breath and horn lightning — still examples" width="1000">
 
