@@ -46,6 +46,7 @@ jobs:
           dist/BooBoo.app/Contents/MacOS/BooBoo --smoke-test
           dist/BooBoo.app/Contents/MacOS/BooBoo --character=mookrata --smoke-test
           dist/BooBoo.app/Contents/MacOS/BooBoo --character=bibi --smoke-test
+          dist/BooBoo.app/Contents/MacOS/BooBoo --character=kitten --smoke-test
           codesign --verify --deep --strict dist/BooBoo.app
       - name: Package Mac download
         run: |
@@ -107,7 +108,7 @@ jobs:
         shell: pwsh
         run: |
           Expand-Archive -LiteralPath 'CuteDesktopPet-Windows.zip' -DestinationPath 'unpacked'
-          foreach ($name in @('BooBoo', 'MooKrata', 'Bibi')) {
+          foreach ($name in @('BooBoo', 'MooKrata', 'Bibi', 'Kitten')) {
             $exe = (Resolve-Path "./unpacked/$name.exe").Path
             $process = Start-Process -FilePath $exe -ArgumentList '--smoke-test' -WindowStyle Hidden -PassThru
             if (-not $process.WaitForExit(30000)) {

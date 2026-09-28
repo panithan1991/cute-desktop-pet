@@ -142,7 +142,7 @@ class BibiFlightMotion:
         self.elapsed += dt
         if self.state == "rest":
             self.y = ground
-            if self.elapsed >= 8.2:
+            if self.elapsed >= 13.2:
                 self.launch()
             return
 

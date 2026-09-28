@@ -1,27 +1,19 @@
-"""Pose order for Bibi's ground, takeoff, flight and landing cycles."""
+"""Smooth wingbeat and grounded play clips for Bibi."""
 
-REST = (
-    "sit", "idle", "wink", "happy", "tilt_right", "tilt_left", "curious",
-    "wave", "cheer", "sleepy", "sleep", "sleep_start", "sleep",
-    "wings_happy", "hover_wings", "wings_half", "wings_up", "crouch", "bow",
-)
-FLIGHT = (
-    "fly_glide", "fly_flap", "fly_cheer", "fly_turn", "fly_glide_low",
-    "fly_dive", "fly_glide", "hover_happy", "hover_wink", "hover_turn",
-)
+from app.animation_clips import CLIPS, progress_pose
 
 
 def choose_bibi_pose(state: str, elapsed: float, paused: bool = False) -> str:
     if paused:
-        return "sleep" if state == "rest" else "fly_glide"
+        return CLIPS["sleep"][8] if state == "rest" else CLIPS["walk"][0]
     if state == "takeoff":
-        return ("crouch", "wings_half", "wings_up", "takeoff", "launch")[
-            min(int(elapsed * 3.0), 4)
-        ]
+        return progress_pose("hop", min(elapsed / 2.4, 1.0) * 0.55)
     if state == "cruise":
-        return FLIGHT[int(elapsed * 4.0) % len(FLIGHT)]
+        return CLIPS["walk"][int(elapsed * 20) % len(CLIPS["walk"])]
     if state == "landing":
-        return ("fly_glide_low", "fly_flap", "hover_turn", "land", "sit")[
-            min(int(elapsed * 1.8), 4)
-        ]
-    return REST[int(elapsed * 2.2) % len(REST)]
+        return progress_pose("hop", 0.55 + min(elapsed / 2.8, 1.0) * 0.45)
+    if elapsed < 4.0:
+        return progress_pose("idle", elapsed / 4.0)
+    if elapsed < 10.0:
+        return progress_pose("sleep", (elapsed - 4.0) / 6.0)
+    return progress_pose("roll", (elapsed - 10.0) / 3.2)

@@ -27,8 +27,9 @@ from app.window_style import configure_overlay, configure_pet_window
 WIDTH = 184
 HEIGHT = 174
 OUTLINE = "#30394f"
-PET_CHARACTERS = frozenset({"bunny", "mookrata", "bibi"})
-GROUND_JUMPERS = frozenset({"guardian", "moss", "astral", "trail", "ember", "bunny", "mookrata"})
+GROUND_PETS = frozenset({"bunny", "mookrata", "kitten"})
+PET_CHARACTERS = GROUND_PETS | {"bibi"}
+GROUND_JUMPERS = GROUND_PETS | {"guardian", "moss", "astral", "trail", "ember"}
 
 
 def get_work_area(root: tk.Tk) -> tuple[int, int, int, int]:
@@ -87,6 +88,8 @@ class DesktopPet:
             default_character = "mookrata"
         if "bibi" in Path(sys.argv[0]).stem.lower() or "--bibi" in sys.argv[1:]:
             default_character = "bibi"
+        if "kitten" in Path(sys.argv[0]).stem.lower() or "--kitten" in sys.argv[1:]:
+            default_character = "kitten"
         for argument in sys.argv[1:]:
             if argument.startswith("--character="):
                 requested = argument.split("=", 1)[1]
@@ -101,7 +104,7 @@ class DesktopPet:
             self.next_idle = self.idle_until + 4.0
             self.next_jump = self.last_tick + self.random.uniform(8, 13)
         self.speed_var = tk.StringVar(value="normal")
-        self.pet_sprites = {name: PetSprites(root, name) for name in PET_CHARACTERS}
+        self.pet_sprites = {default_character: PetSprites(root, default_character)}
 
         configure_pet_window(root)
         root.wm_attributes("-topmost", True)
@@ -173,6 +176,10 @@ class DesktopPet:
             label="Bibi ลูกนกอินทรี", variable=self.character_var,
             value="bibi", command=self._set_character,
         )
+        menu.add_radiobutton(
+            label="ลูกแมวลายขนฟู", variable=self.character_var,
+            value="kitten", command=self._set_character,
+        )
         speed_menu = tk.Menu(menu, tearoff=False)
         for label, value in (("ช้า", "slow"), ("ปกติ", "normal"), ("เร็ว", "fast")):
             speed_menu.add_radiobutton(
@@ -202,6 +209,8 @@ class DesktopPet:
         menu.add_command(label="บิน" if self.current_character == "bibi" else "กระโดด",
                          command=self._jump_now)
         self.jump_menu_index = menu.index("end")
+        menu.add_command(label="กลิ้งเล่น / นอนหงาย", command=self._roll_now)
+        self.roll_menu_index = menu.index("end")
         menu.add_command(label="ยิงพลัง", command=self._fire_now, state="disabled")
         self.fire_menu_index = menu.index("end")
         menu.add_command(
@@ -242,6 +251,8 @@ class DesktopPet:
 
     def _set_character(self) -> None:
         character = self.character_var.get()
+        if character in PET_CHARACTERS and character not in self.pet_sprites:
+            self.pet_sprites[character] = PetSprites(self.root, character)
         left, top, right, bottom = self.work_area
         if character == "ship" and self.current_character != "ship":
             self.flight.x = self.x
@@ -262,16 +273,16 @@ class DesktopPet:
             self.motion.x = self.x
         if character not in GROUND_JUMPERS:
             self.jump.reset()
-        if character in {"bunny", "mookrata"}:
+        if character in GROUND_PETS:
             self.jump.reset()
-            self.jump.launch_speed = 245 if character == "bunny" else 300
+            self.jump.launch_speed = 245 if character in {"bunny", "kitten"} else 300
             self.jump.gravity = 1050
             now = time.monotonic()
             self.rest_start = now
             self.rest_variant = self.random.randrange(3)
-            self.idle_until = now + self.random.uniform(7, 9) if character == "bunny" else now + self.random.uniform(4, 6)
-            self.next_idle = self.idle_until + (self.random.uniform(1.5, 3) if character == "bunny" else self.random.uniform(3, 5))
-            self.next_jump = now + (self.random.uniform(12, 18) if character == "bunny" else self.random.uniform(8, 13))
+            self.idle_until = now + self.random.uniform(7, 9) if character in {"bunny", "kitten"} else now + self.random.uniform(4, 6)
+            self.next_idle = self.idle_until + (self.random.uniform(1.5, 3) if character in {"bunny", "kitten"} else self.random.uniform(3, 5))
+            self.next_jump = now + (self.random.uniform(12, 18) if character in {"bunny", "kitten"} else self.random.uniform(8, 13))
             self.roll_until = 0.0
         else:
             self.jump.launch_speed = 340
@@ -295,6 +306,7 @@ class DesktopPet:
         )
         self.menu.entryconfig(self.jump_menu_index, label="บิน" if character == "bibi" else "กระโดด",
                               state="normal" if character in GROUND_JUMPERS or character == "bibi" else "disabled")
+        self.menu.entryconfig(self.roll_menu_index, state="normal" if character in PET_CHARACTERS else "disabled")
         self._place_window()
         self._redraw()
 
@@ -304,12 +316,27 @@ class DesktopPet:
             return
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
             self.jump.jump()
-            delay = self.random.uniform(12, 18) if self.current_character == "bunny" else (self.random.uniform(8, 13) if self.current_character == "mookrata" else self.random.uniform(3, 6))
+            delay = self.random.uniform(12, 18) if self.current_character in {"bunny", "kitten"} else (self.random.uniform(8, 13) if self.current_character == "mookrata" else self.random.uniform(3, 6))
             self.next_jump = time.monotonic() + delay
 
     def _shoot_click(self, _event: tk.Event) -> str:
         self._fire_now()
         return "break"
+
+    def _roll_now(self) -> None:
+        if self.paused_var.get() or self.dragging:
+            return
+        if self.current_character == "bibi":
+            if self.bibi_flight.state == "rest":
+                self.bibi_flight.elapsed = 10.0
+            return
+        if self.current_character not in GROUND_PETS or self.jump.airborne:
+            return
+        now = time.monotonic()
+        self.roll_start, self.roll_until = now, now + 3.2
+        self.idle_until = max(self.idle_until, self.roll_until)
+        self.next_idle = max(self.next_idle, self.roll_until + 1.0)
+        self.next_roll = now + self.random.uniform(20, 30)
 
     def _fire_now(self, special: bool = False) -> bool:
         if self.current_character in PET_CHARACTERS:
@@ -374,8 +401,8 @@ class DesktopPet:
             if self.current_character in PET_CHARACTERS:
                 self.rest_start = now
                 self.rest_variant = self.random.randrange(3)
-                resting = self.random.uniform(7, 9) if self.current_character == "bunny" else self.random.uniform(4, 6)
-                active = self.random.uniform(1.5, 3) if self.current_character == "bunny" else self.random.uniform(3, 5)
+                resting = self.random.uniform(7, 9) if self.current_character in {"bunny", "kitten"} else self.random.uniform(4, 6)
+                active = self.random.uniform(1.5, 3) if self.current_character in {"bunny", "kitten"} else self.random.uniform(3, 5)
                 self.idle_until = now + resting
                 self.next_idle = self.idle_until + active
                 self.next_jump = max(self.next_jump, self.idle_until + self.random.uniform(1, 2))
@@ -385,12 +412,9 @@ class DesktopPet:
         if now >= self.next_blink:
             self.blink_until = now + 0.16
             self.next_blink = now + self.random.uniform(2.5, 5.5)
-        if (self.current_character == "bunny" and now >= self.next_roll
-                and not self.jump.airborne and not self.motion.paused):
-            self.roll_start = now
-            self.roll_until = now + 1.05
-            self.idle_until = max(self.idle_until, self.roll_until)
-            self.next_roll = now + self.random.uniform(20, 30)
+        if (self.current_character in GROUND_PETS and now >= self.next_roll
+                and not self.jump.airborne and not self.motion.paused and not self.dragging):
+            self._roll_now()
         if not self.dragging:
             left, top, right, bottom = self.work_area
             if self.current_character == "ship":
@@ -416,7 +440,7 @@ class DesktopPet:
                         self.jump.jump()
                         self.next_jump = now + (
                             self.random.uniform(8, 12)
-                            if self.current_character == "bunny"
+                            if self.current_character in {"bunny", "kitten"}
                             else (self.random.uniform(8, 13) if self.current_character == "mookrata" else self.random.uniform(3.5, 6.5))
                         )
                     was_airborne = self.jump.airborne
@@ -540,7 +564,9 @@ class DesktopPet:
             blink=blink,
             paused=self.paused_var.get(),
             roll_progress=((now - self.roll_start) / (self.roll_until - self.roll_start)
-                           if character == "bunny" and now < self.roll_until else None),
+                           if now < self.roll_until else None),
+            jump_progress=0.5 - self.jump.velocity / (2 * self.jump.launch_speed),
+            rest_time=now - self.rest_start,
         )
         c.create_image(
             WIDTH // 2, HEIGHT - 2 - bob,
@@ -677,7 +703,7 @@ def main() -> int:
         except (AttributeError, OSError):
             pass
     root = tk.Tk()
-    root.title("BooBoo, Moo Krata & Bibi")
+    root.title("Cute Desktop Pet")
     root.withdraw()
     if sys.platform == "darwin" and root.tk.call("tk", "windowingsystem") != "aqua":
         root.destroy()

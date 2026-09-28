@@ -2,9 +2,10 @@ import unittest
 
 from PIL import Image, ImageOps
 
+from app.animation_clips import CLIPS
 from app.bibi_animation import choose_bibi_pose
 from app.pet_animation import choose_pet_pose
-from app.pet_sprites import CELL, GRID_COLUMNS, POSES, atlas_path
+from app.pet_sprites import CELL, POSES, atlas_path
 
 
 def pose(character, **changes):
@@ -16,65 +17,58 @@ def pose(character, **changes):
 
 
 class PetAnimationTests(unittest.TestCase):
-    def test_each_pet_has_25_distinct_reachable_poses(self):
-        for character in ("bunny", "mookrata"):
-            keys = POSES[character]
-            with self.subTest(character=character):
-                self.assertEqual(len(keys), 25)
-                self.assertEqual(len(set(keys)), 25)
-                reached = set()
-                for variant in range(3):
-                    for step in range(100):
-                        reached.add(pose(character, rest_variant=variant,
-                                         rest_progress=step / 100))
-                for step in range(100):
-                    reached.add(pose(character, walking=True, walk_time=step / 30))
-                for velocity in (-200, 200):
-                    reached.add(pose(character, airborne=True, jump_velocity=velocity))
-                reached.add(pose(character, landed=True))
-                reached.add(pose(character, paused=True))
-                reached.add(pose(character, blink=True))
-                if character == "bunny":
-                    for step in range(100):
-                        reached.add(pose(character, roll_progress=step / 100))
-                self.assertEqual(reached, set(keys))
+    def test_ground_pets_reach_all_85_frames(self):
+        for character in ("bunny", "mookrata", "kitten"):
+            reached = set()
+            for step in range(300):
+                progress = step / 299
+                reached.add(pose(character, rest_variant=1, rest_progress=progress))
+                reached.add(pose(character, rest_variant=0, rest_progress=progress))
+                reached.add(pose(character, walking=True, walk_time=step / 60))
+                reached.add(pose(character, roll_progress=progress))
+                reached.add(pose(character, airborne=True, jump_progress=progress))
+            self.assertEqual(reached, set(POSES[character]))
 
-    def test_jump_and_landing_are_ordered(self):
-        self.assertEqual(pose("bunny", airborne=True, jump_velocity=245), "hop_up")
-        self.assertEqual(pose("bunny", airborne=True, jump_velocity=-245), "hop_air")
-        self.assertEqual(pose("bunny", landed=True), "crouch")
-        self.assertEqual(pose("mookrata", airborne=True, jump_velocity=300), "hop")
-        self.assertEqual(pose("mookrata", airborne=True, jump_velocity=-300), "hop_two")
-        self.assertEqual(pose("mookrata", landed=True), "land")
+    def test_jump_sequence_follows_ascent_and_descent(self):
+        for character in ("bunny", "mookrata", "kitten"):
+            self.assertEqual(pose(character, airborne=True, jump_progress=0), CLIPS["hop"][0])
+            self.assertEqual(pose(character, airborne=True, jump_progress=0.5), CLIPS["hop"][7])
+            self.assertEqual(pose(character, landed=True), CLIPS["hop"][-1])
+            self.assertEqual(pose(character, paused=True), CLIPS["sleep"][8])
 
-    def test_atlases_have_25_clear_frames_and_correct_left_facing(self):
-        for character in POSES:
+    def test_atlases_have_85_unique_padded_frames_and_mirrored_facings(self):
+        for character, keys in POSES.items():
             with self.subTest(character=character):
+                self.assertEqual(len(keys), 85)
                 right = Image.open(atlas_path(character, 1, "darwin")).convert("RGBA")
                 left = Image.open(atlas_path(character, -1, "darwin")).convert("RGBA")
                 hard = Image.open(atlas_path(character, 1, "win32")).convert("RGBA")
-                columns = GRID_COLUMNS[character]
-                self.assertEqual(right.size, (columns * CELL, 5 * CELL))
+                hard_left = Image.open(atlas_path(character, -1, "win32")).convert("RGBA")
+                self.assertEqual(right.size, (5 * CELL, 17 * CELL))
                 self.assertEqual(left.size, right.size)
                 self.assertEqual(hard.size, right.size)
                 self.assertEqual(set(hard.getchannel("A").tobytes()), {0, 255})
-                for index in range(len(POSES[character])):
-                    box = ((index % columns) * CELL, (index // columns) * CELL,
-                           (index % columns + 1) * CELL, (index // columns + 1) * CELL)
+                unique = set()
+                for index in range(85):
+                    box = ((index % 5) * CELL, (index // 5) * CELL,
+                           (index % 5 + 1) * CELL, (index // 5 + 1) * CELL)
                     frame = right.crop(box)
-                    self.assertIsNotNone(frame.getchannel("A").getbbox())
+                    bounds = frame.getchannel("A").point(lambda a: 255 if a > 32 else 0).getbbox()
+                    self.assertIsNotNone(bounds)
+                    # Guard against the reported cropped head, wing, ear or paw.
+                    self.assertGreaterEqual(min(bounds[0], bounds[1], CELL-bounds[2], CELL-bounds[3]), 6,
+                                            f"{character}: clipped frame {index}")
+                    unique.add(frame.tobytes())
                     self.assertEqual(ImageOps.mirror(frame).tobytes(), left.crop(box).tobytes())
+                    self.assertEqual(ImageOps.mirror(hard.crop(box)).tobytes(), hard_left.crop(box).tobytes())
+                self.assertEqual(len(unique), 85)
 
-    def test_bibi_has_30_reachable_poses(self):
-        keys = POSES["bibi"]
-        self.assertEqual(len(keys), 30)
-        self.assertEqual(len(set(keys)), 30)
-        reached = {
-            choose_bibi_pose(state, step / 20)
-            for state in ("rest", "takeoff", "cruise", "landing")
-            for step in range(300)
-        }
-        self.assertEqual(reached, set(keys))
+    def test_bibi_reaches_all_85_frames_in_real_flight_phases(self):
+        reached = set()
+        for state, duration in (("rest", 13.2), ("takeoff", 2.4), ("cruise", 10), ("landing", 2.8)):
+            for step in range(1000):
+                reached.add(choose_bibi_pose(state, duration * step / 999))
+        self.assertEqual(reached, set(POSES["bibi"]))
 
 
 if __name__ == "__main__":

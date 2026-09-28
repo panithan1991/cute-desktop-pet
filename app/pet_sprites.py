@@ -1,39 +1,19 @@
-"""Fast, pre-rendered animation atlases for the desktop pets."""
-
-from __future__ import annotations
+"""Pre-rendered 85-frame atlases; runtime uses only Tk, not image libraries."""
 
 from pathlib import Path
 import sys
 import tkinter as tk
 
+from app.animation_clips import ALL_POSES
 
 CELL = 160
 COLUMNS = 5
-GRID_COLUMNS = {"bunny": 5, "mookrata": 5, "bibi": 6}
-POSES = {
-    "bunny": (
-        "idle", "blink", "happy", "sleep", "hop_up",
-        "hop_air", "curious", "tilt", "stretch", "sit",
-        "side_idle", "run_a", "run_b", "crouch", "roll_a",
-        "roll_b", "roll_c", "dizzy", "playbow", "wave",
-        "groom", "yawn", "sniff", "alert", "loaf",
-    ),
-    "mookrata": (
-        "idle", "happy", "playbow", "hop", "run_a",
-        "run_b", "tilt", "sleep", "stand_3q", "stand_side",
-        "paw_up", "tilt_left", "tilt_right", "sniff_low", "sniff_air",
-        "happy_sit", "awake_rest", "curled_sleep", "stretch", "playbow_two",
-        "trot_a", "trot_b", "hop_two", "land", "sniff_close",
-    ),
-    "bibi": (
-        "idle", "wink", "happy", "tilt_right", "tilt_left", "curious",
-        "crouch", "wings_half", "wings_up", "bow", "takeoff", "launch",
-        "fly_glide", "fly_flap", "fly_cheer", "fly_turn", "fly_glide_low", "fly_dive",
-        "hover_happy", "hover_wink", "hover_turn", "land", "sleep_start", "sit",
-        "hover_wings", "wings_happy", "wave", "cheer", "sleepy", "sleep",
-    ),
+FILENAME = {
+    "bunny": "booboo-motion", "mookrata": "moo-krata-motion",
+    "bibi": "bibi-motion", "kitten": "kitten-motion",
 }
-FILENAME = {"bunny": "booboo-motion", "mookrata": "moo-krata-motion", "bibi": "bibi-motion"}
+GRID_COLUMNS = dict.fromkeys(FILENAME, COLUMNS)
+POSES = dict.fromkeys(FILENAME, ALL_POSES)
 
 
 def atlas_path(character: str, facing: int, platform: str | None = None) -> Path:
@@ -54,8 +34,7 @@ class PetSprites:
                 raise ValueError(f"Invalid {character} sprite atlas size")
             for index, pose in enumerate(POSES[character]):
                 frame = tk.PhotoImage(master=root, width=CELL, height=CELL)
-                x = (index % columns) * CELL
-                y = (index // columns) * CELL
+                x, y = (index % columns) * CELL, (index // columns) * CELL
                 root.tk.call(str(frame), "copy", str(atlas), "-from",
                              x, y, x + CELL, y + CELL, "-to", 0, 0)
                 self.frames[(pose, facing)] = frame

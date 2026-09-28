@@ -1,58 +1,30 @@
-"""Pose timing shared by both animated desktop pets."""
+"""Continuous clip timing for the rabbit, puppy and kitten."""
 
-from __future__ import annotations
-
-
-REST_POSES = {
-    "bunny": (
-        ("sit", "tilt", "groom", "loaf", "sleep"),
-        ("idle", "curious", "sniff", "alert", "yawn"),
-        ("happy", "wave", "stretch", "playbow", "blink"),
-    ),
-    "mookrata": (
-        ("idle", "happy", "tilt_left", "awake_rest", "sleep"),
-        ("happy_sit", "paw_up", "tilt_right", "curled_sleep", "stretch"),
-        ("sniff_low", "sniff_air", "sniff_close", "playbow", "playbow_two"),
-    ),
-}
-WALK_POSES = {
-    "bunny": ("side_idle", "run_a", "run_b", "run_a"),
-    "mookrata": ("stand_3q", "trot_a", "run_a", "trot_b", "run_b", "stand_side"),
-}
-ROLL_POSES = ("crouch", "roll_a", "roll_b", "roll_c", "dizzy", "playbow")
+from app.animation_clips import CLIPS, progress_pose
 
 
 def choose_pet_pose(
-    character: str,
-    *,
-    walking: bool,
-    walk_time: float,
-    rest_progress: float,
-    rest_variant: int,
-    airborne: bool,
-    jump_velocity: float,
-    landed: bool,
-    blink: bool,
-    paused: bool,
-    roll_progress: float | None = None,
+    character: str, *, walking: bool, walk_time: float, rest_progress: float,
+    rest_variant: int, airborne: bool, jump_velocity: float, landed: bool,
+    blink: bool, paused: bool, roll_progress: float | None = None,
+    jump_progress: float | None = None,
+    rest_time: float | None = None,
 ) -> str:
-    """Choose coherent pose sequences; neither pet slides backward."""
     if paused:
-        return "loaf" if character == "bunny" else "curled_sleep"
+        return CLIPS["sleep"][8]
     if airborne:
-        if character == "bunny":
-            return "hop_up" if jump_velocity > 85 else "hop_air"
-        return "hop" if jump_velocity > 85 else "hop_two"
+        progress = jump_progress if jump_progress is not None else (0.3 if jump_velocity > 0 else 0.7)
+        return progress_pose("hop", progress)
     if landed:
-        return "crouch" if character == "bunny" else "land"
-    if character == "bunny" and roll_progress is not None:
-        return ROLL_POSES[min(int(roll_progress * len(ROLL_POSES)), len(ROLL_POSES) - 1)]
+        return CLIPS["hop"][-1]
+    if roll_progress is not None:
+        return progress_pose("roll", roll_progress)
     if walking:
-        sequence = WALK_POSES[character]
-        return sequence[int(walk_time * (6.8 if character == "bunny" else 8.5)) % len(sequence)]
-    sequence = REST_POSES[character][rest_variant % len(REST_POSES[character])]
-    index = min(int(max(0.0, min(rest_progress, 1.0)) * len(sequence)), len(sequence) - 1)
-    pose = sequence[index]
-    if blink and pose in {"idle", "sit", "happy", "happy_sit"}:
-        return "blink" if character == "bunny" else "tilt"
-    return pose
+        return CLIPS["walk"][int(walk_time * 18) % len(CLIPS["walk"])]
+    # Blinks belong to the idle clip instead of unrelated full-body drawings.
+    clip = "idle" if rest_variant % 3 == 1 else "sleep"
+    if blink and clip == "idle":
+        return CLIPS["idle"][9]
+    if rest_time is not None:
+        return progress_pose(clip, (rest_time % 2.2) / 2.2)
+    return progress_pose(clip, rest_progress)
