@@ -428,6 +428,8 @@ class DesktopPet:
                     self.behavior.step(dt, frozen=bird.paused)
                     if self.behavior.walking and bird.launch():
                         bird.cruise_duration = self.behavior.duration
+                else:
+                    self.behavior.step(dt, frozen=bird.paused, advance_state=False)
                 was_flying = bird.state != "rest"
                 bird.step(dt, left, top, right - WIDTH, bottom - HEIGHT)
                 if was_flying and bird.state == "rest":

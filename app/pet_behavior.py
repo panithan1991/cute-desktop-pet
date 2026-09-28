@@ -2,6 +2,31 @@
 
 import random
 
+from app.behavior_selection import Activity, BehaviorMemory
+
+ACTIVITIES = {
+    "idle": Activity("Observe", (15, 30)),
+    "walk": Activity("Stroll", (20, 45), 15, enter=0.8, exit=0.8),
+    "lounge": Activity("Rest lying down", (25, 50), enter=2, exit=2),
+    "sleep": Activity("Long nap", (40, 90), 30, enter=3, exit=3),
+    "roll": Activity("Playful roll", (6, 9), 90, enter=2, exit=2, group="play"),
+    "belly_up": Activity("Relax belly up", (12, 20), 90, enter=3, exit=3, group="play"),
+    "curious": Activity("Look around", (16, 22), 180, enter=8, exit=8),
+}
+
+NEXT_ACTIVITIES = {
+    "walk": {"idle": 55, "lounge": 35, "sleep": 5, "roll": 3, "belly_up": 2, "curious": 1},
+    "idle": {"walk": 45, "lounge": 30, "sleep": 10, "roll": 5, "belly_up": 7, "curious": 3},
+    "lounge": {"sleep": 45, "idle": 25, "walk": 20, "belly_up": 5, "curious": 5},
+}
+
+PREFERENCES = {
+    "bunny": {"lounge": 1.5, "sleep": 1.4, "roll": 0.7},
+    "mookrata": {"walk": 1.3, "belly_up": 1.3, "roll": 1.2},
+    "kitten": {"lounge": 1.4, "belly_up": 1.3},
+    "bibi": {"walk": 1.3, "roll": 0.5, "belly_up": 0.5},
+}
+
 
 class PetBehavior:
     def __init__(self, character: str, rng: random.Random | None = None):
@@ -11,19 +36,19 @@ class PetBehavior:
         self.state = "idle"
         self.elapsed = 0.0
         self.clock = 0.0
+        self.memory = BehaviorMemory(self.rng, ACTIVITIES)
         self.next_run = self.rng.uniform(90, 180)
         self._configure()
 
     def _configure(self):
-        ranges = {"walk": (20, 45), "idle": (15, 30),
-                  "sleep": (40, 90), "roll": (5, 7)}
+        limits = ACTIVITIES[self.state].duration
         if self.character == "bunny":
-            ranges["walk"] = (18, 35)
+            limits = (18, 35) if self.state == "walk" else limits
         elif self.character == "bibi":
-            ranges["walk"] = (25, 45)
-        self.duration = self.rng.uniform(*ranges[self.state])
+            limits = (25, 45) if self.state == "walk" else limits
+        self.duration = self.rng.uniform(*limits)
         # Most rests are neutral. A head tilt happens once in a rare curious rest.
-        self.variant = 3 if self.state == "idle" and self.rng.random() < 0.2 else 1
+        self.variant = 3 if self.state == "curious" else 1
         self.base_pace = self.rng.uniform(0.65, 0.9)
         self.run_start = None
         self.run_duration = self.rng.uniform(2.5, 4)
@@ -36,28 +61,30 @@ class PetBehavior:
                        and self.rng.random() < 0.12 else None)
 
     def force(self, state: str):
+        if state not in ACTIVITIES:
+            raise ValueError(f"Unknown pet behavior: {state}")
+        self.memory.record(self.state, self.clock)
         self.previous, self.state = self.state, state
         self.elapsed = 0.0
         self._configure()
 
     def finish(self):
-        choices = {
-            "walk": (("idle", "sleep", "roll"), (70, 25, 5)),
-            "idle": (("walk", "sleep", "roll"), (65, 30, 5)),
-            "sleep": (("idle", "walk"), (65, 35)),
-            "roll": (("idle", "walk"), (75, 25)),
-        }
-        states, weights = choices[self.state]
-        # Discourage the same two activities from alternating indefinitely.
-        weights = [weight * (0.35 if state == self.previous else 1)
-                   for state, weight in zip(states, weights)]
-        self.force(self.rng.choices(states, weights=weights, k=1)[0])
+        # Sleep and play end lying down: keep that posture in the next rest.
+        if self.state in {"sleep", "roll", "belly_up"}:
+            self.force("lounge")
+        elif self.state == "curious":
+            self.force("idle")
+        else:
+            self.force(self.memory.choose(NEXT_ACTIVITIES[self.state], self.clock,
+                                          PREFERENCES[self.character]))
 
-    def step(self, seconds: float, frozen: bool = False):
+    def step(self, seconds: float, frozen: bool = False, advance_state: bool = True):
         if frozen:
             return
         dt = min(max(seconds, 0.0), 0.1)
         self.clock += dt
+        if not advance_state:
+            return
         self.elapsed += dt
         if self.elapsed >= self.duration:
             self.finish()
@@ -67,16 +94,27 @@ class PetBehavior:
         return self.state == "walk"
 
     @property
+    def phase(self):
+        return ACTIVITIES[self.state].phase(self.elapsed, self.duration)
+
+    @property
     def pace(self):
         if self.run_start is None:
-            return self.base_pace
+            return self.base_pace * self.movement_ease
         time = self.elapsed - self.run_start
         if not 0 < time < self.run_duration:
-            return self.base_pace
+            return self.base_pace * self.movement_ease
         # Ease both acceleration and deceleration, without switching drawing clips.
         ramp = min(1.0, time / 0.6, (self.run_duration - time) / 0.6)
         eased = ramp * ramp * (3 - 2 * ramp)
-        return self.base_pace + (1.65 - self.base_pace) * eased
+        return (self.base_pace + (1.65 - self.base_pace) * eased) * self.movement_ease
+
+    @property
+    def movement_ease(self):
+        if not self.walking:
+            return 1.0
+        ramp = max(0, min(1, self.elapsed / 0.8, (self.duration - self.elapsed) / 0.8))
+        return 0.15 + 0.85 * ramp * ramp * (3 - 2 * ramp)
 
     def consume_hop(self):
         if self.hop_at is not None and self.elapsed >= self.hop_at:

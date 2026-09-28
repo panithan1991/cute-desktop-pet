@@ -6,6 +6,8 @@ A rabbit, a puppy, a bald eagle, and a fluffy tabby kitten live on your desktop.
 
 The sleepy black dragon has 100 frames for breathing, blinking, tail movements, wing stretches, smoke rings, tiny flames, hovering, yawning, and curling up to sleep. Its wings, tail, flames, and smoke stay inside the pet window.
 
+Behavior is selected by name, with different preferences for each pet. Recent activities and cooldowns reduce repetition. Walks ease in and out; naps and playful rolls finish with a lying rest. Pause and dragging freeze the behavior clock.
+
 | Rabbit | Puppy | Bald Eagle | Tabby Kitten |
 | :---: | :---: | :---: | :---: |
 | <img src="assets/readme/booboo.gif" alt="White rabbit animation" width="150"> | <img src="assets/readme/moo-krata.gif" alt="Puppy animation" width="150"> | <img src="assets/readme/bibi.gif" alt="Bald eagle animation" width="150"> | <img src="assets/readme/kitten.gif" alt="Tabby kitten animation" width="150"> |

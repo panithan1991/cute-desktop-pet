@@ -3,6 +3,21 @@
 import random
 import math
 
+from app.behavior_selection import Activity, BehaviorMemory
+
+DRAGON_ACTIVITIES = {
+    "idle": Activity("Sleepy breathing", (18, 32)),
+    "sleep": Activity("Curled nap", (45, 90), 45, enter=4),
+    "walk": Activity("Gentle hover", (8, 14), 90, enter=2.4, exit=2.8),
+    "curious": Activity("Small head tilt", (4, 5), 240, enter=1, exit=1),
+    "tail": Activity("Tail sway", (4, 6), 45, enter=1, exit=1),
+    "stretch": Activity("Wing stretch", (4, 6), 60, enter=1, exit=1),
+    "smoke": Activity("Smoke ring", (4, 6), 75, enter=1.5, exit=1),
+    "fire": Activity("Tiny flame", (3, 4), 120, enter=1, exit=1),
+    "yawn": Activity("Sleepy yawn", (4, 6), 60, enter=1, exit=1),
+    "wake": Activity("Uncurl and wake", (4, 5), enter=4),
+}
+
 DRAGON_LENGTHS = {"idle": 8, "blink": 6, "curious": 6, "tail": 6,
                   "stretch": 6, "smoke": 8, "fire": 8, "takeoff": 10,
                   "hover": 10, "landing": 8, "yawn": 8, "sleep": 8, "wake": 8}
@@ -20,16 +35,18 @@ class DragonBehavior:
     def __init__(self, rng=None):
         self.rng = rng if rng is not None else random.Random()
         self.previous = None
+        self.clock = 0.0
+        self.memory = BehaviorMemory(self.rng, DRAGON_ACTIVITIES)
         self.force("idle")
 
     def force(self, state):
+        if state not in DRAGON_ACTIVITIES:
+            raise ValueError(f"Unknown dragon behavior: {state}")
+        if hasattr(self, "state"):
+            self.memory.record(self.state, self.clock)
         self.previous, self.state = getattr(self, "state", None), state
         self.elapsed = 0.0
-        ranges = {"idle": (18, 32), "sleep": (45, 90), "walk": (8, 14),
-                  "curious": (4, 5), "tail": (4, 6), "stretch": (4, 6),
-                  "smoke": (4, 6), "fire": (3, 4), "yawn": (4, 6),
-                  "wake": (4, 5)}
-        self.duration = self.rng.uniform(*ranges[state])
+        self.duration = self.rng.uniform(*DRAGON_ACTIVITIES[state].duration)
         self.blink_interval = self.rng.uniform(5, 9)
 
     def finish(self):
@@ -40,20 +57,26 @@ class DragonBehavior:
         elif self.state != "idle":
             self.force("idle")
         else:
-            states = ["tail", "stretch", "smoke", "fire", "yawn", "sleep", "walk", "curious"]
-            weights = [15, 15, 15, 8, 15, 15, 14, 3]
-            weights = [w * (0.2 if s == self.previous else 1) for s, w in zip(states, weights)]
-            self.force(self.rng.choices(states, weights=weights, k=1)[0])
+            self.force(self.memory.choose({"tail": 15, "stretch": 15, "smoke": 15,
+                       "fire": 8, "yawn": 15, "sleep": 15, "walk": 14, "curious": 3}, self.clock))
 
-    def step(self, seconds, frozen=False):
+    def step(self, seconds, frozen=False, advance_state=True):
         if not frozen:
-            self.elapsed += min(max(seconds, 0), 0.1)
+            dt = min(max(seconds, 0), 0.1)
+            self.clock += dt
+            if not advance_state:
+                return
+            self.elapsed += dt
             if self.elapsed >= self.duration:
                 self.finish()
 
     @property
     def walking(self):
         return self.state == "walk"
+
+    @property
+    def phase(self):
+        return DRAGON_ACTIVITIES[self.state].phase(self.elapsed, self.duration)
 
     def pose(self, flight_state="rest", flight_elapsed=0):
         if flight_state == "takeoff":

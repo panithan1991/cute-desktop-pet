@@ -10,6 +10,15 @@ def resting_pose(state: str, elapsed: float, duration: float, variant: int = 1,
     """Enter/leave sleep once; hold closed eyes instead of replaying a whole nap."""
     if state == "roll":
         return progress_pose("roll", elapsed / max(duration, 0.001))
+    if state == "belly_up":
+        if elapsed < 3:
+            return CLIPS["roll"][min(9, int(elapsed / 3 * 10))]
+        if duration - elapsed <= 3:
+            return CLIPS["roll"][min(19, 10 + int((3 - max(0, duration - elapsed)) / 3 * 10))]
+        return CLIPS["roll"][10]
+    if state == "lounge":
+        # Open-eyed lying poses join the end of a nap/roll without standing up.
+        return CLIPS["sleep"][3 if blink else int(elapsed / 3) % 2]
     if state == "sleep":
         if elapsed < 3:
             return CLIPS["sleep"][min(7, int(elapsed / 3 * 8))]

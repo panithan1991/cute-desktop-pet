@@ -19,6 +19,7 @@ class PetBehaviorTests(unittest.TestCase):
                     self.assertGreaterEqual(pet.duration, 40)
                 tilted += pet.variant == 3
                 durations.add(round(pet.duration, 1))
+                pet.clock += pet.duration
                 pet.finish()
                 self.assertNotEqual(pet.state, old)
                 pairs.add((old, pet.state))
