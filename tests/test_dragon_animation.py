@@ -7,6 +7,25 @@ from app.behavior_art import EXTRA_CLIPS
 
 
 class DragonTests(unittest.TestCase):
+    def test_threat_roar_and_stationary_lightning_have_reachable_frames_and_cooldowns(self):
+        dragon = DragonBehavior(random.Random(6))
+        for state in ("threat", "roar", "storm_hover"):
+            dragon.force(state)
+            while dragon.transition.active:
+                dragon.step(.1)
+            self.assertFalse(dragon.walking)
+            reached = set()
+            for i in range(400):
+                dragon.elapsed = dragon.duration*i/399
+                reached.add(dragon.pose())
+            self.assertEqual(reached,set(EXTRA_CLIPS["dragon"][state]))
+            frozen = (dragon.pose(), dragon.clock)
+            dragon.step(.1,frozen=True)
+            self.assertEqual(frozen,(dragon.pose(),dragon.clock))
+            dragon.finish()
+            self.assertEqual(dragon.state,"idle")
+            self.assertEqual(dragon.memory.choose({state:1},dragon.clock),"idle")
+
     def test_all_100_frames_are_reachable_by_real_activities(self):
         dragon = DragonBehavior(random.Random(10))
         reached = set()

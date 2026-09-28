@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from PIL import Image
 
@@ -9,6 +10,20 @@ from test_behavior_art import frame
 
 
 class DragonEffectTests(unittest.TestCase):
+    def test_effects_never_erase_pixels_from_the_clean_body_or_face(self):
+        poses = POSES["dragon"]
+        atlas = Image.open(atlas_path("dragon", 1, "darwin")).convert("RGBA")
+        reference = Image.open(Path(__file__).resolve().parents[1] /
+                               "assets/source/dragon-effect-bodies.png").convert("RGBA")
+        index = 0
+        for names in (DRAGON_CLIPS["smoke"], DRAGON_CLIPS["fire"], EXTRA_CLIPS["dragon"]["hiccup"]):
+            for name in names:
+                clean = frame(reference, index)
+                rendered = frame(atlas, poses.index(name))
+                before, after = clean.getchannel("A").tobytes(), rendered.getchannel("A").tobytes()
+                self.assertTrue(all(b >= a for a,b in zip(before,after)), f"Erased body pixel: {name}")
+                index += 1
+
     def test_effect_clips_return_to_exact_neutral_pose_without_edge_residue(self):
         poses = POSES["dragon"]
         image = Image.open(atlas_path("dragon", 1, "darwin")).convert("RGBA")

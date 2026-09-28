@@ -44,10 +44,21 @@ preening, alternating wing stretches, one-leg rest. Dragon: tail hug, smoky
 hiccup, wing blanket. Sleeping dragon gestures lead directly into closed-eye
 sleep without replaying the entry.
 
-Dragon smoke and fire have 23 frames each. During artwork baking, only the
-effect layer uses premultiplied-alpha interpolation. Smoke drifts between
-painted stages; fire stays anchored at the mouth and grows/shrinks. The body
-uses bounded texture motion instead of blended duplicate faces or limbs.
+Dragon smoke and fire have 43 frames each, and smoky hiccups have 25.
+During artwork baking, independent effects use premultiplied-alpha
+interpolation. Clean body poses are never segmented by brightness or erased;
+effects only alpha-composite over them. A saved clean-body atlas lets tests
+verify no body alpha is lost. Smoke expands, drifts upward and dissipates;
+fire stays anchored at the mouth and grows/shrinks.
+
+Warning displays and roars have 30 frames each and separate cooldowns.
+`storm_hover` has 140 frames for lift, four slow wingbeats and settling, with
+twelve irregular lightning bursts lasting about 0.1–0.2 seconds each. Branches
+stay coherent during a strike, change between strikes, and turn off fully
+between them. `app/dragon_lightning.py` separates these exposures from the
+slow body movement. It does not trigger the
+travel controller, so the desktop position stays fixed. Pausing freezes the
+body and baked effects together. These activities return to a neutral pose.
 
 Validation: `python -m unittest discover -s tests -q` checks cooldowns, retained
 history, transition routes, gentle movement, pause behavior, all sprite bounds,

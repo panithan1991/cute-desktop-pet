@@ -40,7 +40,7 @@ class PetAnimationTests(unittest.TestCase):
     def test_atlases_have_85_unique_padded_frames_and_mirrored_facings(self):
         for character, keys in POSES.items():
             with self.subTest(character=character):
-                expected = 240 if character == "dragon" else 195
+                expected = 485 if character == "dragon" else 195
                 self.assertEqual(len(keys), expected)
                 right = Image.open(atlas_path(character, 1, "darwin")).convert("RGBA")
                 left = Image.open(atlas_path(character, -1, "darwin")).convert("RGBA")

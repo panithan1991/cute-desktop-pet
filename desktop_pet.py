@@ -216,6 +216,18 @@ class DesktopPet:
         menu.add_command(label="Curl Up & Sleep (ขดตัวนอน)" if self.current_character == "dragon" else "Roll / Belly Up (กลิ้งเล่น / นอนหงาย)",
                          command=self._roll_now)
         self.roll_menu_index = menu.index("end")
+        dragon_menu = tk.Menu(menu, tearoff=False)
+        for label, activity in (
+            ("Flame Breath (พ่นไฟ)", "fire"),
+            ("Smoke Ring (พ่นวงควัน)", "smoke"),
+            ("Warning Display (ขู่กางปีก)", "threat"),
+            ("Roar (คำราม)", "roar"),
+            ("Horn Lightning (ตีปีกปล่อยสายฟ้า)", "storm_hover"),
+        ):
+            dragon_menu.add_command(label=label, command=lambda state=activity: self._dragon_gesture(state))
+        menu.add_cascade(label="Dragon Behaviors (พฤติกรรมมังกร)", menu=dragon_menu,
+                         state="normal" if self.current_character == "dragon" else "disabled")
+        self.dragon_menu_index = menu.index("end")
         menu.add_command(label="Use Power (ใช้พลัง)", command=self._fire_now, state="disabled")
         self.fire_menu_index = menu.index("end")
         menu.add_command(
@@ -313,8 +325,14 @@ class DesktopPet:
         self.menu.entryconfig(self.roll_menu_index,
                               label="Curl Up & Sleep (ขดตัวนอน)" if character == "dragon" else "Roll / Belly Up (กลิ้งเล่น / นอนหงาย)",
                               state="normal" if character in PET_CHARACTERS else "disabled")
+        self.menu.entryconfig(self.dragon_menu_index, state="normal" if character == "dragon" else "disabled")
         self._place_window()
         self._redraw()
+
+    def _dragon_gesture(self, state: str) -> None:
+        if (self.current_character == "dragon" and self.dragon_flight.state == "rest"
+                and not self.paused_var.get() and not self.dragging):
+            self.behavior.force(state)
 
     def _jump_now(self) -> None:
         if self.current_character in AIR_PETS:

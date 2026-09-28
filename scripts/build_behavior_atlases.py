@@ -4,6 +4,7 @@ Artwork baking only: Pillow, numpy, OpenCV. Runtime still uses only Tk.
 """
 
 from pathlib import Path
+import math
 import sys
 
 import cv2
@@ -103,13 +104,29 @@ def build(character):
     sleep = frames[base.index(DRAGON_CLIPS["sleep"][-1])] if character == "dragon" else frames[69]
     travel = frames[base.index(DRAGON_CLIPS["takeoff"][0])] if character == "dragon" else frames[70 if character == "bibi" else 15]
     painted = extract(ROOT / f"assets/source/{name}-behaviors.png")
+    actions = extract(ROOT / "assets/source/dragon-actions.png", count=20) if character == "dragon" else []
     previews = []
     for row, (clip, poses) in enumerate(EXTRA_CLIPS[character].items()):
         ref = sleep if clip in {"hug_tail", "wing_blanket"} else idle
-        keys = normalize_row(painted[row*5:(row+1)*5], ref, 4 if row == 0 else 0)
+        cells = (actions[(row-4)*5:(row-3)*5] if row >= 5 else painted[row*5:(row+1)*5])
+        keys = normalize_row(cells, ref, 4 if row == 0 else 0)
         keys[0] = sleep if row == 0 else ref
         keys[-1] = travel if clip == "travel_ready" else ref
         sequence = tween_path(keys, len(poses))
+        if clip == "storm_hover":
+            # Four slow wingbeats; VFX can flash much faster than the body.
+            aerial = []
+            for f in normalize_row(cells, ref):
+                raised = Image.new("RGBA", (CELL, CELL)); raised.alpha_composite(f, (0,-10)); aerial.append(raised)
+            sequence = (inbetweens(idle,aerial[0],16) + tween_path(aerial,27)*4
+                        + inbetweens(aerial[-1],idle,15) + [idle])
+            # Subpixel body breathing/follow-through avoids a mechanically
+            # identical texture loop while the wingbeat retains its anatomy.
+            for i in range(16,124):
+                bob = 1.3*math.sin(i*.19)+.6*math.sin(i*.073)
+                sequence[i] = sequence[i].transform((CELL,CELL), Image.Transform.AFFINE,
+                                                     (1,0,0,0,1,-bob), Image.Resampling.BICUBIC)
+            assert len(sequence) == len(poses)
         frames.extend(sequence)
         if row < 4:
             previews.extend(sequence)
@@ -121,6 +138,17 @@ def build(character):
         demo.append(image)
     demo[0].save(ROOT / f"assets/readme/{name}-behaviors.gif", save_all=True,
                  append_images=demo[1:], duration=180, loop=0, disposal=2)
+    if character == "dragon":
+        extra_start = len(base)
+        for clip in ("threat", "roar", "storm_hover"):
+            first = sum(len(p) for n, p in EXTRA_CLIPS[character].items()
+                        if list(EXTRA_CLIPS[character]).index(n) < list(EXTRA_CLIPS[character]).index(clip))
+            sequence = frames[extra_start+first:extra_start+first+len(EXTRA_CLIPS[character][clip])]
+            thumbnails = []
+            for f in sequence:
+                bg = Image.new("RGB", f.size, "#e8edf2"); bg.paste(f, mask=f.getchannel("A")); thumbnails.append(bg)
+            thumbnails[0].save(ROOT / f"assets/readme/dragon-{clip}.gif", save_all=True,
+                               append_images=thumbnails[1:], duration=150, loop=0, disposal=2)
     print(f"{character}: {len(frames)} frames; 3 new gestures and 2 connecting clips")
 
 

@@ -13,17 +13,20 @@ DRAGON_ACTIVITIES = {
     "curious": Activity("Small head tilt", (4, 5), 240, enter=1, exit=1),
     "tail": Activity("Tail sway", (4, 6), 45, enter=1, exit=1),
     "stretch": Activity("Wing stretch", (4, 6), 60, enter=1, exit=1),
-    "smoke": Activity("Smoke ring", (4, 6), 75, enter=1.5, exit=1),
-    "fire": Activity("Tiny flame", (3, 4), 120, enter=1, exit=1),
+    "smoke": Activity("Volumetric smoke ring", (6, 8), 75, enter=1.5, exit=1.5),
+    "fire": Activity("Golden flame breath", (5, 7), 120, enter=1, exit=1.5),
     "yawn": Activity("Sleepy yawn", (4, 6), 60, enter=1, exit=1),
     "wake": Activity("Uncurl and wake", (4, 5), enter=4),
     "hug_tail": Activity("Hug tail during a nap", (6, 9), 150, enter=1, exit=1),
     "hiccup": Activity("Tiny smoky hiccup", (4, 6), 180, enter=1, exit=1),
     "wing_blanket": Activity("Sleep under wings", (7, 10), 180, enter=1, exit=1),
+    "threat": Activity("Warning glare and wing display", (5, 7), 120, enter=1.5, exit=1.5),
+    "roar": Activity("Small fierce roar", (5, 7), 180, enter=1.5, exit=1.5),
+    "storm_hover": Activity("Stationary wingbeats and rapid horn lightning", (7, 9), 210, enter=1, exit=1),
 }
 
 DRAGON_LENGTHS = {"idle": 8, "blink": 6, "curious": 6, "tail": 6,
-                  "stretch": 6, "smoke": 23, "fire": 23, "takeoff": 10,
+                  "stretch": 6, "smoke": 43, "fire": 43, "takeoff": 10,
                   "hover": 10, "landing": 8, "yawn": 8, "sleep": 8, "wake": 8}
 DRAGON_CLIPS = {name: tuple(f"dragon_{name}_{i:02d}" for i in range(count))
                 for name, count in DRAGON_LENGTHS.items()}
@@ -70,7 +73,8 @@ class DragonBehavior:
         else:
             self.force(self.memory.choose({"tail": 15, "stretch": 15, "smoke": 15,
                        "fire": 8, "yawn": 15, "sleep": 15, "walk": 14, "curious": 3,
-                       "hug_tail": 10, "hiccup": 6, "wing_blanket": 10}, self.clock))
+                       "hug_tail": 10, "hiccup": 6, "wing_blanket": 10,
+                       "threat": 8, "roar": 6, "storm_hover": 8}, self.clock))
 
     def step(self, seconds, frozen=False, advance_state=True):
         if not frozen:
