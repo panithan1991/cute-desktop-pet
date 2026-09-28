@@ -4,8 +4,6 @@
 
 A rabbit, a puppy, a bald eagle, and a fluffy tabby kitten live on your desktop. Each has 195 animation frames, long walks and naps, and its own grooming, sniffing, stretching or playful gestures. Ground pets occasionally run; the eagle flies across and up the screen before landing. Seven other characters are available from the menu.
 
-The black dragon has 1,110 body frames: sleepy gestures, warning displays, roars, large fantasy flame breath, smoke rings, rapid tree-like lightning branching sideways from its horns, and a seated one-wing whirlwind made of volumetric cloud wisps. Jade-grey smoke rings drift out and merge into a gas cloud about 2.5 dragon body lengths away. The cloud holds briefly, then ignites into turquoise-green flames and falling embers; the consumed gas disappears completely. The dragon widens its eyes and lifts its head and wings in excitement, with green light reflected on its dark scales during ignition. Fire and smoke occur more often, with cooldowns to vary the routine. Large effects use a separate transparent layer so the face stays intact. It now takes slow ground walks lasting 18–30 seconds and occasional short 5–8 second runs, with distance-driven paw cycles and painted sitting transitions. The dragon can soar high across the screen for 25–45 seconds. Each flight has a 50% chance of 2–3 thunder somersaults. It can also relax belly-up for 22–28 seconds and blow smoke rings that linger for six seconds into the sky, or stand on two hind feet with red eyes, continuous wingbeats, flame aura, lightning and wind vortices.
-
 Named behaviors, recent activity memory, and cooldowns vary the routine. Painted waking, stretching, and turning clips connect rest and travel. Pause and dragging freeze the behavior clock.
 
 | Rabbit | Puppy | Bald Eagle | Tabby Kitten |
@@ -19,10 +17,6 @@ Named behaviors, recent activity memory, and cooldowns vary the routine. Painted
 <img src="assets/readme/dragon-powers.png" alt="Dragon smoke, flame breath and horn lightning — still examples" width="1000">
 
 <img src="assets/readme/dragon-stunts.png" alt="Belly-up smoke rings, thunder somersault and fury — still examples" width="1000">
-
-<img src="assets/readme/dragon-gaits.png" alt="Ground walking and running — still examples" width="800">
-
-<img src="assets/readme/dragon-cloud-flame.png" alt="Jade gas cloud gathers, ignites and burns away — still examples" width="960">
 
 <img src="assets/readme/dragon-cloud-scene.png" alt="Smoke rings merge into a distant cloud; green reflections and excited reaction during ignition — still examples" width="1100">
 
