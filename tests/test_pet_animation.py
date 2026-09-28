@@ -3,6 +3,7 @@ import unittest
 from PIL import Image, ImageOps
 
 from app.animation_clips import CLIPS
+from app.animation_clips import ALL_POSES
 from app.bibi_animation import choose_bibi_pose
 from app.pet_animation import choose_pet_pose
 from app.pet_sprites import CELL, POSES, atlas_path
@@ -27,7 +28,7 @@ class PetAnimationTests(unittest.TestCase):
                 reached.add(pose(character, walking=True, walk_time=step / 60))
                 reached.add(pose(character, roll_progress=progress))
                 reached.add(pose(character, airborne=True, jump_progress=progress))
-            self.assertEqual(reached, set(POSES[character]))
+            self.assertEqual(reached, set(ALL_POSES))
 
     def test_jump_sequence_follows_ascent_and_descent(self):
         for character in ("bunny", "mookrata", "kitten"):
@@ -39,7 +40,7 @@ class PetAnimationTests(unittest.TestCase):
     def test_atlases_have_85_unique_padded_frames_and_mirrored_facings(self):
         for character, keys in POSES.items():
             with self.subTest(character=character):
-                expected = 100 if character == "dragon" else 85
+                expected = 240 if character == "dragon" else 195
                 self.assertEqual(len(keys), expected)
                 right = Image.open(atlas_path(character, 1, "darwin")).convert("RGBA")
                 left = Image.open(atlas_path(character, -1, "darwin")).convert("RGBA")
@@ -62,11 +63,8 @@ class PetAnimationTests(unittest.TestCase):
                     unique.add(frame.tobytes())
                     self.assertEqual(ImageOps.mirror(frame).tobytes(), left.crop(box).tobytes())
                     self.assertEqual(ImageOps.mirror(hard.crop(box)).tobytes(), hard_left.crop(box).tobytes())
-                if character == "dragon":
-                    # Reused painted endpoints keep transitions consistent.
-                    self.assertGreaterEqual(len(unique), 85)
-                else:
-                    self.assertEqual(len(unique), 85)
+                # Reused exact endpoints keep the joining poses identical.
+                self.assertGreaterEqual(len(unique), expected-35)
 
     def test_bibi_uses_flight_and_rest_clips_without_forced_play_after_every_nap(self):
         reached = set()

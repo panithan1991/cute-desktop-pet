@@ -2,17 +2,17 @@
 
 [![Mac and Windows builds](https://github.com/panithan1991/cute-desktop-pet/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/panithan1991/cute-desktop-pet/actions/workflows/release.yml)
 
-A rabbit, a puppy, a bald eagle, and a fluffy tabby kitten live on your desktop. Each has 85 animation frames, long walks and naps, occasional small head tilts, and playful rolls. Ground pets sometimes make a short run; the eagle flies across and up the screen before landing. Activities vary in order, duration, and pace. Seven other characters are available from the menu.
+A rabbit, a puppy, a bald eagle, and a fluffy tabby kitten live on your desktop. Each has 195 animation frames, long walks and naps, and its own grooming, sniffing, stretching or playful gestures. Ground pets occasionally run; the eagle flies across and up the screen before landing. Seven other characters are available from the menu.
 
-The sleepy black dragon has 100 frames for breathing, blinking, tail movements, wing stretches, smoke rings, tiny flames, hovering, yawning, and curling up to sleep. Its wings, tail, flames, and smoke stay inside the pet window.
+The sleepy black dragon has 240 frames, including tail hugs, smoky hiccups, and a wing blanket. Smoke rings and tiny flames form, drift or shrink, then fade inside the pet window.
 
-Behavior is selected by name, with different preferences for each pet. Recent activities and cooldowns reduce repetition. Walks ease in and out; naps and playful rolls finish with a lying rest. Pause and dragging freeze the behavior clock.
+Named behaviors, recent activity memory, and cooldowns vary the routine. Painted waking, stretching, and turning clips connect rest and travel. Pause and dragging freeze the behavior clock.
 
 | Rabbit | Puppy | Bald Eagle | Tabby Kitten |
 | :---: | :---: | :---: | :---: |
-| <img src="assets/readme/booboo.gif" alt="White rabbit animation" width="150"> | <img src="assets/readme/moo-krata.gif" alt="Puppy animation" width="150"> | <img src="assets/readme/bibi.gif" alt="Bald eagle animation" width="150"> | <img src="assets/readme/kitten.gif" alt="Tabby kitten animation" width="150"> |
+| <img src="assets/readme/booboo-behaviors.gif" alt="Rabbit washing its face and stretching" width="150"> | <img src="assets/readme/moo-krata-behaviors.gif" alt="Puppy wagging, sniffing and bowing" width="150"> | <img src="assets/readme/bibi-behaviors.gif" alt="Eagle preening and stretching" width="150"> | <img src="assets/readme/kitten-behaviors.gif" alt="Kitten grooming and kneading" width="150"> |
 
-<img src="assets/readme/dragon.gif" alt="Sleepy black dragon: 100 animation frames" width="170">
+<img src="assets/readme/dragon-behaviors.gif" alt="Dragon tail hugs and wing blanket" width="170"> <img src="assets/readme/dragon-effects.gif" alt="Continuous dragon smoke and fire" width="170">
 
 ## Download
 

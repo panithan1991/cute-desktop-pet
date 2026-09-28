@@ -143,89 +143,89 @@ class DesktopPet:
     def _build_menu(self) -> None:
         menu = tk.Menu(self.root, tearoff=False)
         menu.add_checkbutton(
-            label="หยุดเดินชั่วคราว", variable=self.paused_var, command=self._set_paused
+            label="Pause (หยุดชั่วคราว)", variable=self.paused_var, command=self._set_paused
         )
         menu.add_separator()
         menu.add_radiobutton(
-            label="ผู้พิทักษ์ดวงดาว", variable=self.character_var, value="guardian", command=self._set_character
+            label="Star Guardian (ผู้พิทักษ์ดวงดาว)", variable=self.character_var, value="guardian", command=self._set_character
         )
         menu.add_radiobutton(
-            label="ยานสำรวจดาว", variable=self.character_var, value="ship", command=self._set_character
+            label="Starship (ยานสำรวจดาว)", variable=self.character_var, value="ship", command=self._set_character
         )
         menu.add_separator()
         for label, value in (
-            ("นักดูแลพฤกษา", "moss"),
-            ("พ่อมด", "astral"),
-            ("นักสำรวจเส้นทาง", "trail"),
-            ("ผู้พิทักษ์แสงอำพัน", "ember"),
+            ("Grove Keeper (นักดูแลพฤกษา)", "moss"),
+            ("Wizard (พ่อมด)", "astral"),
+            ("Trail Scout (นักสำรวจเส้นทาง)", "trail"),
+            ("Amber Guardian (ผู้พิทักษ์แสงอำพัน)", "ember"),
         ):
             menu.add_radiobutton(
                 label=label, variable=self.character_var, value=value, command=self._set_character
             )
         menu.add_separator()
         menu.add_radiobutton(
-            label="แมวน้อย", variable=self.character_var, value="cat", command=self._set_character
+            label="Cartoon Cat (แมวน้อย)", variable=self.character_var, value="cat", command=self._set_character
         )
         menu.add_radiobutton(
-            label="BooBoo กระต่ายหูตก", variable=self.character_var,
+            label="BooBoo — Rabbit (กระต่ายหูตก)", variable=self.character_var,
             value="bunny", command=self._set_character,
         )
         menu.add_radiobutton(
-            label="Moo Krata ลูกสุนัข", variable=self.character_var,
+            label="Moo Krata — Puppy (ลูกสุนัข)", variable=self.character_var,
             value="mookrata", command=self._set_character,
         )
         menu.add_radiobutton(
-            label="Bibi ลูกนกอินทรี", variable=self.character_var,
+            label="Bibi — Eagle (ลูกนกอินทรี)", variable=self.character_var,
             value="bibi", command=self._set_character,
         )
         menu.add_radiobutton(
-            label="ลูกแมวลายขนฟู", variable=self.character_var,
+            label="Tabby Kitten (ลูกแมวลายขนฟู)", variable=self.character_var,
             value="kitten", command=self._set_character,
         )
-        menu.add_radiobutton(label="มังกรดำขี้เซา", variable=self.character_var,
+        menu.add_radiobutton(label="Sleepy Dragon (มังกรดำขี้เซา)", variable=self.character_var,
                              value="dragon", command=self._set_character)
         speed_menu = tk.Menu(menu, tearoff=False)
-        for label, value in (("ช้า", "slow"), ("ปกติ", "normal"), ("เร็ว", "fast")):
+        for label, value in (("Slow (ช้า)", "slow"), ("Normal (ปกติ)", "normal"), ("Fast (เร็ว)", "fast")):
             speed_menu.add_radiobutton(
                 label=label, variable=self.speed_var, value=value, command=self._set_speed
             )
-        menu.add_cascade(label="ความเร็ว", menu=speed_menu)
+        menu.add_cascade(label="Speed (ความเร็ว)", menu=speed_menu)
         menu.add_checkbutton(
-            label="อยู่เหนือหน้าต่างอื่น",
+            label="Always on Top (อยู่เหนือหน้าต่างอื่น)",
             variable=self.topmost_var,
             command=self._set_topmost,
         )
         menu.add_checkbutton(
-            label="ใช้พลังอัตโนมัติ", variable=self.auto_power_var,
+            label="Auto Powers (ใช้พลังอัตโนมัติ)", variable=self.auto_power_var,
             command=self._reset_power_timer, state="disabled",
         )
         self.auto_power_menu_index = menu.index("end")
         interval_menu = tk.Menu(menu, tearoff=False)
         for seconds in (3, 5, 6):
             interval_menu.add_radiobutton(
-                label=f"ทุก {seconds} วินาที",
+                label=f"Every {seconds}s (ทุก {seconds} วินาที)",
                 variable=self.power_interval_var,
                 value=seconds,
                 command=self._reset_power_timer,
             )
-        menu.add_cascade(label="ความถี่ใช้พลัง", menu=interval_menu, state="disabled")
+        menu.add_cascade(label="Power Interval (ความถี่ใช้พลัง)", menu=interval_menu, state="disabled")
         self.power_interval_menu_index = menu.index("end")
-        menu.add_command(label="บิน" if self.current_character in AIR_PETS else "กระโดด",
+        menu.add_command(label="Fly (บิน)" if self.current_character in AIR_PETS else "Jump (กระโดด)",
                          command=self._jump_now)
         self.jump_menu_index = menu.index("end")
-        menu.add_command(label="ขดตัวนอน" if self.current_character == "dragon" else "กลิ้งเล่น / นอนหงาย",
+        menu.add_command(label="Curl Up & Sleep (ขดตัวนอน)" if self.current_character == "dragon" else "Roll / Belly Up (กลิ้งเล่น / นอนหงาย)",
                          command=self._roll_now)
         self.roll_menu_index = menu.index("end")
-        menu.add_command(label="ยิงพลัง", command=self._fire_now, state="disabled")
+        menu.add_command(label="Use Power (ใช้พลัง)", command=self._fire_now, state="disabled")
         self.fire_menu_index = menu.index("end")
         menu.add_command(
-            label="พลังพิเศษ", command=lambda: self._fire_now(special=True),
+            label="Special Power (พลังพิเศษ)", command=lambda: self._fire_now(special=True),
             state="disabled",
         )
         self.special_menu_index = menu.index("end")
-        menu.add_command(label="กลับไปขอบล่าง", command=self._move_to_bottom)
+        menu.add_command(label="Return to Bottom (กลับไปขอบล่าง)", command=self._move_to_bottom)
         menu.add_separator()
-        menu.add_command(label="ออกจากแอป", command=self.close)
+        menu.add_command(label="Quit (ออกจากแอป)", command=self.close)
         self.menu = menu
 
     def _place_window(self) -> None:
@@ -305,13 +305,13 @@ class DesktopPet:
             self.menu.entryconfig(index, state=power_state)
         self.menu.entryconfig(
             self.special_menu_index,
-            label=SPECIAL_POWERS.get(character, ("", "พลังพิเศษ"))[1],
+            label=SPECIAL_POWERS.get(character, ("", "Special Power (พลังพิเศษ)"))[1],
             state="normal" if character in SPECIAL_POWERS else "disabled",
         )
-        self.menu.entryconfig(self.jump_menu_index, label="บิน" if character in AIR_PETS else "กระโดด",
+        self.menu.entryconfig(self.jump_menu_index, label="Fly (บิน)" if character in AIR_PETS else "Jump (กระโดด)",
                               state="normal" if character in GROUND_JUMPERS or character in AIR_PETS else "disabled")
         self.menu.entryconfig(self.roll_menu_index,
-                              label="ขดตัวนอน" if character == "dragon" else "กลิ้งเล่น / นอนหงาย",
+                              label="Curl Up & Sleep (ขดตัวนอน)" if character == "dragon" else "Roll / Belly Up (กลิ้งเล่น / นอนหงาย)",
                               state="normal" if character in PET_CHARACTERS else "disabled")
         self._place_window()
         self._redraw()
@@ -319,11 +319,12 @@ class DesktopPet:
     def _jump_now(self) -> None:
         if self.current_character in AIR_PETS:
             bird = self.dragon_flight if self.current_character == "dragon" else self.bibi_flight
-            if bird.launch():
+            if bird.state == "rest" and not bird.paused:
                 self.behavior.force("walk")
-                bird.cruise_duration = self.behavior.duration
             return
         if self.current_character in GROUND_JUMPERS and not self.motion.paused:
+            if self.current_character in GROUND_PETS and self.behavior.transition.active:
+                return
             self.jump.jump()
             delay = self.random.uniform(12, 18) if self.current_character in {"bunny", "kitten"} else (self.random.uniform(8, 13) if self.current_character == "mookrata" else self.random.uniform(3, 6))
             self.next_jump = time.monotonic() + delay
@@ -509,7 +510,8 @@ class DesktopPet:
             pose = choose_bibi_pose(self.bibi_flight.state, self.bibi_flight.elapsed,
                                     rest_state=self.behavior.state, rest_elapsed=self.behavior.elapsed,
                                     rest_duration=self.behavior.duration, variant=self.behavior.variant,
-                                    blink=blink and not self.paused_var.get())
+                                    blink=blink and not self.paused_var.get(),
+                                    behavior_pose=self.behavior.pose())
             canvas.create_image(WIDTH // 2, HEIGHT - 2,
                                 image=self.pet_sprites["bibi"].get(pose, self.bibi_flight.direction),
                                 anchor="s")
@@ -586,6 +588,7 @@ class DesktopPet:
             jump_progress=0.5 - self.jump.velocity / (2 * self.jump.launch_speed),
             rest_time=self.behavior.elapsed,
             rest_state=self.behavior.state, rest_duration=self.behavior.duration,
+            behavior_pose=self.behavior.pose(),
         )
         c.create_image(
             WIDTH // 2, HEIGHT - 2,

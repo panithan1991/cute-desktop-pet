@@ -1,6 +1,6 @@
 # Artwork sources
 
-Created with the built-in ImageGen tool using the supplied animal illustrations as identity references. Each pet uses 40 painted keyframes plus 45 motion-compensated inbetweens, producing exactly 85 distinct animation frames. These are animation frames, not 85 unrelated poses.
+Created with the built-in ImageGen tool using the supplied animal illustrations as identity references. Four pets have 85 base frames plus 110 gesture/transition frames (195 total). The dragon has 130 base frames plus 110 gesture/transition frames (240 total). These are animation frames, not unrelated poses.
 
 ## Prompt set
 
@@ -15,3 +15,15 @@ All prompts preserve the reference animal, soft painted fur/feathers, colors, ma
 ## Regenerate atlases
 
 Install `Pillow`, `numpy` and `opencv-python`, then run `python scripts/build_pet_atlases.py` from the repository root. The script extracts whole connected subjects rather than cropping guessed grid cells, aligns each sequence at a common scale, and creates mirrored smooth-alpha Mac and binary-alpha Windows atlases. Rolling uses all 20 painted drawings directly; other clips use bounded texture warps without crossfading faces. No image-generation or image-processing library is needed by the app at runtime.
+
+Then run, in order:
+
+```sh
+python scripts/build_dragon_atlas.py
+python scripts/build_behavior_atlases.py
+python scripts/build_dragon_effects.py
+```
+
+`*-behaviors.png` contains five rows of five painted keyframes: waking/stretching, three species-specific gestures, and preparing to travel. The builder appends 110 frames and preserves canonical joining endpoints. `behavior-prompts.json` records the original prompts; `anatomy-repair-prompts.json` records corrections to lifted paws and folded wings. Raised forepaws must replace their grounded counterparts; mammals have four legs and two ears, birds two feet and two wings, dragons four legs and two wings.
+
+`dragon-effects.png` contains 18 painted stages for smoke rings, tiny fire and hiccups. `dragon-effects-prompt.txt` records the prompt. The effects builder runs last because it replaces smoke/fire/hiccup frames, with padding for the entire effect and alpha-aware interpolation. Review final frames visually for anatomy; bounds tests cannot count limbs.

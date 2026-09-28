@@ -3,6 +3,7 @@ import unittest
 
 from app.dragon_animation import DRAGON_CLIPS, DRAGON_POSES, DragonBehavior
 from app.pet_motion import BibiFlightMotion
+from app.behavior_art import EXTRA_CLIPS
 
 
 class DragonTests(unittest.TestCase):
@@ -11,17 +12,22 @@ class DragonTests(unittest.TestCase):
         reached = set()
         for state in ("idle", "curious", "tail", "stretch", "smoke", "fire", "yawn", "sleep", "wake"):
             dragon.force(state)
+            while dragon.transition.active:
+                dragon.step(.1)
             for i in range(3000):
                 dragon.elapsed = dragon.duration * i / 2999
                 reached.add(dragon.pose())
         for flight, duration in (("takeoff", 2.4), ("cruise", 10), ("landing", 2.8)):
             for i in range(1000):
                 reached.add(dragon.pose(flight, duration * i / 999))
-        self.assertEqual(reached, set(DRAGON_POSES))
+        expected = set(DRAGON_POSES)-set(DRAGON_CLIPS["wake"])
+        self.assertEqual(reached, expected | set(EXTRA_CLIPS["dragon"]["wake_stretch"]))
 
     def test_sleep_wakes_before_returning_to_idle_and_pause_freezes_effects(self):
         dragon = DragonBehavior(random.Random(3))
         dragon.force("sleep")
+        while dragon.transition.active:
+            dragon.step(.1)
         self.assertGreaterEqual(dragon.duration, 45)
         dragon.elapsed = 30
         self.assertIn(dragon.pose(), DRAGON_CLIPS["sleep"][5:])

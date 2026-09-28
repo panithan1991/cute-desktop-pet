@@ -40,6 +40,8 @@ class BehaviorSelectionTests(unittest.TestCase):
             self.assertEqual(resting_pose(pet.state, 0, pet.duration), CLIPS["sleep"][0])
         pet.force("walk")
         self.assertEqual(pet.phase, "enter")
+        while pet.transition.active:
+            pet.step(.1)
         low = pet.pace
         pet.elapsed = 2
         self.assertEqual(pet.phase, "loop")

@@ -74,8 +74,8 @@ def build():
             frames.extend(inbetweens(normalized[keys[segment]], normalized[keys[segment+1]],
                                     base + (segment < extra)))
         frames.append(normalized[keys[-1]])
-    assert len(frames) == 100
-    atlas = Image.new("RGBA", (CELL*5, CELL*20))
+    assert len(frames) == sum(DRAGON_LENGTHS.values())
+    atlas = Image.new("RGBA", (CELL*5, CELL*(len(frames)//5)))
     left = Image.new("RGBA", atlas.size)
     for i, frame in enumerate(frames):
         bounds = frame.getchannel("A").point(lambda a: 255 if a > 32 else 0).getbbox()
@@ -98,7 +98,7 @@ def build():
         demo.append(background)
     demo[0].save(ROOT / "assets/readme/dragon.gif", save_all=True, append_images=demo[1:],
                  duration=130, loop=0, disposal=2)
-    print("Dragon: 100 frames; all dragon, smoke and flame bounds padded")
+    print(f"Dragon: {len(frames)} base frames; all dragon, smoke and flame bounds padded")
 
 
 if __name__ == "__main__":

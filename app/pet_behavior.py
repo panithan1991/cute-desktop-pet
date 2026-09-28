@@ -3,6 +3,22 @@
 import random
 
 from app.behavior_selection import Activity, BehaviorMemory
+from app.behavior_art import PostureTransition, SIGNATURES, gesture_pose
+
+SIGNATURE_ACTIVITIES = {
+    "wash_face": Activity("Wash face", (5, 7), 120, enter=1, exit=1),
+    "sniff": Activity("Twitch nose and sniff", (4, 6), 75, enter=1, exit=1),
+    "hind_stretch": Activity("Stretch hind legs", (5, 7), 150, enter=1, exit=1),
+    "wag_tail": Activity("Gentle tail wag", (5, 8), 75, enter=1, exit=1),
+    "sniff_ground": Activity("Sniff before walking", (5, 7), 90, enter=1, exit=1),
+    "play_bow": Activity("Play bow", (5, 7), 150, enter=1, exit=1),
+    "groom": Activity("Lick paw and wash face", (6, 8), 120, enter=1, exit=1),
+    "knead": Activity("Knead paws", (5, 7), 150, enter=1, exit=1),
+    "watch_tail": Activity("Watch tail tip", (5, 7), 120, enter=1, exit=1),
+    "preen": Activity("Preen chest feathers", (6, 8), 120, enter=1, exit=1),
+    "wing_stretch": Activity("Stretch each wing", (5, 7), 150, enter=1, exit=1),
+    "one_leg": Activity("Rest on one leg", (7, 10), 150, enter=1, exit=1),
+}
 
 ACTIVITIES = {
     "idle": Activity("Observe", (15, 30)),
@@ -36,12 +52,15 @@ class PetBehavior:
         self.state = "idle"
         self.elapsed = 0.0
         self.clock = 0.0
-        self.memory = BehaviorMemory(self.rng, ACTIVITIES)
+        self.activities = {**ACTIVITIES,
+                           **{name: SIGNATURE_ACTIVITIES[name] for name in SIGNATURES[character]}}
+        self.memory = BehaviorMemory(self.rng, self.activities)
+        self.transition = PostureTransition(character)
         self.next_run = self.rng.uniform(90, 180)
         self._configure()
 
     def _configure(self):
-        limits = ACTIVITIES[self.state].duration
+        limits = self.activities[self.state].duration
         if self.character == "bunny":
             limits = (18, 35) if self.state == "walk" else limits
         elif self.character == "bibi":
@@ -61,9 +80,10 @@ class PetBehavior:
                        and self.rng.random() < 0.12 else None)
 
     def force(self, state: str):
-        if state not in ACTIVITIES:
+        if state not in self.activities:
             raise ValueError(f"Unknown pet behavior: {state}")
         self.memory.record(self.state, self.clock)
+        self.transition.connect(self.state, state)
         self.previous, self.state = self.state, state
         self.elapsed = 0.0
         self._configure()
@@ -74,8 +94,15 @@ class PetBehavior:
             self.force("lounge")
         elif self.state == "curious":
             self.force("idle")
+        elif self.state == "sniff_ground":
+            self.force("walk")
+        elif self.state in SIGNATURES[self.character]:
+            self.force("idle")
         else:
-            self.force(self.memory.choose(NEXT_ACTIVITIES[self.state], self.clock,
+            options = dict(NEXT_ACTIVITIES[self.state])
+            if self.state in {"idle", "lounge"}:
+                options.update(dict.fromkeys(SIGNATURES[self.character], 10))
+            self.force(self.memory.choose(options, self.clock,
                                           PREFERENCES[self.character]))
 
     def step(self, seconds: float, frozen: bool = False, advance_state: bool = True):
@@ -85,17 +112,23 @@ class PetBehavior:
         self.clock += dt
         if not advance_state:
             return
+        if self.transition.active:
+            self.transition.step(dt)
+            return
         self.elapsed += dt
         if self.elapsed >= self.duration:
             self.finish()
 
     @property
     def walking(self):
-        return self.state == "walk"
+        return self.state == "walk" and not self.transition.active
 
     @property
     def phase(self):
-        return ACTIVITIES[self.state].phase(self.elapsed, self.duration)
+        return "enter" if self.transition.active else self.activities[self.state].phase(self.elapsed, self.duration)
+
+    def pose(self):
+        return self.transition.pose() or gesture_pose(self.character, self.state, self.elapsed, self.duration)
 
     @property
     def pace(self):
@@ -111,7 +144,7 @@ class PetBehavior:
 
     @property
     def movement_ease(self):
-        if not self.walking:
+        if self.state != "walk":
             return 1.0
         ramp = max(0, min(1, self.elapsed / 0.8, (self.duration - self.elapsed) / 0.8))
         return 0.15 + 0.85 * ramp * ramp * (3 - 2 * ramp)

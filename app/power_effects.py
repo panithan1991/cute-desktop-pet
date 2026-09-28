@@ -32,10 +32,10 @@ POWER_STYLES = {
 }
 
 SPECIAL_POWERS = {
-    "guardian": ("lightning", "เรียกฟ้าผ่า"),
-    "moss": ("tree", "เสกต้นไม้"),
-    "astral": ("tornado", "เสกทอร์นาโด"),
-    "ember": ("fire", "พ่นไฟ"),
+    "guardian": ("lightning", "Summon Lightning (เรียกฟ้าผ่า)"),
+    "moss": ("tree", "Grow a Tree (เสกต้นไม้)"),
+    "astral": ("tornado", "Summon Tornado (เสกทอร์นาโด)"),
+    "ember": ("fire", "Breathe Fire (พ่นไฟ)"),
 }
 
 

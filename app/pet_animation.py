@@ -44,6 +44,7 @@ def choose_pet_pose(
     rest_time: float | None = None,
     rest_state: str | None = None, rest_duration: float = 60,
     pace: float = 1.0,
+    behavior_pose: str | None = None,
 ) -> str:
     if paused:
         return CLIPS["sleep"][8]
@@ -52,6 +53,8 @@ def choose_pet_pose(
         return progress_pose("hop", progress)
     if landed:
         return CLIPS["hop"][-1]
+    if behavior_pose is not None:
+        return behavior_pose
     if roll_progress is not None:
         return progress_pose("roll", roll_progress)
     if walking:

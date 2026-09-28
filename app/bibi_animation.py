@@ -7,7 +7,7 @@ from app.pet_animation import resting_pose
 def choose_bibi_pose(state: str, elapsed: float, paused: bool = False, *,
                      rest_state: str = "idle", rest_elapsed: float = 0,
                      rest_duration: float = 60, variant: int = 1,
-                     blink: bool = False) -> str:
+                     blink: bool = False, behavior_pose: str | None = None) -> str:
     if paused:
         return CLIPS["sleep"][8] if state == "rest" else CLIPS["walk"][0]
     if state == "takeoff":
@@ -16,4 +16,6 @@ def choose_bibi_pose(state: str, elapsed: float, paused: bool = False, *,
         return CLIPS["walk"][int(elapsed * 12) % len(CLIPS["walk"])]
     if state == "landing":
         return progress_pose("hop", 0.55 + min(elapsed / 2.8, 1.0) * 0.45)
+    if behavior_pose is not None:
+        return behavior_pose
     return resting_pose(rest_state, rest_elapsed, rest_duration, variant, blink)

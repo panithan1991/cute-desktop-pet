@@ -31,9 +31,23 @@ another activity. Pausing or dragging freezes both movement and behavior.
 To add an activity, declare its specification, provide a compatible clip path,
 and add it to allowed next choices. Use mandatory transitions where the body
 posture must match; use weighted choices where several next actions fit.
-Existing sprites limit available transitions: this system does not invent
-missing turn or stand-up drawings. Add painted connecting poses when such a
-transition is needed rather than mixing unrelated images.
+`app/behavior_art.py` supplies 25-frame waking/stretching and turning clips.
+Its posture transition queue connects lying, upright, and travel states;
+movement and activity time wait until these connecting drawings finish.
+Joining endpoints match the original poses exactly. Add painted connecting
+poses when introducing a new posture.
+
+Each pet has three signature activities with separate cooldowns. Rabbit:
+face washing, sniffing, hind-leg stretch. Puppy: tail wag, ground sniff before
+walking, play bow. Kitten: paw grooming, kneading, watching its tail. Eagle:
+preening, alternating wing stretches, one-leg rest. Dragon: tail hug, smoky
+hiccup, wing blanket. Sleeping dragon gestures lead directly into closed-eye
+sleep without replaying the entry.
+
+Dragon smoke and fire have 23 frames each. During artwork baking, only the
+effect layer uses premultiplied-alpha interpolation. Smoke drifts between
+painted stages; fire stays anchored at the mouth and grows/shrinks. The body
+uses bounded texture motion instead of blended duplicate faces or limbs.
 
 Validation: `python -m unittest discover -s tests -q` checks cooldowns, retained
 history, transition routes, gentle movement, pause behavior, all sprite bounds,

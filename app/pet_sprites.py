@@ -6,6 +6,7 @@ import tkinter as tk
 
 from app.animation_clips import ALL_POSES
 from app.dragon_animation import DRAGON_POSES
+from app.behavior_art import EXTRA_POSES
 
 CELL = 160
 COLUMNS = 5
@@ -16,6 +17,7 @@ FILENAME = {
 GRID_COLUMNS = dict.fromkeys(FILENAME, COLUMNS)
 POSES = dict.fromkeys(FILENAME, ALL_POSES)
 POSES["dragon"] = DRAGON_POSES
+POSES = {character: base + EXTRA_POSES[character] for character, base in POSES.items()}
 
 
 def atlas_path(character: str, facing: int, platform: str | None = None) -> Path:
