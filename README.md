@@ -32,11 +32,11 @@ Eleven new gestures add proud chest puffs, curious sniffing, happy wiggles, hove
 
 ## Download
 
-Download **v0.12.0** from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
+Download **v0.12.1** from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
 
 | Download for Window | Download for MAC |
 | --- | --- |
-| [Download Windows — v0.12.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-Windows.zip) | [Download Mac Apple Silicon — v0.12.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Apple-Silicon.zip) · [Download Mac Intel — v0.12.0](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Intel.zip) |
+| [Download Windows — v0.12.1](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-Windows.zip) | [Download Mac Apple Silicon — v0.12.1](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Apple-Silicon.zip) · [Download Mac Intel — v0.12.1](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Intel.zip) |
 
 Extract the ZIP. On Windows, open one of the included pet executables. On Mac, open the included app and choose a character from the pet menu. The downloads include Python, Tk, and the artwork. Double-click the pet to open **Pet Studio**, or right-click (Control-click on Mac) and choose **Pet Studio**. Pick a companion from portrait cards, choose dragon gestures by category, and adjust speed or pause. English and Thai labels appear together. Drag the pet to move it.
 

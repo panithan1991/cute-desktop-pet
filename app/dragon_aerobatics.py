@@ -8,6 +8,7 @@ from app.dragon_personality import AIR_GESTURES, envelope
 class DragonFlightMotion(BibiFlightMotion):
     mode='walk'
     requested_mode='walk'
+    perch_side=None
     roll_chosen=False
     roll_turns=0
     roll_start=0.0

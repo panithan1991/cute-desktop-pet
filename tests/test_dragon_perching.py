@@ -12,6 +12,12 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 class DragonPerchingTests(unittest.TestCase):
+    def test_direct_dragon_startup_has_a_safe_perch_default(self):
+        f=DragonFlightMotion(450,680,auto_launch=False)
+        self.assertIsNone(f.perch_side)
+        f.mode='perch_landing';f.state='cruise'
+        self.assertIsNotNone(f.perch_pose(DragonBehavior()))
+
     def test_all_three_edges_grip_pause_and_depart_without_teleporting(self):
         for side in ('left','right','top'):
             f=DragonFlightMotion(450,240,auto_launch=False,rng=random.Random(5))
