@@ -18,8 +18,7 @@ for %%N in (BooBoo MooKrata Bibi Kitten Dragon) do (
         --add-data "assets\bibi-motion-left-windows.png;assets" ^
         --add-data "assets\kitten-motion-windows.png;assets" ^
         --add-data "assets\kitten-motion-left-windows.png;assets" ^
-        --add-data "assets\dragon-motion-windows.png;assets" ^
-        --add-data "assets\dragon-motion-left-windows.png;assets" ^
+        --add-data "assets\runtime\dragon-windows;assets\runtime\dragon-windows" ^
         desktop_pet.py
     if errorlevel 1 exit /b 1
 )

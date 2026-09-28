@@ -93,6 +93,16 @@ def save(character, frames):
         hard = image.copy()
         hard.putalpha(image.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
         hard.save(ROOT / f"assets/{name}-motion{suffix}-windows.png", optimize=True)
+        if character == "dragon":
+            from app.pet_sprites import PAGE_FRAMES
+            for platform,source in (("macos",image),("windows",hard)):
+                directory = ROOT / f"assets/runtime/dragon-{platform}"
+                directory.mkdir(parents=True,exist_ok=True)
+                for start in range(0,len(frames),PAGE_FRAMES):
+                    y = start//5*CELL
+                    end = min(source.height,y+PAGE_FRAMES//5*CELL)
+                    side = "left" if suffix else "right"
+                    source.crop((0,y,CELL*5,end)).save(directory/f"{side}-{start//PAGE_FRAMES:02d}.png",optimize=True)
 
 
 def build(character):

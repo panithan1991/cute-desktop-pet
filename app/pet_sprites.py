@@ -1,6 +1,7 @@
 """Pre-rendered pet atlases; runtime uses only Tk, not image libraries."""
 
 from pathlib import Path
+from collections import OrderedDict
 import sys
 import tkinter as tk
 
@@ -10,6 +11,7 @@ from app.behavior_art import EXTRA_POSES
 
 CELL = 160
 COLUMNS = 5
+PAGE_FRAMES = 40
 FILENAME = {
     "bunny": "booboo-motion", "mookrata": "moo-krata-motion",
     "bibi": "bibi-motion", "kitten": "kitten-motion", "dragon": "dragon-motion",
@@ -30,6 +32,12 @@ def atlas_path(character: str, facing: int, platform: str | None = None) -> Path
 class PetSprites:
     def __init__(self, root: tk.Misc, character: str) -> None:
         self.frames: dict[tuple[str, int], tk.PhotoImage] = {}
+        self.root, self.character = root, character
+        if character == "dragon":
+            self.frames = OrderedDict()
+            self.pages = OrderedDict()
+            self.indices = {pose:index for index,pose in enumerate(POSES[character])}
+            return
         columns = GRID_COLUMNS[character]
         rows = len(POSES[character]) // columns
         for facing in (1, -1):
@@ -44,4 +52,37 @@ class PetSprites:
                 self.frames[(pose, facing)] = frame
 
     def get(self, pose: str, facing: int) -> tk.PhotoImage:
-        return self.frames[(pose, 1 if facing >= 0 else -1)]
+        key = (pose, 1 if facing >= 0 else -1)
+        if self.character != "dragon":
+            return self.frames[key]
+        if key in self.frames:
+            self.frames.move_to_end(key)
+            return self.frames[key]
+        index = self.indices[pose]
+        page, local = divmod(index, PAGE_FRAMES)
+        page_key = (key[1], page)
+        if page_key not in self.pages:
+            atlas = tk.PhotoImage(master=self.root, file=str(dragon_page_path(key[1], page)))
+            rows = min(PAGE_FRAMES, len(POSES["dragon"])-page*PAGE_FRAMES)//COLUMNS
+            if (atlas.width(),atlas.height()) != (COLUMNS*CELL,rows*CELL):
+                raise ValueError("Invalid dragon sprite page size")
+            self.pages[page_key] = atlas
+            if len(self.pages) > 2:
+                self.pages.popitem(last=False)
+        self.pages.move_to_end(page_key)
+        atlas = self.pages[page_key]
+        image = tk.PhotoImage(master=self.root, width=CELL, height=CELL)
+        x,y = local%COLUMNS*CELL, local//COLUMNS*CELL
+        self.root.tk.call(str(image),"copy",str(atlas),"-from",x,y,x+CELL,y+CELL,"-to",0,0)
+        self.frames[key] = image
+        if len(self.frames) > 80:
+            self.frames.popitem(last=False)
+        return image
+
+
+def dragon_page_path(facing, page, platform=None):
+    platform = sys.platform if platform is None else platform
+    base = Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parents[1]))
+    family = "dragon-windows" if platform == "win32" else "dragon-macos"
+    side = "left" if facing < 0 else "right"
+    return base / "assets/runtime" / family / f"{side}-{page:02d}.png"

@@ -60,6 +60,12 @@ slow body movement. It does not trigger the
 travel controller, so the desktop position stays fixed. Pausing freezes the
 body and baked effects together. These activities return to a neutral pose.
 
+Dragon runtime art is split into pages of 40 frames. Tk decodes a page only
+when a pose needs it, with at most two decoded pages and 80 cached frames.
+This avoids decoding two very tall PNGs at startup and bounds memory during
+long sessions. Packaging includes only the target platform's pages. The full
+atlases remain artwork/test references; page tests compare every pixel.
+
 Validation: `python -m unittest discover -s tests -q` checks cooldowns, retained
 history, transition routes, gentle movement, pause behavior, all sprite bounds,
 both facings, and the dragon's smoke/flame padding.
