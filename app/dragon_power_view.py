@@ -7,7 +7,8 @@ import sys
 import tkinter as tk
 
 from app.dragon_lightning import flash_at, STORM_FRAMES
-from app.dragon_power_geometry import FIRE_WIDTH, FIRE_HEIGHT, fire_frame, overlay_rect, bolt_paths, gust_paths
+from app.dragon_power_geometry import FIRE_WIDTH, FIRE_HEIGHT, fire_frame, overlay_rect, gust_transform
+from app.dragon_weather_layout import LIGHTNING_BOUNDS
 from app.window_style import configure_overlay, configure_pet_window
 
 
@@ -21,6 +22,7 @@ class DragonPowerView:
         self.canvas = tk.Canvas(self.window, background=background, highlightthickness=0,borderwidth=0)
         self.canvas.pack()
         self.frames, self.scaled = {}, OrderedDict()
+        self.weather = OrderedDict()
         self.previous_state, self.previous_elapsed = None,0
         self.seed = 0
         self.last_rect = None
@@ -52,6 +54,40 @@ class DragonPowerView:
         if len(self.scaled)>64:
             self.scaled.popitem(last=False)
         return self.scaled[key]
+
+    def asset_path(self,name):
+        base=Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parents[1]))
+        platform="windows" if sys.platform=="win32" else "macos"
+        return str(base/f"assets/runtime/dragon-{platform}/{name}.png")
+
+    def vortex(self,index,facing,scale=1):
+        side="left" if facing<0 else "right"
+        key=f"vortex-{side}"
+        if key not in self.frames:
+            atlas=tk.PhotoImage(master=self.window,file=self.asset_path(key))
+            frames=[]
+            for i in range(32):
+                image=tk.PhotoImage(master=self.window,width=180,height=200)
+                x,y=i%4*180,i//4*200
+                self.window.tk.call(str(image),"copy",str(atlas),"-from",x,y,x+180,y+200,"-to",0,0)
+                frames.append(image)
+            self.frames[key]=frames
+        original=self.frames[key][index]
+        if scale==1:return original
+        cache_key=key,index,scale
+        if cache_key not in self.scaled:self.scaled[cache_key]=original.subsample(scale,scale)
+        self.scaled.move_to_end(cache_key)
+        if len(self.scaled)>64:self.scaled.popitem(last=False)
+        return self.scaled[cache_key]
+
+    def lightning(self,index,scale):
+        key=index,scale
+        if key not in self.weather:
+            image=tk.PhotoImage(master=self.window,file=self.asset_path(f"lightning-{index:02d}"))
+            self.weather[key]=image.subsample(scale,scale) if scale>1 else image
+        self.weather.move_to_end(key)
+        if len(self.weather)>8:self.weather.popitem(last=False)
+        return self.weather[key]
 
     def draw(self,state,elapsed,duration,mouth,horns,facing,bounds,topmost):
         if state not in {"fire","storm_hover","wing_gust"}:
@@ -92,23 +128,26 @@ class DragonPowerView:
             if p<.15 or p>.94:
                 self.window.withdraw(); return
             envelope = min(1,(p-.15)/.15,(.94-p)/.2)
-            for path in gust_paths((mouth[0]-x,mouth[1]-y),(w,h),-facing,p,elapsed):
-                coords = [v for point in path for v in point]
-                c.create_line(*coords,fill="#576c81",width=3,smooth=True)
-                c.create_line(*coords,fill="#daeaf1",width=1,smooth=True)
+            cx,cy = gust_transform((mouth[0]-x,mouth[1]-y),(w,h),-facing,p)
+            t=(p-.15)/.79
+            index=min(7,int(t/.2*8)) if t<.2 else 8+int(elapsed*12)%16 if t<.8 else 24+min(7,int((t-.8)/.2*8))
+            scale=max(1,math.ceil(200/max(8,cy-4)),math.ceil(180/max(8,2*min(cx,w-cx)-4)))
+            image=self.vortex(index,-facing,scale)
+            c.create_image(cx,cy,image=image,anchor="s")
             self.window.wm_attributes("-alpha",max(0,min(1,envelope)))
         else:
             strike,strength,growth = flash_at(round(elapsed/max(duration,.001)*(STORM_FRAMES-1)))
             if not strength:
                 self.window.withdraw(); return
-            local = [(px-x,py-y) for px,py in horns]
-            paths = bolt_paths(local,(w,h),self.seed,strike)
-            for path in paths:
-                path = path[:max(2,round(len(path)*growth))]
-                coords = [v for point in path for v in point]
-                c.create_line(*coords,fill="#3e4977",width=6)
-                c.create_line(*coords,fill="#8b7dff",width=3)
-                c.create_line(*coords,fill="#fcfaff",width=1)
+            index=(self.seed+strike*7919)%16
+            mx,my=origin[0]-x,origin[1]-y
+            l,t,r,b=LIGHTNING_BOUNDS[index]
+            scale=max(1,math.ceil((280-l)/max(8,mx-2)),
+                      math.ceil((r-280)/max(8,w-mx-2)),
+                      math.ceil((380-t)/max(8,my-2)),
+                      math.ceil((b-380)/max(8,h-my-2)))
+            image=self.lightning(index,scale)
+            c.create_image(mx-280/scale,my-380/scale,image=image,anchor="nw")
             self.window.wm_attributes("-alpha",strength)
         if state == "fire":
             self.window.wm_attributes("-alpha",1)

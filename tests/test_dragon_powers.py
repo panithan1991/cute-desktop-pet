@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import Image, ImageOps
 from app.dragon_animation import DragonBehavior, DRAGON_ACTIVITIES
 from app.behavior_art import EXTRA_CLIPS
-from app.dragon_power_geometry import fire_frame, overlay_rect, bolt_paths, gust_paths
+from app.dragon_power_geometry import fire_frame, overlay_rect, bolt_paths, gust_transform
 
 
 class DragonPowerTests(unittest.TestCase):
@@ -46,12 +46,11 @@ class DragonPowerTests(unittest.TestCase):
 
     def test_whirlwind_drifts_towards_the_flapping_wing_and_freezes(self):
         for sign in (-1,1):
-            early=gust_paths((280,380),(560,480),sign,.3,2)
-            late=gust_paths((280,380),(560,480),sign,.8,6)
-            def center(paths): return sum(x for p in paths for x,y in p)/sum(map(len,paths))
-            self.assertGreater(sign*(center(late)-center(early)),100)
-            self.assertEqual(late,gust_paths((280,380),(560,480),sign,.8,6))
-            self.assertTrue(all(6<=x<=554 and 6<=y<=474 for p in late for x,y in p))
+            early=gust_transform((280,380),(560,480),sign,.3)
+            late=gust_transform((280,380),(560,480),sign,.8)
+            self.assertGreater(sign*(late[0]-early[0]),100)
+            self.assertEqual(late,gust_transform((280,380),(560,480),sign,.8))
+            self.assertTrue(90<=late[0]<=470 and 210<=late[1]<=468)
 
     def test_interrupted_gesture_starts_bridge_at_its_current_pose(self):
         pet=DragonBehavior(random.Random(8))
@@ -82,3 +81,32 @@ class DragonPowerTests(unittest.TestCase):
         clip=EXTRA_CLIPS['dragon']['wing_gust']
         for name in (clip[0],clip[-1]):
             self.assertEqual(frame(atlas,poses.index(name)).tobytes(),idle)
+
+    def test_weather_images_have_complete_alpha_and_no_windows_magenta_matte(self):
+        root=Path(__file__).resolve().parents[1]/'assets/runtime'
+        for platform in ('macos','windows'):
+            directory=root/f'dragon-{platform}'
+            for i in range(16):
+                image=Image.open(directory/f'lightning-{i:02d}.png').convert('RGBA')
+                self.assertEqual(image.size,(560,480))
+                bounds=image.getchannel('A').point(lambda a:255 if a>32 else 0).getbbox()
+                self.assertGreaterEqual(min(bounds[0],bounds[1],560-bounds[2],480-bounds[3]),5)
+                if platform=='windows':self.assertLessEqual(set(image.getchannel('A').tobytes()),{0,255})
+            a,b=[Image.open(directory/f'vortex-{side}.png').convert('RGBA') for side in ('right','left')]
+            self.assertEqual(a.size,(720,1600))
+            for i in range(32):
+                x,y=i%4*180,i//4*200
+                right,left=[im.crop((x,y,x+180,y+200)) for im in (a,b)]
+                self.assertEqual(ImageOps.mirror(right).tobytes(),left.tobytes())
+                bounds=right.getchannel('A').point(lambda a:255 if a>32 else 0).getbbox()
+                self.assertIsNotNone(bounds)
+                self.assertGreaterEqual(min(bounds[0],bounds[1],180-bounds[2],200-bounds[3]),1)
+            if platform=='windows':self.assertLessEqual(set(a.getchannel('A').tobytes()),{0,255})
+
+    def test_lightning_tree_forks_only_outwards_from_each_horn(self):
+        paths=bolt_paths([(271,380),(289,380)],(560,480),3,2)
+        self.assertEqual(len(paths),26)
+        for side,tree in enumerate((paths[:13],paths[13:])):
+            sign=-1 if side==0 else 1
+            for path in tree:
+                self.assertTrue(all(sign*(b[0]-a[0])>=0 for a,b in zip(path,path[1:])))

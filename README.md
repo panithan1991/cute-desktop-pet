@@ -4,7 +4,7 @@
 
 A rabbit, a puppy, a bald eagle, and a fluffy tabby kitten live on your desktop. Each has 195 animation frames, long walks and naps, and its own grooming, sniffing, stretching or playful gestures. Ground pets occasionally run; the eagle flies across and up the screen before landing. Seven other characters are available from the menu.
 
-The black dragon has 545 body frames: sleepy gestures, warning displays, roars, large fantasy flame breath, smoke rings, rapid horn lightning, and a seated one-wing whirlwind. Fire and smoke occur more often, with cooldowns to vary the routine. Large effects use a separate transparent layer so the face stays intact. The dragon can soar high across the screen for 25–45 seconds.
+The black dragon has 545 body frames: sleepy gestures, warning displays, roars, large fantasy flame breath, smoke rings, rapid tree-like lightning branching sideways from its horns, and a seated one-wing whirlwind made of volumetric cloud wisps. Fire and smoke occur more often, with cooldowns to vary the routine. Large effects use a separate transparent layer so the face stays intact. The dragon can soar high across the screen for 25–45 seconds.
 
 Named behaviors, recent activity memory, and cooldowns vary the routine. Painted waking, stretching, and turning clips connect rest and travel. Pause and dragging freeze the behavior clock.
 
