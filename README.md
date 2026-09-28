@@ -14,7 +14,7 @@ Named behaviors, recent activity memory, and cooldowns vary the routine. Painted
 
 <img src="assets/readme/dragon.png" alt="Black baby dragon" width="170">
 
-<img src="assets/readme/dragon-powers.png" alt="Dragon smoke, flame breath and horn lightning — still examples" width="600">
+<img src="assets/readme/dragon-powers.png" alt="Dragon smoke, flame breath and horn lightning — still examples" width="1000">
 
 ## Download
 
