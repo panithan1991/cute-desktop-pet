@@ -12,6 +12,12 @@ from test_behavior_art import frame
 
 
 class DragonStuntTests(unittest.TestCase):
+    def test_belly_smoke_is_a_long_rest_with_six_second_rings(self):
+        from app.dragon_animation import DRAGON_ACTIVITIES
+        from app.dragon_power_view import SKY_RING_LIFETIME
+        self.assertEqual(SKY_RING_LIFETIME,6)
+        self.assertEqual(DRAGON_ACTIVITIES['belly_smoke'].duration,(22,28))
+
     def test_one_half_probability_decision_per_successful_launch(self):
         flight=DragonFlightMotion(300,700,auto_launch=False,rng=random.Random(50))
         chosen=0;turns=set()

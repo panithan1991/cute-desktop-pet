@@ -12,6 +12,8 @@ from app.dragon_weather_layout import LIGHTNING_BOUNDS
 from app.dragon_fire_layout import FIRE_NOZZLES
 from app.dragon_stunt_effect_layout import TREE_BOUNDS
 from app.dragon_cloud import cloud_frame, cloud_center, cloud_sparks, CLOUD_SIZE, CLOUD_FRAMES
+
+SKY_RING_LIFETIME = 6.0
 from app.window_style import configure_overlay, configure_pet_window
 
 
@@ -216,10 +218,10 @@ class DragonPowerView:
             visible=False
             for i,at in enumerate((.27,.47,.67)):
                 age=elapsed-duration*at
-                if not 0<=age<2.8:continue
+                if not 0<=age<SKY_RING_LIFETIME:continue
                 visible=True
                 if i not in self.ring_origins:self.ring_origins[i]=mouth
-                ox,oy=self.ring_origins[i];t=age/2.8
+                ox,oy=self.ring_origins[i];t=age/SKY_RING_LIFETIME
                 mx=max(50,min(w-50,ox-x+6*math.sin(age*1.2+i)-3))
                 my=max(12,min(h-12,oy-y-8-100*t))
                 scale=max(1,math.ceil(96/max(8,2*min(my,h-my)-4)))
