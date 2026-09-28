@@ -114,6 +114,12 @@ class DragonBehavior:
         choice=self.memory.choose({name:1 for name in sorted(PERCH_POWERS)},self.clock)
         self.force(choice if choice in PERCH_POWERS else self.rng.choice(sorted(PERCH_POWERS)))
 
+    def start_turn(self):
+        from app.dragon_flight_joins import DRAGON_TURN_POSES
+        self.turn_pending = True
+        self.transition.queue = [(DRAGON_TURN_POSES, False, 0.72)]
+        self.transition.elapsed = 0.0
+
     def finish(self):
         if self.perched:
             self.force('idle')
@@ -128,6 +134,10 @@ class DragonBehavior:
         elif self.state != "idle":
             self.force("idle")
         else:
+            if not self.perched and self.rng.random() < 0.20:
+                self.force("idle")
+                self.start_turn()
+                return
             self.force(self.memory.choose({
                 **{name: (14 if name in {'proud','curious_sniff','happy'} else 10 if name=='perch_landing' else 8) for name in NEW_ACTIVITIES},
                 "fire": 40,
@@ -185,8 +195,8 @@ class DragonBehavior:
         # Ease into travel; decelerate at the work-area edge before turning.
         margin = (right-motion.x) if motion.direction > 0 else (motion.x-left)
         if margin <= .3:
-            self.turn_pending = True
-            self.finish()
+            self.force("idle")
+            self.start_turn()
             motion.speed = speed
             return
         motion.speed *= min(1, self.elapsed / .65, max(0, (self.duration-self.elapsed)/.65), max(.08, margin / 20))

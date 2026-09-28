@@ -73,3 +73,37 @@ class DragonTests(unittest.TestCase):
         self.assertTrue(all(0 <= x <= 900 and 20 <= y <= 700 for x, y in points))
         self.assertLess(min(y for x, y in points), 350)
         self.assertEqual((flight.state, flight.y), ("rest", 700))
+
+    def test_idle_turn_around_has_smooth_transitions_and_expected_rate(self):
+        from app.dragon_flight_joins import DRAGON_TURN_POSES
+
+        dragon = DragonBehavior(random.Random(42))
+        dragon.force("idle")
+        dragon.start_turn()
+        self.assertTrue(dragon.turn_pending)
+        self.assertTrue(dragon.transition.active)
+
+        poses = []
+        while dragon.transition.active:
+            poses.append(dragon.pose())
+            dragon.step(0.04)
+
+        self.assertEqual(poses[0], "dragon_turn_00")
+        self.assertEqual(poses[-1], "dragon_turn_12")
+        self.assertEqual(len(poses), 18)
+        self.assertTrue(dragon.turn_pending)
+        self.assertFalse(dragon.transition.active)
+
+        # 20% probability over large sample
+        rng = random.Random(12345)
+        turns = 0
+        trials = 1000
+        for _ in range(trials):
+            d = DragonBehavior(rng)
+            d.force("idle")
+            d.finish()
+            if d.turn_pending and d.transition.active and d.state == "idle":
+                turns += 1
+
+        self.assertGreaterEqual(turns, 160)
+        self.assertLessEqual(turns, 240)
