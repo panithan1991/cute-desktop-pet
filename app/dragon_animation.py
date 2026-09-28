@@ -10,6 +10,8 @@ DRAGON_ACTIVITIES = {
     "idle": Activity("Sleepy breathing", (8, 14)),
     "sleep": Activity("Curled nap", (45, 55), 100, enter=4),
     "walk": Activity("Soaring flight", (25, 45), 40, enter=2.4, exit=2.8),
+    "ground_walk": Activity("Sleepy ground stroll", (18, 30), 30),
+    "run": Activity("Short playful ground run", (5, 8), 85),
     "curious": Activity("Small head tilt", (2.5, 4.0), 30, enter=1, exit=1),
     "tail": Activity("Tail sway", (3, 4.5), 25, enter=1, exit=1),
     "stretch": Activity("Wing stretch", (3.5, 5), 30, enter=1, exit=1),
@@ -48,6 +50,8 @@ class DragonBehavior:
         self.clock = 0.0
         self.memory = BehaviorMemory(self.rng, DRAGON_ACTIVITIES)
         self.transition = PostureTransition("dragon")
+        self.ground_distance = 0.0
+        self.turn_pending = False
         self.force("idle")
 
     def force(self, state):
@@ -59,11 +63,22 @@ class DragonBehavior:
             # Finish the remaining painted exit when a menu command interrupts
             # an upright gesture. Keep the current frame as the bridge start.
             source_pose = self.pose()
+            interrupted_ground = []
+            if self.transition.active and self.transition.queue[0][0] == "ground_ready":
+                from app.behavior_art import EXTRA_CLIPS
+                name, reverse, seconds = self.transition.queue[0]
+                frames = EXTRA_CLIPS["dragon"][name]
+                ordered = frames[::-1] if reverse else frames
+                index = ordered.index(source_pose)
+                interrupted_ground = [(ordered[index:], False, max(.1, seconds-self.transition.elapsed))]
+                interrupted_ground += self.transition.queue[1:]
             source_clip = DRAGON_CLIPS.get(self.state)
             if source_clip is None:
                 from app.behavior_art import EXTRA_CLIPS
                 source_clip = EXTRA_CLIPS["dragon"].get(self.state)
             self.transition.connect(self.state, state)
+            if interrupted_ground:
+                self.transition.queue = interrupted_ground + self.transition.queue
             if self.state not in {"idle", "sleep", "wake", "walk", "hug_tail", "wing_blanket"} and source_clip and source_pose in source_clip:
                 remainder = source_clip[source_clip.index(source_pose):]
                 if len(remainder)>1:
@@ -72,6 +87,7 @@ class DragonBehavior:
                 self.transition.queue = []
         self.previous, self.state = getattr(self, "state", None), state
         self.elapsed = 0.0
+        self.ground_distance = 0.0
         if state == "sleep" and (self.transition.active or self.previous in {"hug_tail", "wing_blanket", "sleep"}):
             self.elapsed = 4.0
         self.duration = self.rng.uniform(*DRAGON_ACTIVITIES[state].duration)
@@ -93,6 +109,8 @@ class DragonBehavior:
                 "belly_smoke": 20,
                 "fury": 10,
                 "walk": 18,
+                "ground_walk": 24,
+                "run": 5,
                 "threat": 15,
                 "roar": 14,
                 "hiccup": 12,
@@ -120,7 +138,33 @@ class DragonBehavior:
 
     @property
     def walking(self):
+        # Legacy travel name used by the shared flight launcher; ground travel
+        # must never launch wings or borrow the airborne motion clock.
         return self.state == "walk" and not self.transition.active
+
+    @property
+    def grounded_travel(self):
+        return self.state in {"ground_walk", "run"} and not self.transition.active
+
+    def move_ground(self, motion, seconds, left, right):
+        """Use distance, rather than elapsed time, to drive planted-paw cycles."""
+        if not self.grounded_travel or motion.paused:
+            return
+        dt = min(max(seconds, 0), .1)
+        speed = motion.speed
+        motion.speed *= .55 if self.state == "ground_walk" else 1.65
+        # Ease into travel; decelerate at the work-area edge before turning.
+        margin = (right-motion.x) if motion.direction > 0 else (motion.x-left)
+        if margin <= .3:
+            self.turn_pending = True
+            self.finish()
+            motion.speed = speed
+            return
+        motion.speed *= min(1, self.elapsed / .65, max(0, (self.duration-self.elapsed)/.65), max(.08, margin / 20))
+        before = motion.x
+        motion.step(dt, left, right)
+        self.ground_distance += abs(motion.x-before)
+        motion.speed = speed
 
     @property
     def phase(self):
@@ -136,6 +180,11 @@ class DragonBehavior:
         connecting = self.transition.pose()
         if connecting:
             return connecting
+        if self.state in {"ground_walk", "run"}:
+            from app.behavior_art import EXTRA_CLIPS
+            frames = EXTRA_CLIPS["dragon"][self.state]
+            stride = 44 if self.state == "ground_walk" else 72
+            return frames[int((self.ground_distance % stride) / stride * (len(frames)-1))]
         extra = gesture_pose("dragon", "wake_stretch" if self.state == "wake" else self.state,
                              self.elapsed, self.duration)
         if extra:

@@ -118,6 +118,11 @@ def build(character):
     previews = []
     for row, (clip, poses) in enumerate(EXTRA_CLIPS[character].items()):
         ref = sleep if clip in {"hug_tail", "wing_blanket"} else idle
+        if clip in {"ground_ready", "ground_walk", "run"}:
+            from build_dragon_gaits import ground_sequences
+            if clip == "ground_ready":
+                ground = ground_sequences(idle)
+            frames.extend(ground[clip]);continue
         if clip == "fury":
             from build_dragon_stunts import fury_sequence
             frames.extend(fury_sequence(idle));continue

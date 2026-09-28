@@ -15,7 +15,7 @@ EXTRA_CLIPS = {
     for character, signatures in SIGNATURES.items()
 }
 EXTRA_CLIPS["dragon"]["hiccup"] = tuple(f"extra_hiccup_{i:02d}" for i in range(25))
-for name, length in (("threat", 30), ("roar", 30), ("storm_hover", 140), ("wing_gust", 60), ("belly_smoke", 120), ("roll_enter", 15), ("roll_loop", 90), ("roll_exit", 15), ("fury", 180)):
+for name, length in (("threat", 30), ("roar", 30), ("storm_hover", 140), ("wing_gust", 60), ("belly_smoke", 120), ("roll_enter", 15), ("roll_loop", 90), ("roll_exit", 15), ("fury", 180), ("ground_ready", 25), ("ground_walk", 40), ("run", 40)):
     EXTRA_CLIPS["dragon"][name] = tuple(f"extra_{name}_{i:02d}" for i in range(length))
 EXTRA_POSES = {character: tuple(pose for clip in clips.values() for pose in clip)
                for character, clips in EXTRA_CLIPS.items()}
@@ -31,6 +31,8 @@ def gesture_pose(character, state, elapsed, duration):
 
 
 def posture(state):
+    if state in {"ground_walk", "run"}:
+        return "ground_travel"
     if state in {"sleep", "lounge", "roll", "belly_up", "hug_tail", "wing_blanket"}:
         return "lying"
     if state == "walk":
@@ -52,12 +54,16 @@ class PostureTransition:
             return
         if start == "travel":
             self.queue.append(("travel_ready", True, 2.4))
+        if start == "ground_travel":
+            self.queue.append(("ground_ready", True, 1.8))
         if start == "lying":
             self.queue.append(("wake_stretch", False, 4.5))
         if end == "lying":
             self.queue.append(("wake_stretch", True, 4.5))
         if end == "travel":
             self.queue.append(("travel_ready", False, 2.4))
+        if end == "ground_travel":
+            self.queue.append(("ground_ready", False, 1.8))
 
     @property
     def active(self):

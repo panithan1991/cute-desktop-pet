@@ -227,6 +227,8 @@ class DesktopPet:
         self.roll_menu_index = menu.index("end")
         dragon_menu = tk.Menu(menu, tearoff=False)
         for label, activity in (
+            ("Walk (เดินบนพื้น)", "ground_walk"),
+            ("Run (วิ่งเล่น)", "run"),
             ("Flame Breath (พ่นไฟ)", "fire"),
             ("Smoke Ring (พ่นวงควัน)", "smoke"),
             ("Warning Display (ขู่กางปีก)", "threat"),
@@ -463,6 +465,14 @@ class DesktopPet:
                 bird = self.dragon_flight if self.current_character == "dragon" else self.bibi_flight
                 if bird.state == "rest":
                     self.behavior.step(dt, frozen=bird.paused)
+                    if self.current_character == "dragon":
+                        self.motion.x = bird.x
+                        self.motion.direction = bird.direction
+                        if self.behavior.turn_pending and not self.behavior.transition.active and not bird.paused:
+                            self.motion.direction *= -1
+                            self.behavior.turn_pending = False
+                        self.behavior.move_ground(self.motion, dt, left, right - WIDTH)
+                        bird.x, bird.direction = self.motion.x, self.motion.direction
                     if self.behavior.walking and bird.launch():
                         bird.cruise_duration = self.behavior.duration
                 else:
@@ -798,7 +808,7 @@ def main() -> int:
     pet = DesktopPet(root)
     if smoke_test:
         if pet.character_var.get() == "dragon":
-            for state in ("fire", "storm_hover", "wing_gust", "belly_smoke", "fury"):
+            for state in ("fire", "storm_hover", "wing_gust", "belly_smoke", "fury", "ground_walk", "run"):
                 pet.behavior.force(state)
                 pet.behavior.transition.queue = []
                 pet.behavior.elapsed = pet.behavior.duration*.5
