@@ -3,6 +3,7 @@ import math
 from app.pet_motion import BibiFlightMotion
 from app.behavior_art import EXTRA_CLIPS
 from app.dragon_personality import AIR_GESTURES, envelope
+from app.dragon_flight_joins import JOIN_SECONDS,JOIN_FRAMES,LANDING_JOIN_POSES
 
 
 class DragonFlightMotion(BibiFlightMotion):
@@ -37,21 +38,26 @@ class DragonFlightMotion(BibiFlightMotion):
             self.state='unperch';self.elapsed=0
 
     def _grip(self,side):
+        self.flight_join_index=min(9,int((self.hover_elapsed%1.8)/1.8*10))
         self.perch_side=side
         self.state='grabbing';self.elapsed=0;self.roll_chosen=False
         self.direction=-1 if side=='right' else 1
 
     @property
     def grip_amount(self):
-        if self.state=='grabbing':return min(1,self.elapsed/1.2)
+        if self.state=='grabbing':return max(0,min(1,(self.elapsed-JOIN_SECONDS)/1.2))
         if self.state=='unperch':return max(0,1-self.elapsed/1.2)
         return 1 if self.state=='perched' else 0
 
     def perch_pose(self,behavior):
+        if self.state=='release_join':return LANDING_JOIN_POSES[min(JOIN_FRAMES-1,int(self.elapsed/JOIN_SECONDS*JOIN_FRAMES))]
         if self.state not in {'grabbing','perched','unperch'}:return None
         name='top_perch' if getattr(self,'perch_side',None)=='top' else 'wall_perch'
         frames=EXTRA_CLIPS['dragon'][name]
-        if self.state=='grabbing':return frames[min(12,int(self.elapsed/1.2*12))]
+        if self.state=='grabbing':
+            if self.elapsed<JOIN_SECONDS:
+                return f'flight_join_{self.flight_join_index:02d}_{min(JOIN_FRAMES-1,int(self.elapsed/JOIN_SECONDS*JOIN_FRAMES)):02d}'
+            return frames[min(12,int((self.elapsed-JOIN_SECONDS)/1.2*12))]
         if self.state=='unperch':return frames[max(0,12-int(self.elapsed/1.2*12))]
         if self.state!='perched':return None
         if behavior.state=='idle':return frames[12]
@@ -61,13 +67,15 @@ class DragonFlightMotion(BibiFlightMotion):
         return frames[min(39,index)]
 
     def step(self,seconds,left,top,right,ground):
-        if self.state in {'grabbing','perched','unperch'}:
+        if self.state in {'grabbing','perched','unperch','release_join'}:
             if self.paused:return
             self.elapsed+=min(max(seconds,0),.1)
             self.x=max(left,min(right,self.x));self.y=max(top,min(ground,self.y))
-            if self.state=='grabbing' and self.elapsed>=1.2:
+            if self.state=='grabbing' and self.elapsed>=1.2+JOIN_SECONDS:
                 self.state='perched';self.elapsed=0
             elif self.state=='unperch' and self.elapsed>=1.2:
+                self.state='release_join';self.elapsed=0
+            elif self.state=='release_join' and self.elapsed>=JOIN_SECONDS:
                 self.state='landing';self.elapsed=0;self.landing_y=self.y
             return
         if self.state=='cruise' and self.mode in {'walk','perch_landing'}:
@@ -78,18 +86,16 @@ class DragonFlightMotion(BibiFlightMotion):
             if self.elapsed<=dt:
                 self.climb=-self.speed*self.rng.uniform(1.35,1.95)
             acceleration=min(1,self.elapsed/.8)
+            horizontal_factor=.1 if self.rolling else 1
+            vertical_factor=.02 if self.rolling else 1
             horizontal_gap=right-self.x if self.direction>0 else self.x-left
             vertical_gap=self.y-top if getattr(self,'climb',-self.speed)<0 else ground-self.y
-            self.x+=self.direction*self.speed*dt*acceleration*max(.2,min(1,horizontal_gap/65))
-            self.y+=getattr(self,'climb',-self.speed)*dt*acceleration*max(.2,min(1,vertical_gap/65))
+            self.x+=self.direction*self.speed*dt*acceleration*horizontal_factor*max(.2,min(1,horizontal_gap/65))
+            self.y+=getattr(self,'climb',-self.speed)*dt*acceleration*vertical_factor*max(.2,min(1,vertical_gap/65))
             side='top' if self.y<=top else 'left' if self.x<=left else 'right' if self.x>=right else None
             self.x=max(left,min(right,self.x));self.y=max(top,min(ground,self.y))
             if self.y>=ground:self.climb=-abs(self.climb)
-            if side:
-                if self.rolling:
-                    if side=='top':self.climb=abs(self.climb)
-                    else:self.direction=1 if side=='left' else -1
-                else:self._grip(side)
+            if side:self._grip(side)
             elif self.elapsed>=self.cruise_duration:
                 self.state='landing';self.elapsed=0;self.landing_y=self.y
             return
@@ -116,6 +122,11 @@ class DragonFlightMotion(BibiFlightMotion):
             # Slow through zero before a small backwards drift, then recover.
             speed=self.speed*(1-1.18*e)
         if self.mode!='perch_landing':self.x+=self.direction*speed*dt
+        side='top' if self.y<=top else 'left' if self.x<=left else 'right' if self.x>=right else None
+        if side:
+            self.x=max(left,min(right,self.x));self.y=max(top,min(ground,self.y))
+            self._grip(side)
+            return
         if self.mode!='perch_landing':
             if self.x>=right:self.x,self.direction=right,-1
             elif self.x<=left:self.x,self.direction=left,1

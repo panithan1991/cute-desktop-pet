@@ -34,12 +34,12 @@ class DragonPerchingTests(unittest.TestCase):
                 self.assertIsNone(f.perch_pose(DragonBehavior()))
             self.assertEqual(f.state,'grabbing');self.assertEqual(f.perch_side,side)
             contact=(f.x,f.y)
-            for _ in range(13):f.step(.1,0,25,950,680)
+            for _ in range(17):f.step(.1,0,25,950,680)
             self.assertEqual(f.state,'perched');self.assertEqual((f.x,f.y),contact)
             before=(f.x,f.y,f.elapsed);f.paused=True;f.step(.1,0,25,950,680)
             self.assertEqual(before,(f.x,f.y,f.elapsed));f.paused=False
             f.depart()
-            for _ in range(45):f.step(.1,0,25,950,680)
+            for _ in range(50):f.step(.1,0,25,950,680)
             self.assertEqual(f.state,'rest');self.assertEqual(f.y,680)
 
     def test_flying_in_open_space_never_displays_a_stationary_grip(self):
@@ -81,3 +81,26 @@ class DragonPerchingTests(unittest.TestCase):
                 for i in range(16):
                     with Image.open(root/f'roar-cone-{side}/{i:02d}.png') as up,Image.open(root/f'roar-down-{side}/{i:02d}.png') as down:
                         self.assertEqual(ImageOps.flip(up).tobytes(),down.tobytes())
+
+    def test_special_air_maneuver_contact_also_grips_the_edge(self):
+        f=DragonFlightMotion(949,240,auto_launch=False)
+        f.state='cruise';f.mode='dive_recover';f.direction=1
+        f.cruise_duration=10;f.altitude=.3
+        f.step(.1,0,25,950,680)
+        self.assertEqual(f.state,'grabbing')
+        self.assertEqual(f.perch_side,'right')
+
+    def test_flight_join_endpoints_match_actual_wingbeat_and_landing(self):
+        from app.dragon_animation import DRAGON_CLIPS
+        root=ROOT/'assets/runtime/dragon-macos/body-fx/right'
+        with Image.open(ROOT/'assets/dragon-motion.png') as atlas:
+            def body(pose):
+                i=POSES['dragon'].index(pose)
+                return atlas.crop((i%5*160,i//5*160,i%5*160+160,i//5*160+160)).tobytes()
+            for phase,pose in enumerate(DRAGON_CLIPS['hover']):
+                with Image.open(root/f'flight_join_{phase:02d}_00.png') as first,Image.open(root/f'flight_join_{phase:02d}_05.png') as last:
+                    self.assertEqual(first.tobytes(),body(pose))
+                    self.assertEqual(last.tobytes(),body(DRAGON_CLIPS['hover'][0]))
+            with Image.open(root/'landing_join_00.png') as first,Image.open(root/'landing_join_05.png') as last:
+                self.assertEqual(first.tobytes(),body(DRAGON_CLIPS['hover'][0]))
+                self.assertEqual(last.tobytes(),body(DRAGON_CLIPS['landing'][0]))

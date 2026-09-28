@@ -105,3 +105,7 @@ Edge perching uses two painted 40-frame clips with planted paws. One action is s
 Belly-up smoke now lasts 36–42 seconds and emits six distinct rings. The painted breath cycles are reused six times between lie-down and sit-up clips, with each ring born during exhalation and lasting six seconds. No extra body assets or runtime image processing are needed.
 
 Edge contact now triggers a 1.2-second painted grip transition after normal diagonal flight. No random edge target or position interpolation runs during cruise. Upward velocity favors reaching the top. One randomly selected fire/gas/mouth-lightning action runs before release and landing. Mouth lightning renders 3–4 independent painted trees rooted at the mouth, with the horn-lightning flash/dark-gap cadence.
+
+Flight transitions add 66 standalone body frames: six bridge frames for each of ten hover wingbeat phases plus a six-frame hover-to-landing bridge. They are loaded directly through the existing bounded sprite cache. Aurora breath now uses 64 pre-rendered flow frames from one painted plume, a stationary nozzle at (8,80), downstream-only periodic deformation and identical first/last frames. No source switching or image warping occurs at runtime.
+
+Static charge uses tracked horn tips and two directional pre-baked coronas (rear 32 degrees, front 18 degrees), mirrored with the body. Each corona is rooted at the horn tip, pointing away from the head rather than into the forehead.

@@ -6,7 +6,7 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 CLIPS={'cloud-flame':(240,240,48),'sky-rings':(96,96,24),
-       'ember-bubble':(96,96,36),'aurora-left':(240,160,32),'aurora-right':(240,160,32),'shockwave':(240,240,32),
+       'ember-bubble':(96,96,36),'aurora-left':(240,160,64),'aurora-right':(240,160,64),'shockwave':(240,240,32),
        'roar-cone-left':(640,360,16),'roar-cone-right':(640,360,16),
        'scale-charge':(96,96,32),
        'fury-aura':(240,200,32),

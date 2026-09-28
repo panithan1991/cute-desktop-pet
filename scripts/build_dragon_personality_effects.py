@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
-SIZES={'ember-bubble':(96,96,36),'aurora-right':(240,160,32),'aurora-left':(240,160,32),
+SIZES={'ember-bubble':(96,96,36),'aurora-right':(240,160,64),'aurora-left':(240,160,64),
        'shockwave':(240,240,32)}
 
 
@@ -26,6 +26,32 @@ def painted_effects():
             key=Image.new('RGBA',(w,h))
             key.alpha_composite(image,(8 if name=='aurora-right' else (w-image.width)//2,(h-image.height)//2))
             keys.append(key)
+        if name=='aurora-right':
+            # One painted plume, anchored at its bright narrow nozzle. Moving
+            # flow stays downstream; the source and first pixels never drift.
+            import cv2
+            original=keys[0]
+            data=np.asarray(original).astype(np.float32)/255
+            rx=int(np.flatnonzero(data[:,:,3].max(axis=0)>.3)[0])
+            ry=int(np.argmax(data[:,rx,3]*data[:,rx,:3].sum(axis=1)))
+            anchored=original.transform((w,h),Image.Transform.AFFINE,
+                (1,0,rx-8,0,1,ry-80),Image.Resampling.BICUBIC)
+            rgba=np.asarray(anchored).astype(np.float32)/255
+            rgba[:,:,:3]*=rgba[:,:,3:4]
+            yy,xx=np.mgrid[:h,:w].astype(np.float32)
+            influence=np.clip((xx-24)/80,0,1)
+            frames=[]
+            for i in range(count):
+                phase=i/(count-1)*math.tau
+                dx=1.3*np.sin(yy*.08-phase)*influence
+                dy=(2.2*np.sin(xx*.045-phase)+1.1*np.sin(xx*.09-phase*2))*influence
+                flowed=cv2.remap(rgba,xx-dx,yy-dy,cv2.INTER_CUBIC,borderMode=cv2.BORDER_CONSTANT)
+                flowed=np.clip(flowed,0,1)
+                flowed[:,:,:3]/=np.maximum(flowed[:,:,3:4],.0001)
+                frames.append(Image.fromarray(np.uint8(np.clip(flowed,0,1)*255)))
+            frames[-1]=frames[0].copy()
+            result[name]=frames
+            continue
         frames=[]
         for i in range(count):
             t=i/(count-1)*4;k=min(3,int(t));amount=t-k

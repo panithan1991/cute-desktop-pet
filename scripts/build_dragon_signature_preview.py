@@ -1,4 +1,4 @@
-"""Still examples of the five new elemental signatures for the README."""
+"""Still examples of the four new elemental signatures for the README."""
 from pathlib import Path
 import sys, math
 from PIL import Image,ImageDraw
@@ -28,8 +28,10 @@ def build():
                 plume=plume.resize((150,100),Image.Resampling.LANCZOS)
                 scene.alpha_composite(plume,(mx,my-50))
             elif state=='static_charge':
-                corona=Image.open(ROOT/'assets/runtime/dragon-macos/fx/scale-charge/12.png').resize((48,48),Image.Resampling.LANCZOS)
-                for dx in (-9,9):scene.alpha_composite(corona,(hx+dx-24,hy-40))
+                from app.dragon_charge_layout import charge_horns
+                for part,(px,py) in zip(('rear','front'),charge_horns(20)):
+                    corona=Image.open(ROOT/f'assets/runtime/dragon-macos/fx/charge-{part}-right/12.png').resize((64,64),Image.Resampling.LANCZOS)
+                    scene.alpha_composite(corona,(round(x+px-32),round(y+py-54)))
             elif state=='thunder_roar':
                 for j in range(4):
                     tree=Image.open(ROOT/f'assets/runtime/dragon-macos/tree-right-{(3+j*5)%16:02d}.png').resize((280,240),Image.Resampling.LANCZOS)

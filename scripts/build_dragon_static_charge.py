@@ -2,7 +2,7 @@
 from pathlib import Path
 import sys
 import numpy as np
-from PIL import Image
+from PIL import Image,ImageOps
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from build_behavior_atlases import extract
@@ -29,6 +29,15 @@ def build():
             k,t=divmod(i,8);image=blend(keys[k],keys[(k+1)%4],t/8)
             if platform=='windows':image.putalpha(image.getchannel('A').point(lambda a:255 if a>=48 else 0))
             image.save(directory/f'{i:02d}.png',optimize=True)
+            for part,angle in (('rear',32),('front',18)):
+                rooted=Image.new('RGBA',(128,128));rooted.alpha_composite(image,(16,28))
+                rooted=rooted.rotate(angle,resample=Image.Resampling.BICUBIC,center=(64,108))
+                for side in ('right','left'):
+                    target=base/'fx'/f'charge-{part}-{side}'
+                    target.mkdir(parents=True,exist_ok=True)
+                    variant=ImageOps.mirror(rooted) if side=='left' else rooted
+                    if platform=='windows':variant.putalpha(variant.getchannel('A').point(lambda a:255 if a>=48 else 0))
+                    variant.save(target/f'{i:02d}.png',optimize=True)
             atlas.alpha_composite(image,(i%4*96,i//4*96))
         atlas.save(base/'scale-charge.png',optimize=True)
     print('Baked 32 realistic horn corona frames')

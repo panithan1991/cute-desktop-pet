@@ -20,7 +20,7 @@ Named behaviors, recent activity memory, and cooldowns vary the routine. Painted
 
 <img src="assets/readme/dragon-cloud-scene.png" alt="Smoke rings merge into a distant cloud; green reflections and excited reaction during ignition — still examples" width="1100">
 
-Eleven new gestures add proud chest puffs, curious sniffing, happy wiggles, hover float, dive and recover, air braking, clinging to the left, right or top screen edge, ember bubbles, static scale charge, aurora breath, and thunder roar. Each has 40 body frames, shared posture joins, and cooldowns. Charging leads into lightning; successful powers can end with a proud or happy reaction. The dragon grips a side or top edge only after flying into it. It performs one random fire, jade gas or mouth-lightning action, then releases its grip and flies down to land. Mouth lightning uses three or four separate branching channels and rapid flashes. Pet Studio adds portrait cards, grouped actions, bilingual controls, and a compact context menu.
+Eleven new gestures add proud chest puffs, curious sniffing, happy wiggles, hover float, dive and recover, air braking, clinging to the left, right or top screen edge, ember bubbles, static scale charge, aurora breath, and thunder roar. Each has 40 body frames, shared posture joins, and cooldowns. Charging leads into lightning; successful powers can end with a proud or happy reaction. The dragon grips a side or top edge only after flying into it. It performs one random fire, jade gas or mouth-lightning action, then releases its grip and flies down to land. Mouth lightning uses three or four separate branching channels and rapid flashes. Another 66 pre-baked frames connect wingbeats, gripping and landing; aurora breath uses a stable mouth nozzle with 64 smooth flow frames. Pet Studio adds portrait cards, grouped actions, bilingual controls, and a compact context menu.
 
 <img src="assets/readme/dragon-personality.png" alt="Eleven new dragon gestures — still examples" width="960">
 
@@ -32,11 +32,11 @@ Eleven new gestures add proud chest puffs, curious sniffing, happy wiggles, hove
 
 ## Download
 
-Download **v0.12.2** from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
+Download **v0.12.3** from the [latest release](https://github.com/panithan1991/cute-desktop-pet/releases/latest):
 
 | Download for Window | Download for MAC |
 | --- | --- |
-| [Download Windows — v0.12.2](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-Windows.zip) | [Download Mac Apple Silicon — v0.12.2](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Apple-Silicon.zip) · [Download Mac Intel — v0.12.2](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Intel.zip) |
+| [Download Windows — v0.12.3](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-Windows.zip) | [Download Mac Apple Silicon — v0.12.3](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Apple-Silicon.zip) · [Download Mac Intel — v0.12.3](https://github.com/panithan1991/cute-desktop-pet/releases/latest/download/CuteDesktopPet-macOS-Intel.zip) |
 
 Extract the ZIP. On Windows, open one of the included pet executables. On Mac, open the included app and choose a character from the pet menu. The downloads include Python, Tk, and the artwork. Double-click the pet to open **Pet Studio**, or right-click (Control-click on Mac) and choose **Pet Studio**. Pick a companion from portrait cards, choose dragon gestures by category, and adjust speed or pause. English and Thai labels appear together. Drag the pet to move it.
 

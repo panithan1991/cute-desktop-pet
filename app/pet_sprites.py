@@ -61,7 +61,8 @@ class PetSprites:
         if key in self.frames:
             self.frames.move_to_end(key)
             return self.frames[key]
-        if pose in DIRECT_DRAGON_POSES:
+        from app.dragon_flight_joins import FLIGHT_JOIN_POSES,LANDING_JOIN_POSES
+        if pose in DIRECT_DRAGON_POSES or pose in FLIGHT_JOIN_POSES or pose in LANDING_JOIN_POSES:
             base=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[1]))
             platform='windows' if sys.platform=='win32' else 'macos'
             side='left' if facing<0 else 'right'

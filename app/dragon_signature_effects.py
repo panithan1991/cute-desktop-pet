@@ -13,10 +13,10 @@ def draw_signature(view,state,elapsed,duration,mouth,horns,facing,rect):
     if state=='aurora_breath':
         available=(w-mx-6) if facing>0 else mx-6
         scale=max(1,math.ceil(240/max(8,available)),math.ceil(160/max(8,2*min(my,h-my)-4)))
-        frame=int(elapsed*9)%32
+        frame=int(elapsed*15)%63
         side='right' if facing>0 else 'left'
-        image=view.clip_image(f'aurora-{side}',frame,240,160,32,scale)
-        c.create_image(mx if facing>0 else mx-240/scale,my-80/scale,image=image,anchor='nw')
+        image=view.clip_image(f'aurora-{side}',frame,240,160,64,scale)
+        c.create_image(mx-(8 if facing>0 else 231)/scale,my-80/scale,image=image,anchor='nw')
     elif state=='ember_bubbles':
         for i in range(8):
             birth=duration*(.28+.06*i);age=elapsed-birth
@@ -33,11 +33,13 @@ def draw_signature(view,state,elapsed,duration,mouth,horns,facing,rect):
         # Painted corona remains attached to each horn. Tiny specular glints
         # crawl over existing scales; no structural spike/limb is invented.
         frame=int(elapsed*11)%32
-        for wx,wy in horns:
+        for i,(wx,wy) in enumerate(horns):
             sx,sy=wx-x,wy-y
-            scale=max(2,math.ceil(80/max(8,sy-4)),math.ceil(96/max(8,2*min(sx,w-sx)-4)))
-            image=view.clip_image('scale-charge',frame,96,96,32,scale)
-            c.create_image(sx-48/scale,sy-80/scale,image=image,anchor='nw')
+            scale=max(2,math.ceil(108/max(8,sy-4)),math.ceil(128/max(8,2*min(sx,w-sx)-4)))
+            part='rear' if (i==0)==(facing>0) else 'front'
+            side='right' if facing>0 else 'left'
+            image=view.clip_image(f'charge-{part}-{side}',frame,128,128,32,scale)
+            c.create_image(sx-(64 if facing>0 else 63)/scale,sy-108/scale,image=image,anchor='nw')
         for i in range(7):
             a=elapsed*3+i*2.4
             sx=hx+22*math.sin(a);sy=hy+12+i*5

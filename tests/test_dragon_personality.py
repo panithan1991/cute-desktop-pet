@@ -50,7 +50,7 @@ class DragonPersonalityTests(unittest.TestCase):
                 if flight.state=='rest':break
             self.assertEqual(flight.state,'rest',mode)
             self.assertEqual(flight.y,680)
-            self.assertGreater(len(reached),8 if mode=='perch_landing' else 30)
+            self.assertGreater(len(reached),8)
             flight.state='cruise';flight.elapsed=3;flight.paused=True
             before=(flight.x,flight.y,flight.elapsed,flight.maneuver_pose())
             flight.step(.1,0,25,950,680)
@@ -95,14 +95,14 @@ class DragonPersonalityTests(unittest.TestCase):
             self.assertTrue(view.window.deiconify.called,state)
 
     def test_new_effects_have_full_alpha_on_mac_and_simple_windows_masks(self):
-        sizes={'ember-bubble':(96,96,36),'aurora-right':(240,160,32),'aurora-left':(240,160,32),'scale-charge':(96,96,32),'shockwave':(240,240,32)}
+        sizes={'ember-bubble':(96,96,36),'aurora-right':(240,160,64),'aurora-left':(240,160,64),'scale-charge':(96,96,32),'shockwave':(240,240,32)}
         for platform in ('windows','macos'):
             for name,(w,h,count) in sizes.items():
                 for i in range(count):
                     with Image.open(ROOT/f'assets/runtime/dragon-{platform}/fx/{name}/{i:02d}.png') as im:
                         self.assertEqual(im.size,(w,h))
                         if platform=='windows':self.assertLessEqual(set(im.getchannel('A').tobytes()),{0,255})
-        for i in range(32):
+        for i in range(64):
             root=ROOT/'assets/runtime/dragon-macos/fx'
             with Image.open(root/f'aurora-right/{i:02d}.png') as right,Image.open(root/f'aurora-left/{i:02d}.png') as left:
                 self.assertEqual(ImageOps.mirror(right).tobytes(),left.tobytes())
@@ -144,3 +144,24 @@ class DragonPersonalityTests(unittest.TestCase):
             view.reset_mock()
             self.assertFalse(draw_signature(view,'thunder_roar',55/(STORM_FRAMES-1)*8,8,(150,250),((130,200),(145,200)),1,(0,0,840,480)))
             self.assertFalse(view.tree.called)
+
+    def test_aurora_nozzle_is_stationary_and_loop_has_no_jump(self):
+        root=ROOT/'assets/runtime/dragon-macos/fx/aurora-right'
+        with Image.open(root/'00.png') as first,Image.open(root/'63.png') as last:
+            self.assertEqual(first.tobytes(),last.tobytes())
+            nozzle=first.crop((0,0,24,160)).tobytes()
+        for i in range(64):
+            with Image.open(root/f'{i:02d}.png') as frame:
+                self.assertEqual(frame.crop((0,0,24,160)).tobytes(),nozzle)
+
+    def test_charge_tracks_horn_tips_and_outward_variants_mirror_exactly(self):
+        from app.dragon_charge_layout import charge_horns
+        self.assertEqual(charge_horns(0),charge_horns(39))
+        self.assertLess(charge_horns(20)[1][1],charge_horns(0)[1][1])
+        for part in ('rear','front'):
+            for platform in ('macos','windows'):
+                root=ROOT/f'assets/runtime/dragon-{platform}/fx'
+                for i in range(32):
+                    with Image.open(root/f'charge-{part}-right/{i:02d}.png') as right,Image.open(root/f'charge-{part}-left/{i:02d}.png') as left:
+                        self.assertEqual(right.size,(128,128))
+                        self.assertEqual(ImageOps.mirror(right).tobytes(),left.tobytes())

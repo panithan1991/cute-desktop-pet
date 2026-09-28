@@ -642,6 +642,9 @@ class DesktopPet:
                     index=names.index(pose) if pose in names else 0
                     mouth=MOUTH_POSITIONS[-1] if reacting else MOUTH_POSITIONS[index] if state in {"fire", "cloud_flame"} else BELLY_MOUTHS[index] if state=="belly_smoke" else (80,100) if state=="fury" else (119,92) if state in POWER_GESTURES else (42,105)
                     horns=HORN_POSITIONS[index] if state=="storm_hover" else FURY_HORNS[index] if state=="fury" else ((76,60),(94,60))
+                if state=='static_charge':
+                    from app.dragon_charge_layout import charge_horns
+                    horns=charge_horns(index)
                 if perched:
                     mouth=(104,83) if bird.perch_side=='top' else (105,73)
                     horns=((72,40),(87,40))

@@ -55,3 +55,5 @@ The exact prompt set and selected source image paths are in `dragon-cloud-refine
 `dragon-roar-lightning-cone.png` contains four branching electrical cones; `scripts/build_dragon_roar_cone.py` produces 16 mouth-aligned variations per facing/platform. The complete prompt is recorded alongside the other generation prompts. Ember bubble frames are 96×96 with a 36-frame growth/rupture/dissolution lifecycle.
 
 `dragon-edge-perch.png` contains eight complete wall and overhead grip keyframes. The personality builder interpolates two 40-frame clips and exports them as individual runtime body frames. Prompts are stored with the source artwork.
+
+`python scripts/build_dragon_flight_joins.py` bakes wingbeat and landing bridges from the existing atlas; `build_dragon_personality_effects.py` bakes anchored 64-frame aurora flow.
