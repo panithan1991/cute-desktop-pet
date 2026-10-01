@@ -1,6 +1,6 @@
 """Pre-rendered powered flight, shared by launch, cruise and descent."""
 WING_FRAMES = 60
-WING_PERIOD = 1.5
+WING_PERIOD = 3.0
 LIFT_SECONDS = 1.4
 LIFT_POSES = tuple(f'liftoff_{i:02d}' for i in range(24))
 WING_POSES = tuple(f'wingbeat_{i:02d}' for i in range(WING_FRAMES))

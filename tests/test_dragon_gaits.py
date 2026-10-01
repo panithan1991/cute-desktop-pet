@@ -100,3 +100,39 @@ class DragonGaitTests(unittest.TestCase):
         before = pet.pose()
         pet.force('fire')
         self.assertEqual(pet.pose(), before)
+
+    def test_run_glide_behavior_and_frames(self):
+        from pathlib import Path
+        ROOT = Path(__file__).resolve().parents[1]
+        pet = DragonBehavior(random.Random(10))
+        pet.force('run_glide')
+        while pet.transition.active:
+            pet.step(.1)
+        self.assertTrue(pet.grounded_travel)
+        self.assertFalse(pet.walking)
+        
+        # Test pose progression through sprint, leap, glide, and touchdown
+        pet.elapsed = 0.5
+        pose_early = pet.pose()
+        self.assertTrue(pose_early.startswith('extra_run_glide_'))
+        pet.elapsed = pet.duration * 0.5
+        pose_mid = pet.pose()
+        self.assertTrue(pose_mid.startswith('extra_run_glide_'))
+        self.assertNotEqual(pose_early, pose_mid)
+        
+        # Test motion speed during run_glide
+        motion = PetMotion(400)
+        pet.elapsed = pet.duration * 0.5  # In glide phase
+        pet.move_ground(motion, .1, 0, 2000)
+        self.assertGreater(motion.x, 400)
+        
+        # Test all 40 frames exist on disk and mirror properly
+        for platform, ext in (('macos', 'png'), ('windows', 'ppm')):
+            root = ROOT / f'assets/runtime/dragon-{platform}/body-fx'
+            for i in range(40):
+                pose = f'extra_run_glide_{i:02d}'
+                with Image.open(root / f'right/{pose}.{ext}') as right, \
+                     Image.open(root / f'left/{pose}.{ext}') as left:
+                    self.assertEqual(ImageOps.mirror(right).tobytes(), left.tobytes(), pose)
+                    self.assertEqual(right.size, (160, 160))
+

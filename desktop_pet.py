@@ -540,6 +540,11 @@ class DesktopPet:
                     else:self.behavior.finish()
                     if self.current_character=='dragon':self.behavior.transition.queue=[]
                 self.x, self.y = bird.x, bird.y
+                if self.current_character == "dragon" and bird.state == "rest" and self.behavior.state == "run_glide":
+                    p = min(1.0, max(0.0, self.behavior.elapsed / max(0.001, self.behavior.duration)))
+                    if 0.30 <= p <= 0.88:
+                        glide_p = (p - 0.30) / 0.58
+                        self.y = bird.y - 16 * math.sin(math.pi * glide_p)
             else:
                 moving = (self.behavior.walking if self.current_character in GROUND_PETS
                           else now >= self.idle_until) or self.jump.airborne
@@ -897,7 +902,7 @@ def main() -> int:
     if smoke_test:
         if pet.character_var.get() == "dragon":
             pet._open_studio();root.update_idletasks();pet.control_panel.hide()
-            for state in ("fire", "cloud_flame", "storm_hover", "wing_gust", "belly_smoke", "fury", "ground_walk", "run", *[n for n in dict(MENU_LABELS).values() if n not in AIR_GESTURES]):
+            for state in ("fire", "cloud_flame", "storm_hover", "wing_gust", "belly_smoke", "fury", "ground_walk", "run", *[n for n in dict(MENU_LABELS).values() if n not in AIR_GESTURES and n != "roll"]):
                 pet.behavior.force(state)
                 pet.behavior.transition.queue = []
                 pet.behavior.elapsed = pet.behavior.duration*.5

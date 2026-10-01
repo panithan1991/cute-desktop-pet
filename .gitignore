@@ -6,3 +6,10 @@ dist/
 *.spec
 .pytest_cache/
 *.zip
+scratch/
+*-audit.png
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

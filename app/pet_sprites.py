@@ -63,7 +63,8 @@ class PetSprites:
             return self.frames[key]
         from app.dragon_flight_joins import FLIGHT_JOIN_POSES,LANDING_JOIN_POSES,TOUCHDOWN_JOIN_POSES,DRAGON_TURN_POSES
         from app.dragon_air_cycle import AIR_BODY_POSES
-        if pose in DIRECT_DRAGON_POSES or pose in FLIGHT_JOIN_POSES or pose in LANDING_JOIN_POSES or pose in TOUCHDOWN_JOIN_POSES or pose in AIR_BODY_POSES or pose in DRAGON_TURN_POSES:
+        from app.dragon_personality import RUN_GLIDE_POSES
+        if pose in DIRECT_DRAGON_POSES or pose in FLIGHT_JOIN_POSES or pose in LANDING_JOIN_POSES or pose in TOUCHDOWN_JOIN_POSES or pose in AIR_BODY_POSES or pose in DRAGON_TURN_POSES or pose in RUN_GLIDE_POSES:
             base=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[1]))
             platform='windows' if sys.platform=='win32' else 'macos'
             side='left' if facing<0 else 'right'

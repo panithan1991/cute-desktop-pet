@@ -11,17 +11,25 @@ def draw_signature(view,state,elapsed,duration,mouth,horns,facing,rect):
     mx,my=mouth[0]-x,mouth[1]-y
     hx,hy=(horns[0][0]+horns[1][0])/2-x,(horns[0][1]+horns[1][1])/2-y
     if state=='aurora_breath':
-        from app.dragon_power_geometry import fire_frame
+        if p < 0.20 or p >= 0.82:
+            return False
         from app.dragon_fire_layout import FIRE_NOZZLES
         available=(w-mx-6) if facing>0 else mx-6
         scale=max(1,math.ceil(240/max(8,available)),math.ceil(160/max(8,2*min(my,h-my)-4)))
-        frame=fire_frame(elapsed,duration)
-        if frame is None:return False
+        t_active = (p - 0.20) / 0.62
+        if t_active < 0.14:
+            frame = min(7, int(t_active / 0.14 * 8))
+        elif t_active < 0.82:
+            frame = 8 + int(elapsed * 12) % 16
+        else:
+            frame = 24 + min(7, int((t_active - 0.82) / 0.18 * 8))
         side='right' if facing>0 else 'left'
         image=view.clip_image(f'aurora-flame-{side}',frame,240,160,32,scale)
         nx,ny=FIRE_NOZZLES[frame]
         if facing<0:nx=239-nx
         c.create_image(mx-nx/scale,my-ny/scale,image=image,anchor='nw')
+        fade_active = min(1.0, (p - 0.20) / 0.04, (0.82 - p) / 0.04)
+        fade = fade_active * fade_active * (3 - 2 * fade_active)
     elif state=='ember_bubbles':
         for i in range(8):
             birth=duration*(.28+.06*i);age=elapsed-birth

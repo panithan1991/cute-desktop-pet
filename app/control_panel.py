@@ -12,11 +12,11 @@ PETS=(('bunny','BooBoo','กระต่ายหูตก','booboo'),
       ('dragon','Sleepy Dragon','มังกรดำขี้เซา','dragon'))
 GROUPS=(
     ('Personality · บุคลิก',('proud','curious_sniff','happy','belly_smoke','threat','roar','fury')),
-    ('Move & Fly · เคลื่อนไหว',('ground_walk','run','walk','hover_float','dive_recover','air_brake','roll','perch_landing')),
+    ('Move & Fly · เคลื่อนไหว',('ground_walk','run','run_glide','walk','hover_float','dive_recover','air_brake','roll','perch_landing')),
     ('Elemental Magic · พลังธาตุ',('ember_bubbles','static_charge','aurora_breath','thunder_roar','fire','smoke','cloud_flame','storm_hover','wing_gust')),
 )
 LABELS={state:label for label,state in MENU_LABELS}
-LABELS.update({'ground_walk':'Walk (เดิน)','run':'Run (วิ่ง)','walk':'Soaring Flight (บินร่อน)',
+LABELS.update({'ground_walk':'Walk (เดิน)','run':'Run (วิ่ง)','run_glide':'Run & Low Glide (วิ่งแล้วร่อนใกล้พื้น)','walk':'Soaring Flight (บินร่อน)',
               'belly_smoke':'Belly-up Smoke (นอนหงายพ่นควัน)','threat':'Warning (ขู่กางปีก)',
               'roar':'Roar (คำราม)','fury':'Fury (โกรธจัด)','fire':'Flame Breath (พ่นไฟ)',
               'smoke':'Smoke Ring (วงควัน)','cloud_flame':'Jade Cloud Ignition (เมฆแก๊สติดไฟ)',

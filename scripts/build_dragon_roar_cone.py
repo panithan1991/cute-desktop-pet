@@ -38,7 +38,8 @@ def build():
                 if platform=='windows':frame.putalpha(frame.getchannel('A').point(lambda a:255 if a>=48 else 0))
                 frame.save(directory/f'{i:02d}.png',optimize=True)
                 down=base/'fx'/f'roar-down-{side}';down.mkdir(parents=True,exist_ok=True)
-                ImageOps.flip(frame).save(down/f'{i:02d}.png',optimize=True)
+                with Image.open(directory/f'{i:02d}.png') as saved_up:
+                    ImageOps.flip(saved_up).save(down/f'{i:02d}.png')
                 atlas.alpha_composite(frame,(i%4*640,i//4*360))
             atlas.save(base/f'{name}.png',optimize=True)
     print('Baked 16 giant mouth-rooted branching cones, both facings and platforms')

@@ -166,7 +166,10 @@ class DragonFlightMotion(BibiFlightMotion):
         return frames[min(39, index)]
 
     def flight_pose(self):
-        if self.state == 'takeoff' and self.elapsed < LIFT_SECONDS: return LIFT_POSES[min(len(LIFT_POSES) - 1, int(self.elapsed / LIFT_SECONDS * len(LIFT_POSES)))]
+        if self.state == 'takeoff' and self.elapsed < LIFT_SECONDS:
+            p = max(0.0, min(1.0, self.elapsed / LIFT_SECONDS))
+            p_eased = p * p * (3.0 - 2.0 * p)
+            return LIFT_POSES[min(len(LIFT_POSES) - 1, int(p_eased * len(LIFT_POSES)))]
         if self.state == 'land_fold':
             frames = AIR_LAND_FOLD
             return frames[min(len(frames) - 1, int(self.elapsed / 1.4 * len(frames)))]

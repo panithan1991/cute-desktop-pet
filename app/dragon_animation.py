@@ -5,7 +5,7 @@ import math
 
 from app.behavior_selection import Activity, BehaviorMemory
 from app.behavior_art import PostureTransition, gesture_pose
-from app.dragon_personality import NEW_ACTIVITIES, AIR_GESTURES, PERCH_POWERS
+from app.dragon_personality import NEW_ACTIVITIES, AIR_GESTURES, PERCH_POWERS, RUN_GLIDE_POSES
 
 DRAGON_ACTIVITIES = {
     "idle": Activity("Sleepy breathing", (8, 14)),
@@ -13,6 +13,7 @@ DRAGON_ACTIVITIES = {
     "walk": Activity("Soaring flight", (25, 45), 40, enter=2.4, exit=2.8),
     "ground_walk": Activity("Sleepy ground stroll", (18, 30), 30),
     "run": Activity("Short playful ground run", (5, 8), 85),
+    "run_glide": Activity("Running dash and ground-skimming glide · วิ่งแล้วร่อนใกล้พื้น", (4.5, 6.5), 70),
     "curious": Activity("Small head tilt", (2.5, 4.0), 30, enter=1, exit=1),
     "tail": Activity("Tail sway", (3, 4.5), 25, enter=1, exit=1),
     "stretch": Activity("Wing stretch", (3.5, 5), 30, enter=1, exit=1),
@@ -183,7 +184,7 @@ class DragonBehavior:
 
     @property
     def grounded_travel(self):
-        return self.state in {"ground_walk", "run"} and not self.transition.active
+        return self.state in {"ground_walk", "run", "run_glide"} and not self.transition.active
 
     def move_ground(self, motion, seconds, left, right):
         """Use distance, rather than elapsed time, to drive planted-paw cycles."""
@@ -191,7 +192,13 @@ class DragonBehavior:
             return
         dt = min(max(seconds, 0), .1)
         speed = motion.speed
-        motion.speed *= .55 if self.state == "ground_walk" else 1.65
+        if self.state == "ground_walk":
+            motion.speed *= .55
+        elif self.state == "run":
+            motion.speed *= 1.65
+        elif self.state == "run_glide":
+            p = min(1.0, max(0.0, self.elapsed / self.duration))
+            motion.speed *= (1.7 if p < 0.32 else 2.3 if p < 0.85 else 1.2)
         # Ease into travel; decelerate at the work-area edge before turning.
         margin = (right-motion.x) if motion.direction > 0 else (motion.x-left)
         if margin <= .3:
@@ -211,7 +218,9 @@ class DragonBehavior:
 
     def pose(self, flight_state="rest", flight_elapsed=0):
         if flight_state == "takeoff":
-            return dragon_frame("takeoff", flight_elapsed / 2.4)
+            p = max(0.0, min(1.0, flight_elapsed / 2.4))
+            p_eased = p * p * (3.0 - 2.0 * p)
+            return dragon_frame("takeoff", p_eased)
         if flight_state == "cruise":
             return dragon_frame("hover", (flight_elapsed % 1.8) / 1.8)
         if flight_state == "landing":
@@ -231,6 +240,11 @@ class DragonBehavior:
             frames = EXTRA_CLIPS["dragon"][self.state]
             stride = 44 if self.state == "ground_walk" else 72
             return frames[int((self.ground_distance % stride) / stride * (len(frames)-1))]
+        if self.state == "run_glide":
+            from app.dragon_personality import RUN_GLIDE_POSES
+            frames = RUN_GLIDE_POSES
+            p = min(1.0, max(0.0, self.elapsed / self.duration))
+            return frames[min(len(frames) - 1, int(p * len(frames)))]
         if self.state=='belly_smoke':
             from app.dragon_belly_timing import belly_pose_index
             from app.behavior_art import EXTRA_CLIPS
@@ -251,4 +265,24 @@ class DragonBehavior:
             return DRAGON_CLIPS["sleep"][5 + min(2, int(breath * 3))]
         if self.state == "walk":
             return DRAGON_CLIPS["idle"][0]
+        if self.state == "yawn":
+            # Sleepy yawning: windup to open wide, savor and hold the sleepy peak with trembling chin, then slowly sigh and relax
+            p = max(0.0, min(1.0, self.elapsed / self.duration))
+            if p < 0.22:
+                progress = (p / 0.22) * (4.0 / 8.0)
+            elif p < 0.65:
+                progress = 4.2 / 8.0
+            else:
+                progress = (4.0 / 8.0) + ((p - 0.65) / 0.35) * (4.0 / 8.0)
+            return dragon_frame("yawn", progress)
+        if self.state == "stretch":
+            # Wing stretch: arch back and extend wings, hold the full satisfying stretch, then fold back to rest
+            p = max(0.0, min(1.0, self.elapsed / self.duration))
+            if p < 0.25:
+                progress = (p / 0.25) * (3.0 / 6.0)
+            elif p < 0.65:
+                progress = 3.2 / 6.0
+            else:
+                progress = (3.0 / 6.0) + ((p - 0.65) / 0.35) * (3.0 / 6.0)
+            return dragon_frame("stretch", progress)
         return dragon_frame(self.state, self.elapsed / self.duration)

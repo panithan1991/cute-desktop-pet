@@ -34,7 +34,7 @@ def gesture_pose(character, state, elapsed, duration):
 
 
 def posture(state):
-    if state in {"ground_walk", "run"}:
+    if state in {"ground_walk", "run", "run_glide"}:
         return "ground_travel"
     if state in {"sleep", "lounge", "roll", "belly_up", "hug_tail", "wing_blanket"}:
         return "lying"

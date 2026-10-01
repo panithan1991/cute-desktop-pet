@@ -18,10 +18,12 @@ AIR_GESTURES = frozenset(('hover_float', 'dive_recover', 'air_brake', 'perch_lan
 POWER_GESTURES = frozenset(('ember_bubbles', 'static_charge', 'aurora_breath', 'thunder_roar'))
 PERCH_CLIPS = ('wall_perch', 'top_perch')
 PERCH_POWERS = frozenset(('fire', 'cloud_flame', 'thunder_roar'))
+RUN_GLIDE_POSES = tuple(f'extra_run_glide_{i:02d}' for i in range(40))
 MENU_LABELS = (
     ('Proud Chest Puff (ยืดอกภูมิใจ)', 'proud'),
     ('Curious Sniff (ดมอย่างสงสัย)', 'curious_sniff'),
     ('Happy Wiggle (กระดิกหางดีใจ)', 'happy'),
+    ('Run & Low Glide (วิ่งแล้วร่อนใกล้พื้น)', 'run_glide'),
     ('Hover Float (ลอยตัวกลางอากาศ)', 'hover_float'),
     ('Dive and Recover (บินดิ่งแล้วเชิดขึ้น)', 'dive_recover'),
     ('Air Brake (กางปีกเบรก)', 'air_brake'),
