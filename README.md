@@ -6,11 +6,11 @@ A lovely companion living right on your desktop!
 
 ## 🐾 Characters (สัตว์เลี้ยงที่มีให้เลือก)
 
-| Rabbit (กระต่าย BooBoo) | Puppy (ลูกหมาหมูกระทะ) | Bald Eagle (นกอินทรี Bibi) | Tabby Kitten (ลูกแมวแท็บบี้) |
+| Rabbit | Puppy | Bald Eagle | Tabby Kitten |
 | :---: | :---: | :---: | :---: |
 | <img src="assets/readme/booboo.png" alt="Rabbit" width="150"> | <img src="assets/readme/moo-krata.png" alt="Puppy" width="150"> | <img src="assets/readme/bibi.png" alt="Bald eagle" width="150"> | <img src="assets/readme/kitten.png" alt="Tabby kitten" width="150"> |
 
-| Sleepy Dragon (มังกรดำแสนง่วง) |
+| Sleepy Dragon |
 | :---: |
 | <img src="assets/readme/dragon.png" alt="Black baby dragon" width="170"> |
 
